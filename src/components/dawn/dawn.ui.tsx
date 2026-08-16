@@ -85,7 +85,7 @@ export function DawnScreen({
       data-phase="day"
       className={cn(
         "bg-phase-muted text-foreground",
-        "grid min-h-dvh content-start gap-6 p-4",
+        "grid min-h-full content-start gap-6 p-4",
       )}
     >
       <h1

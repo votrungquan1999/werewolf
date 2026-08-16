@@ -92,7 +92,7 @@ export function DayVote({
     <section
       data-phase="day"
       className={cn(
-        "min-h-dvh bg-phase-muted text-foreground",
+        "min-h-full bg-phase-muted text-foreground",
         "grid content-start gap-6 p-4",
       )}
     >

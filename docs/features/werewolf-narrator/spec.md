@@ -18,10 +18,15 @@ Roles: Werewolf, Villager, Seer, Doctor, Witch, Hunter, Cupid, Fool. Vietnamese 
 
 ## Escape hatches
 
-An options menu, stacked over every screen with the `pile` utility rather than absolute positioning, holds the two controls that must never be one stray tap away from play:
+An options menu sits in a **header row above the screens**, not floating over them. It was piled on top at first and covered the phase headings, so the page is now `grid-rows-[auto_1fr]` and each screen fills the content row with `min-h-full` rather than claiming `min-h-dvh` for itself. Nothing overlaps anything.
 
-- **Undo** steps the whole game back one action — a mis-tapped vote, the wrong night target, an accidental pass. History lives in `history.ts` as a wrapper reducer over `GameState`, capped at 25 steps, and is deliberately **not** persisted: only the live game is parked.
+The menu holds everything that must never be one stray tap away from play:
+
+- **Undo** steps the whole game back one action — a mis-tapped vote, the wrong night target, an accidental pass. History lives in `history.ts` as a wrapper reducer over `GameState`, capped at 25 steps, and is deliberately **not** persisted: only the live game is parked. This is the deep recovery route: if the table is already on the day and something went wrong back in the night, tapping it repeatedly walks the whole game back.
 - **New game** asks for confirmation before wiping, then clears storage and resets.
+- **The language switch** lives here too. It used to float on the screen, where it sat on top of the card.
+
+**Undo is also surfaced inline**, side by side with the primary advance control, so the common case — a phone passed on before its owner looked — is one tap and never needs the menu.
 
 ## House rules
 

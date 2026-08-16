@@ -8,12 +8,14 @@
 
 import {
   RevealCard,
+  RevealFooter,
   RevealHandOff,
   RevealHoldControl,
   RevealHoldPrompt,
   RevealLastPrompt,
   RevealPassOn,
   RevealScreen,
+  RevealStepBack,
 } from "src/components/reveal/reveal.ui";
 import type { Dictionary } from "src/lib/i18n/types";
 
@@ -32,7 +34,10 @@ export function Reveal({ dict }: { dict: Dictionary }) {
         <RevealHoldPrompt>{dict.reveal.holdInstruction}</RevealHoldPrompt>
         <RevealCard roles={dict.roles}>{dict.reveal.yourCard}</RevealCard>
       </RevealHoldControl>
-      <RevealPassOn>{dict.reveal.passItOn}</RevealPassOn>
+      <RevealFooter>
+        <RevealStepBack>{dict.common.back}</RevealStepBack>
+        <RevealPassOn>{dict.reveal.passItOn}</RevealPassOn>
+      </RevealFooter>
     </RevealScreen>
   );
 }

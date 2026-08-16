@@ -83,7 +83,7 @@ describe("GameMenu", () => {
     render(
       <GameProvider>
         <TableProbe />
-        <GameMenu dict={dict} />
+        <GameMenu dict={dict} locale={Locale.En} />
       </GameProvider>,
     );
 
@@ -99,7 +99,7 @@ describe("GameMenu", () => {
   it("stays shut until it is opened, and offers no undo on a fresh game", async () => {
     render(
       <GameProvider>
-        <GameMenu dict={dict} />
+        <GameMenu dict={dict} locale={Locale.En} />
       </GameProvider>,
     );
 

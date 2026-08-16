@@ -660,7 +660,7 @@ export function NightScreen({ copy }: { copy: NightCopy }) {
     <main
       data-phase="night"
       className={cn(
-        "min-h-dvh bg-phase-muted p-6 text-foreground",
+        "min-h-full bg-phase-muted p-6 text-foreground",
         "grid grid-rows-[auto_1fr] gap-6",
       )}
     >

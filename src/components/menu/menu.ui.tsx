@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useCanUndo, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent } from "src/components/ui/card";
@@ -34,6 +34,7 @@ export function GameMenuPanel({
   resetPrompt,
   confirmLabel,
   cancelLabel,
+  children,
 }: {
   openLabel: string;
   undoLabel: string;
@@ -41,6 +42,8 @@ export function GameMenuPanel({
   resetPrompt: string;
   confirmLabel: string;
   cancelLabel: string;
+  /** The language links, composed by the server so this half carries no copy. */
+  children: ReactNode;
 }) {
   const [view, setView] = useState<MenuView>(MenuView.Closed);
   const { undo, resetGame } = useGameActions();
@@ -129,6 +132,9 @@ export function GameMenuPanel({
                 >
                   {newGameLabel}
                 </Button>
+                <div className={cn("gap-2 pt-1", "grid grid-cols-2")}>
+                  {children}
+                </div>
               </>
             )}
           </CardContent>

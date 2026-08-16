@@ -59,6 +59,18 @@ test("keeps the card hidden until the control has been held for a moment", async
   expect(screen.queryByText("Seer")).not.toBeInTheDocument();
 });
 
+test("steps back to the previous player when the phone was passed too early", async () => {
+  const user = userEvent.setup();
+  renderRevealScreen();
+
+  await user.click(screen.getByRole("button", { name: "Next player →" }));
+  expect(screen.getByText("Pass the phone to Long")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Back" }));
+
+  expect(screen.getByText("Pass the phone to Mai")).toBeInTheDocument();
+});
+
 test("names the player whose turn it is on the hand-off", () => {
   renderRevealScreen();
 

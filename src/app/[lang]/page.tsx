@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Dawn } from "src/components/dawn/dawn";
 import { Day } from "src/components/day/day";
 import { GameProvider } from "src/components/game/game.state";
@@ -7,7 +6,7 @@ import { GameMenu } from "src/components/menu/menu";
 import { Night } from "src/components/night/night";
 import { Reveal } from "src/components/reveal/reveal";
 import { Setup } from "src/components/setup/setup";
-import { Locale, swapLocaleInPath, toLocale } from "src/lib/i18n/config";
+import { Locale, toLocale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
 import { cn } from "src/lib/utils";
 
@@ -38,40 +37,19 @@ export default async function GamePage({ params }: GamePageProps) {
 
   return (
     <GameProvider>
-      {/* Piled rather than positioned: the controls float over whichever screen is on. */}
-      <div className={cn("pile min-h-dvh")}>
-        <div>
+      {/* A real row rather than an overlay — floating the menu covered the screen headings. */}
+      <div className={cn("grid min-h-dvh grid-rows-[auto_1fr]")}>
+        <header className={cn("px-3 pt-3", "grid justify-items-end")}>
+          <GameMenu dict={dictionary} locale={locale} />
+        </header>
+
+        <div className={cn("grid")}>
           <Setup dict={dictionary} />
           <Reveal dict={dictionary} />
           <Night dict={dictionary} />
           <Dawn dict={dictionary} />
           <Day dict={dictionary} />
           <GameOver dict={dictionary} />
-        </div>
-
-        <div
-          className={cn(
-            "gap-2 p-3 text-sm",
-            "grid h-fit w-fit justify-items-end justify-self-end",
-          )}
-        >
-          <GameMenu dict={dictionary} />
-
-          <nav className={cn("gap-2", "grid grid-flow-col")}>
-            {Object.values(Locale).map((target) => (
-              <Link
-                key={target}
-                href={swapLocaleInPath(`/${locale}`, target)}
-                aria-current={target === locale ? "true" : undefined}
-                className={cn(
-                  "rounded-full border border-border bg-background/80 px-3 py-1 text-muted-foreground",
-                  "aria-[current]:border-primary aria-[current]:text-foreground",
-                )}
-              >
-                {dictionary.language[target]}
-              </Link>
-            ))}
-          </nav>
         </div>
       </div>
     </GameProvider>

@@ -36,7 +36,7 @@ export function GameOverScreen({
       data-phase="setup"
       className={cn(
         "bg-background text-foreground",
-        "grid min-h-dvh content-start gap-6 p-4",
+        "grid min-h-full content-start gap-6 p-4",
       )}
     >
       <header

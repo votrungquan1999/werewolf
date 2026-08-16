@@ -7,7 +7,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { useGame, useGameActions } from "src/components/game/game.state";
+import {
+  useCanUndo,
+  useGame,
+  useGameActions,
+} from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -64,7 +68,7 @@ export function RevealScreen({ children }: RevealChildrenProps) {
       data-phase="setup"
       className={cn(
         "gap-6 p-6",
-        "grid min-h-dvh grid-rows-[auto_1fr_auto] content-between",
+        "grid min-h-full grid-rows-[auto_1fr_auto] content-between",
       )}
     >
       {children}
@@ -212,6 +216,39 @@ export function RevealCard({ roles, children }: RevealCardProps) {
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Sits the step-back control beside the advance control.
+ * @param props.children - The back button and the pass-on button.
+ * @returns The footer row.
+ */
+export function RevealFooter({ children }: RevealChildrenProps) {
+  return (
+    <div className={cn("gap-2", "grid grid-cols-[auto_1fr]")}>{children}</div>
+  );
+}
+
+/**
+ * Takes the reveal back a step, for a phone passed on before its owner looked.
+ * @param props.children - `dict.common.back`.
+ * @returns The back button, dead until there is something to undo.
+ */
+export function RevealStepBack({ children }: RevealChildrenProps) {
+  const canUndo = useCanUndo();
+  const { undo } = useGameActions();
+
+  return (
+    <Button
+      variant="outline"
+      size="lg"
+      disabled={!canUndo}
+      onClick={undo}
+      className={cn("text-base", "h-14 px-5")}
+    >
+      {children}
+    </Button>
   );
 }
 
