@@ -76,6 +76,14 @@ Phase-driven colour comes from `data-phase` on each screen root, resolving `--co
 
 Dark-only (`<html class="dark">`) — it is played in dim rooms.
 
+### Copy
+
+**Role descriptions are deliberately funny, and must stay rule-accurate.** They are the only place a player learns what their card does, so each one still states its real constraints — the witch's one-potion-a-night limit, the doctor's no-repeat rule — just in the voice of someone at the table rather than a rulebook. Don't flatten them into dry text.
+
+**Interactive controls carry action labels, never instructions.** The pass-on control originally read "Got it? Let go and pass the phone on" and players didn't recognise it as a button at all; it is now "Next player →". Any new control should be named after what it does, with the explanation living outside it.
+
+The Vietnamese is written as a Vietnamese table actually speaks — `soi` for the seer's check, colloquial phrasing on the decoy screen — not as a translation of the English.
+
 ## Behaviours
 
 1. Anyone can switch between Vietnamese and English, staying on the same screen
