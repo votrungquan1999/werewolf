@@ -134,15 +134,17 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
 
   return (
     <HoldContext value={isHeld}>
-      <Button
-        variant="secondary"
+      {/* A plain button, like the night hold: the shadcn one is `inline-flex`, which
+          `pile` cannot override, and the fill below would then eat the whole row. */}
+      <button
+        type="button"
         onPointerDown={showCard}
         onPointerUp={hideCard}
         onPointerLeave={hideCard}
         onPointerCancel={hideCard}
         className={cn(
-          "rounded-xl border border-phase-border bg-card p-4 text-base whitespace-normal",
-          "pile h-auto min-h-64 w-full place-items-center",
+          "touch-manipulation rounded-xl border border-phase-border bg-card p-4 text-base text-foreground",
+          "pile min-h-64 w-full place-items-center",
         )}
       >
         {/* The same filling affordance the night hand-off uses, so one hold
@@ -156,7 +158,7 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
           )}
         />
         {children}
-      </Button>
+      </button>
     </HoldContext>
   );
 }
