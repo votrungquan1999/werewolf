@@ -1,0 +1,159 @@
+import {
+  castDayVote,
+  getDayVoteOutcome,
+  resolveDayVote,
+} from "src/lib/game/day";
+import { applyDeaths, fireHunterShot } from "src/lib/game/deaths";
+import {
+  advanceNightCursor,
+  buildNightOrder,
+  submitNightChoice,
+} from "src/lib/game/night";
+import { resolveNight } from "src/lib/game/resolve-night";
+import {
+  addPlayer,
+  createInitialState,
+  dealRoles,
+  removePlayer,
+  revealNextPlayer,
+  setRoleCount,
+} from "src/lib/game/setup";
+import {
+  ActionType,
+  type AddPlayerAction,
+  type DealRolesAction,
+  DeathCause,
+  type GameAction,
+  type GameState,
+  Phase,
+  type RemovePlayerAction,
+  Winner,
+} from "src/lib/game/types";
+import { getWinner, isFoolWin } from "src/lib/game/win";
+
+/**
+ * Builds an add-player action, minting the id here so the reducer stays pure.
+ * @param name - The player's display name
+ * @returns The action to dispatch
+ */
+export function addPlayerAction(name: string): AddPlayerAction {
+  return { type: ActionType.AddPlayer, id: crypto.randomUUID(), name };
+}
+
+/**
+ * Builds a remove-player action.
+ * @param playerId - The player to drop from tonight's list
+ * @returns The action to dispatch
+ */
+export function removePlayerAction(playerId: string): RemovePlayerAction {
+  return { type: ActionType.RemovePlayer, playerId };
+}
+
+/**
+ * Builds a deal action, minting the shuffle seed here so the reducer stays pure.
+ * @returns The action to dispatch
+ */
+export function dealRolesAction(): DealRolesAction {
+  return {
+    type: ActionType.DealRoles,
+    seed: Math.floor(Math.random() * 2 ** 32),
+  };
+}
+
+/**
+ * Ends the game if the deaths that just landed decided it.
+ * @param state - State immediately after deaths were applied
+ * @returns The same state, or a finished game naming the winner
+ */
+function settleAfterDeaths(state: GameState): GameState {
+  // A dying hunter still has a shot that can flip the result — never call it before they fire.
+  if (state.pendingHunterId !== null) {
+    return state;
+  }
+
+  const winner = getWinner(state);
+  if (winner === null) {
+    return state;
+  }
+
+  return { ...state, winner, phase: Phase.GameOver };
+}
+
+/**
+ * The single reducer for the whole game, delegating each action to its phase slice.
+ * @param state - Current game state
+ * @param action - The action to apply
+ * @returns The next state
+ */
+export function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case ActionType.AddPlayer:
+      return addPlayer(state, action.id, action.name);
+    case ActionType.RemovePlayer:
+      return removePlayer(state, action.playerId);
+    case ActionType.SetRoleCount:
+      return setRoleCount(state, action.role, action.count);
+    case ActionType.DealRoles:
+      return dealRoles(state, action.seed);
+    case ActionType.RevealNextPlayer:
+      return revealNextPlayer(state);
+    // buildNightOrder only computes the order; the reducer owns writing it.
+    case ActionType.StartNight:
+      return {
+        ...state,
+        phase: Phase.Night,
+        // Night one is already numbered by the last role reveal, so only a night
+        // that follows a day advances the count.
+        nightNumber:
+          state.phase === Phase.Day ? state.nightNumber + 1 : state.nightNumber,
+        nightOrderIds: buildNightOrder(state),
+        nightCursor: 0,
+      };
+    case ActionType.SubmitNightChoice:
+      return submitNightChoice(
+        state,
+        action.actorId,
+        action.action,
+        action.targetId,
+        action.secondTargetId,
+      );
+    case ActionType.AdvanceNightCursor:
+      return advanceNightCursor(state);
+    case ActionType.ResolveNight:
+      return settleAfterDeaths(resolveNight(state));
+    case ActionType.CastDayVote:
+      return castDayVote(state, action.voterId, action.targetId);
+    case ActionType.ResolveDayVote: {
+      // Read the outcome first — resolveDayVote clears the votes it was derived from.
+      const outcome = getDayVoteOutcome(state);
+      const resolved = resolveDayVote(state);
+      if (outcome.eliminatedId === null) {
+        return resolved;
+      }
+
+      const lynched = applyDeaths(resolved, [
+        { playerId: outcome.eliminatedId, cause: DeathCause.Lynch },
+      ]);
+      // The fool's win is event-driven, so it bypasses the standing win conditions entirely.
+      if (isFoolWin(state, outcome.eliminatedId)) {
+        return { ...lynched, winner: Winner.Fool, phase: Phase.GameOver };
+      }
+
+      return settleAfterDeaths(lynched);
+    }
+    // The dawn report has been read; the village can start arguing.
+    case ActionType.StartDay:
+      return {
+        ...state,
+        phase: Phase.Day,
+        dayVotes: {},
+        revoteCandidateIds: [],
+      };
+    case ActionType.FireHunterShot:
+      return settleAfterDeaths(fireHunterShot(state, action.targetId));
+    case ActionType.ResetGame:
+      return createInitialState();
+    default:
+      return state;
+  }
+}
