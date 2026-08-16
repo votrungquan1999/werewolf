@@ -11,6 +11,11 @@ if (typeof window !== "undefined") {
     };
   }
 
+  // jsdom has no media stack at all; play() throws rather than returning a promise.
+  if (typeof HTMLMediaElement !== "undefined") {
+    HTMLMediaElement.prototype.play = () => Promise.resolve();
+  }
+
   if (!window.matchMedia) {
     window.matchMedia = (query: string) => ({
       matches: false,

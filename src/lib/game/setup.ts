@@ -61,7 +61,8 @@ export function createInitialState(): GameState {
     witchHealAvailable: true,
     witchPoisonAvailable: true,
     lastProtectedId: null,
-    pendingHunterId: null,
+    hunterTargetId: null,
+    pendingHeartbreakId: null,
     winner: null,
   };
 }

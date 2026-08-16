@@ -53,7 +53,8 @@ function parkFinishedGame(winner: Winner, players: Player[]): void {
     witchHealAvailable: false,
     witchPoisonAvailable: false,
     lastProtectedId: null,
-    pendingHunterId: null,
+    hunterTargetId: null,
+    pendingHeartbreakId: null,
     winner,
   };
 

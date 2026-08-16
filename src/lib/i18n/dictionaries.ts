@@ -1,4 +1,4 @@
-import { DeathCause, RoleId, Winner } from "src/lib/game/types";
+import { RoleId, Winner } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import type { Dictionary } from "src/lib/i18n/types";
 
@@ -47,6 +47,8 @@ const vietnamese: Dictionary = {
     confirmIdentity: "Tôi là {name}",
     holdToOpen: "Nhấn giữ nút để mở lượt của bạn",
     yourRole: "Bạn là {role}",
+    showRole: "Chạm để xem lại bài của bạn",
+    hideRole: "Chạm để giấu bài đi",
     decoyTitle: "Đêm nay bạn không phải làm gì",
     decoyBody:
       "Chờ một chút, giả vờ bấm bấm cho giống người ta, rồi đưa máy cho {name}.",
@@ -58,11 +60,13 @@ const vietnamese: Dictionary = {
       "Bác Sĩ, chọn một người để cứu đêm nay. Được tự cứu mình, nhưng không được cứu lại người đêm qua.",
     witchPrompt:
       "Phù Thủy, cứu nạn nhân đêm nay hoặc đầu độc một người — một đêm chỉ được một trong hai. Mỗi bình dùng một lần cả ván.",
-    witchHealChoice: "Cứu {name}",
     witchHealUnknownChoice: "Cứu nạn nhân của Sói đêm nay",
     witchPoisonChoice: "Đầu độc một người",
     witchNoPotionChoice: "Đêm nay không dùng bình nào",
     witchPoisonConfirm: "Đầu độc {name}? Sáng mai họ chết.",
+    hunterPrompt:
+      "Thợ Săn, chọn sẵn người bạn sẽ kéo theo nếu bạn chết. Chọn trước khi biết mình sống hay chết, và đêm nào cũng đổi lại được.",
+    hunterSkip: "Đêm nay chưa nhắm ai",
     cupidPrompt:
       "Thần Tình Yêu, chọn hai người để se duyên. Một người chết thì người kia cũng chết theo.",
   },
@@ -71,28 +75,25 @@ const vietnamese: Dictionary = {
     seerIsNotWerewolf: "{name} KHÔNG phải Ma Sói.",
     wolfPackTitle: "Bầy Sói của bạn",
     wolfTallyTitle: "Bầy đang bỏ phiếu",
-    witchVictim: "Đêm nay Sói cắn {name}.",
   },
   dawn: {
     title: "Ngày {number}",
+    revealDeaths: "Chạm để xem đêm qua ai mất",
     nobodyDied: "Trời sáng rồi, cả làng bình yên — đêm qua không ai chết.",
     playerDied: "{name} đã chết trong đêm.",
-    causes: {
-      [DeathCause.WolfAttack]: "Bị Ma Sói cắn chết.",
-      [DeathCause.WitchPoison]: "Trúng bình độc của Phù Thủy.",
-      [DeathCause.HunterShot]: "Dính phát súng cuối cùng của Thợ Săn.",
-      [DeathCause.Lynch]: "Bị cả làng treo cổ.",
-      [DeathCause.Heartbreak]: "Đau lòng chết theo người yêu.",
-    },
   },
   day: {
-    voteTitle: "Cả làng bỏ phiếu công khai",
+    discussTitle: "Cả làng bàn bạc",
+    discussAddMinute: "Thêm 1 phút",
+    discussSkip: "Bỏ phiếu luôn",
+    discussTimeUp: "Hết giờ bàn bạc",
+    skipVote: "Bỏ qua lượt",
+    voteTitle: "Cả làng bỏ phiếu",
     playerVotesFor: "{name} bỏ phiếu cho",
     tallyTitle: "Kiểm phiếu",
     votedOut: "Cả làng đã treo cổ {name}.",
     tieTitle: "Hòa phiếu — bỏ phiếu lại giữa những người bằng phiếu nhau.",
     revoteTitle: "Bỏ phiếu lại",
-    hunterShot: "{name} là Thợ Săn — trước khi tắt thở còn kịp bắn một người.",
   },
   gameOver: {
     headlines: {
@@ -204,6 +205,8 @@ const english: Dictionary = {
     confirmIdentity: "I am {name}",
     holdToOpen: "Press and hold the button to open your turn",
     yourRole: "You are the {role}",
+    showRole: "Tap to see your card",
+    hideRole: "Tap to hide your card",
     decoyTitle: "Nothing to do tonight",
     decoyBody: "Wait a moment, look busy, then pass to {name}.",
     wolvesPrompt:
@@ -214,11 +217,13 @@ const english: Dictionary = {
       "Doctor, choose who to protect tonight. You may protect yourself, but not whoever you protected last night.",
     witchPrompt:
       "Witch, heal tonight's victim or poison someone — never both in one night. Each potion works once per game.",
-    witchHealChoice: "Save {name}",
     witchHealUnknownChoice: "Save whoever the wolves take tonight",
     witchPoisonChoice: "Poison someone",
     witchNoPotionChoice: "Use neither potion tonight",
     witchPoisonConfirm: "Poison {name}? They die by morning.",
+    hunterPrompt:
+      "Hunter, choose now who you would drag down with you. You are picking before you know whether you die, and you may change it any night.",
+    hunterSkip: "Take nobody for now",
     cupidPrompt:
       "Cupid, choose two players to fall in love. If one dies, the other dies too.",
   },
@@ -227,28 +232,25 @@ const english: Dictionary = {
     seerIsNotWerewolf: "{name} is NOT a werewolf.",
     wolfPackTitle: "Your pack",
     wolfTallyTitle: "The pack's votes so far",
-    witchVictim: "The wolves went for {name} tonight.",
   },
   dawn: {
     title: "Day {number}",
+    revealDeaths: "Tap to see who the night took",
     nobodyDied: "The sun is up and everyone is still here — nobody died.",
     playerDied: "{name} died in the night.",
-    causes: {
-      [DeathCause.WolfAttack]: "Torn apart by the werewolves.",
-      [DeathCause.WitchPoison]: "Poisoned by the witch.",
-      [DeathCause.HunterShot]: "Caught the hunter's last shot.",
-      [DeathCause.Lynch]: "Lynched by the village.",
-      [DeathCause.Heartbreak]: "Died of a broken heart.",
-    },
   },
   day: {
-    voteTitle: "The village votes out loud",
+    discussTitle: "The village argues",
+    discussAddMinute: "+1 minute",
+    discussSkip: "Vote now",
+    discussTimeUp: "Time is up",
+    skipVote: "Abstain",
+    voteTitle: "The village votes",
     playerVotesFor: "{name} votes for",
     tallyTitle: "Vote tally",
     votedOut: "The village has voted out {name}.",
     tieTitle: "It's a tie — revote between the tied players.",
     revoteTitle: "Revote",
-    hunterShot: "{name} was the hunter — one last shot before they go.",
   },
   gameOver: {
     headlines: {

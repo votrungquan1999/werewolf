@@ -261,6 +261,12 @@ export function submitNightChoice(
     return recordPotion(state, targetId, potionKind);
   }
 
+  // Kept on the game rather than on night intents: the mark must outlive the nightly
+  // reset, so a hunter killed on a later day still fires the shot they committed to.
+  if (action === NightAction.MarkTarget) {
+    return targetId === null ? state : { ...state, hunterTargetId: targetId };
+  }
+
   // A null target is the actor declining — nothing is recorded, so dawn sees no intent.
   if (targetId === null) {
     return state;

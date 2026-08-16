@@ -66,7 +66,8 @@ function createState(
     witchHealAvailable: true,
     witchPoisonAvailable: true,
     lastProtectedId: null,
-    pendingHunterId: null,
+    hunterTargetId: null,
+    pendingHeartbreakId: null,
     winner: null,
     ...overrides,
   };
@@ -252,6 +253,38 @@ describe("Feature: Dawn resolution", () => {
         true,
       );
       expect(dawn.witchHealAvailable).toBe(false);
+    });
+  });
+
+  describe("Scenario: A lover was lynched the day before", () => {
+    it("should fold their partner into the dawn list with everyone else", () => {
+      const state = createState(
+        [
+          createPlayer("w1", RoleId.Werewolf),
+          createPlayer("v1", RoleId.Villager),
+          createPlayer("l1", RoleId.Seer),
+        ],
+        {
+          pendingHeartbreakId: "l1",
+          night: {
+            wolfVotes: { w1: "v1" },
+            protectedId: null,
+            inspectedId: null,
+            healsVictim: false,
+            poisonTargetId: null,
+            loverIds: null,
+          },
+        },
+      );
+
+      const dawn = resolveNight(state);
+
+      // Indistinguishable from the wolf kill sitting beside it.
+      expect(dawn.dawnDeaths.map((death) => death.playerId).sort()).toEqual([
+        "l1",
+        "v1",
+      ]);
+      expect(dawn.pendingHeartbreakId).toBeNull();
     });
   });
 });

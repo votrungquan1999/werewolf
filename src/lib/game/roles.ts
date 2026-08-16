@@ -53,8 +53,8 @@ export const ROLE_DEFINITIONS: Record<RoleId, RoleDefinition> = {
   [RoleId.Hunter]: {
     id: RoleId.Hunter,
     team: Team.Village,
-    nightAction: null,
-    nightOrder: null,
+    nightAction: NightAction.MarkTarget,
+    nightOrder: 6,
     firstNightOnly: false,
     maxPerGame: 1,
   },

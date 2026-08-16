@@ -1,20 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
-import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "src/components/ui/card";
+import { Card, CardContent } from "src/components/ui/card";
 import { Separator } from "src/components/ui/separator";
-import { canHunterShoot } from "src/lib/game/deaths";
-import { type Death, Phase, type Player } from "src/lib/game/types";
-import type { DeathCauseDictionary } from "src/lib/i18n/types";
+import { type Death, Phase } from "src/lib/game/types";
+import { playDaybreak } from "src/lib/sound";
 import { cn } from "src/lib/utils";
 
 /**
@@ -26,12 +18,10 @@ import { cn } from "src/lib/utils";
 export interface DawnScreenProps {
   /** `{number}` = the day that is starting. */
   titleTemplate: string;
+  revealDeathsLabel: string;
   nobodyDiedLabel: string;
   /** `{name}` = the player who died. */
   playerDiedTemplate: string;
-  causeLabels: DeathCauseDictionary;
-  hunterTitle: string;
-  hunterInstruction: string;
   continueLabel: string;
 }
 
@@ -47,21 +37,21 @@ function fillTemplate(template: string, token: string, value: string): string {
 }
 
 /**
- * The morning report: who died overnight, and a dying hunter's parting shot.
+ * The morning report: who the night took.
  * @param props - Every string the report can render
  * @returns The dawn screen, or nothing when the game is not at dawn
  */
 export function DawnScreen({
   titleTemplate,
+  revealDeathsLabel,
   nobodyDiedLabel,
   playerDiedTemplate,
-  causeLabels,
-  hunterTitle,
-  hunterInstruction,
   continueLabel,
 }: DawnScreenProps) {
   const state = useGame();
-  const { fireHunterShot, startDay } = useGameActions();
+  const { startDay } = useGameActions();
+  // The table gathers round before the news lands, so the report opens closed.
+  const [isRevealed, setIsRevealed] = useState(false);
 
   // Each screen gates itself on the phase, so the page can mount them all at once.
   if (state.phase !== Phase.Dawn) {
@@ -77,10 +67,6 @@ export function DawnScreen({
     return state.players.find((player) => player.id === playerId)?.name ?? "";
   }
 
-  const pendingHunter: Player | null =
-    state.players.find((player) => player.id === state.pendingHunterId) ?? null;
-  const livingPlayers = state.players.filter((player) => player.isAlive);
-
   return (
     <section className={cn("grid w-full gap-6 p-4")}>
       <h1
@@ -92,74 +78,63 @@ export function DawnScreen({
         {fillTemplate(titleTemplate, "number", String(state.nightNumber))}
       </h1>
 
-      <div className={cn("grid gap-4")}>
-        {state.dawnDeaths.length === 0 ? (
-          <p className={cn("text-lg")}>{nobodyDiedLabel}</p>
-        ) : (
-          state.dawnDeaths.map((death: Death) => (
-            <Card
-              key={`${death.playerId}-${death.cause}`}
-              className={cn("bg-card text-card-foreground ring-phase-border")}
-            >
-              <CardContent className={cn("grid gap-1")}>
-                <p className={cn("text-destructive text-lg font-semibold")}>
-                  {fillTemplate(
-                    playerDiedTemplate,
-                    "name",
-                    nameOf(death.playerId),
-                  )}
-                </p>
-                <p className={cn("text-sm")}>{causeLabels[death.cause]}</p>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* The dying hunter takes someone with them, and the game is held open until they do. */}
-      {pendingHunter !== null && (
-        <Card className={cn("bg-card text-card-foreground ring-phase-border")}>
-          <CardHeader>
-            <CardTitle className={cn("text-lg")}>{hunterTitle}</CardTitle>
-            <CardDescription className={cn("text-phase text-sm")}>
-              {hunterInstruction}
-            </CardDescription>
-            <CardAction>
-              <Badge variant="destructive">{pendingHunter.name}</Badge>
-            </CardAction>
-          </CardHeader>
-          <CardContent className={cn("grid gap-2")}>
-            {livingPlayers.map((player) => (
-              <Button
-                key={player.id}
-                variant="outline"
-                disabled={!canHunterShoot(state, player.id)}
-                onClick={() => fireHunterShot(player.id)}
-                className={cn(
-                  "border-phase-border text-phase h-14 text-base",
-                  "w-full",
-                )}
-              >
-                {player.name}
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
+      {!isRevealed && (
+        <Button
+          onClick={() => {
+            // Fired straight from the tap: phones refuse audio no gesture asked for.
+            playDaybreak();
+            setIsRevealed(true);
+          }}
+          className={cn(
+            "bg-phase text-phase-foreground h-24 text-lg font-semibold",
+            "w-full",
+          )}
+        >
+          {revealDeathsLabel}
+        </Button>
       )}
 
-      <Separator className={cn("bg-phase-border")} />
+      {isRevealed && (
+        <>
+          <div className={cn("grid gap-4")}>
+            {state.dawnDeaths.length === 0 ? (
+              <p className={cn("text-foreground text-lg")}>{nobodyDiedLabel}</p>
+            ) : (
+              state.dawnDeaths.map((death: Death) => (
+                <Card
+                  key={`${death.playerId}-${death.cause}`}
+                  className={cn(
+                    "bg-card text-card-foreground ring-phase-border",
+                  )}
+                >
+                  <CardContent className={cn("grid gap-1")}>
+                    <p className={cn("text-destructive text-lg font-semibold")}>
+                      {fillTemplate(
+                        playerDiedTemplate,
+                        "name",
+                        nameOf(death.playerId),
+                      )}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
 
-      {/* Unavailable while a hunter is owed a shot — that shot can still flip who wins. */}
-      <Button
-        disabled={pendingHunter !== null}
-        onClick={startDay}
-        className={cn(
-          "bg-phase text-phase-foreground h-14 text-base",
-          "w-full",
-        )}
-      >
-        {continueLabel}
-      </Button>
+          <Separator className={cn("bg-phase-border")} />
+
+          {/* The day opens once the table has read the news — nothing else gates it. */}
+          <Button
+            onClick={startDay}
+            className={cn(
+              "bg-phase text-phase-foreground h-14 text-base",
+              "w-full",
+            )}
+          >
+            {continueLabel}
+          </Button>
+        </>
+      )}
     </section>
   );
 }

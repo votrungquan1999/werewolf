@@ -37,6 +37,15 @@ export function resolveNight(state: GameState): GameState {
     deaths.push({ playerId: poisonTargetId, cause: DeathCause.WitchPoison });
   }
 
+  // A partner whose lover was lynched yesterday dies now, mixed in with tonight's
+  // deaths so the table cannot tell heartbreak from teeth or poison.
+  if (state.pendingHeartbreakId !== null) {
+    deaths.push({
+      playerId: state.pendingHeartbreakId,
+      cause: DeathCause.Heartbreak,
+    });
+  }
+
   // dawnDeaths is cleared before applying so the report shows tonight only.
   const resolved = applyDeaths(
     {
@@ -55,6 +64,7 @@ export function resolveNight(state: GameState): GameState {
   return {
     ...resolved,
     phase: Phase.Dawn,
+    pendingHeartbreakId: null,
     // Remembered so the doctor cannot protect the same player two nights running.
     lastProtectedId: protectedId,
     night: {

@@ -78,8 +78,8 @@ describe("Feature: running a game through one reducer", () => {
     });
   });
 
-  describe("Scenario: the wolves kill the hunter and reach parity", () => {
-    it("should hold the game open so the hunter can still take someone with them", () => {
+  describe("Scenario: the wolves kill the hunter who had marked one of them", () => {
+    it("should fire the committed shot at dawn and hand the game to the village", () => {
       const state: GameState = {
         ...createInitialState(),
         phase: Phase.Night,
@@ -89,6 +89,7 @@ describe("Feature: running a game through one reducer", () => {
           { id: "p2", name: "Bình", role: RoleId.Hunter, isAlive: true },
           { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
         ],
+        hunterTargetId: "p1",
         night: {
           wolfVotes: { p1: "p2" },
           protectedId: null,
@@ -101,9 +102,13 @@ describe("Feature: running a game through one reducer", () => {
 
       const next = gameReducer(state, { type: ActionType.ResolveNight });
 
-      expect(next.pendingHunterId).toBe("p2");
-      expect(next.winner).toBe(null);
-      expect(next.phase).toBe(Phase.Dawn);
+      // Committed privately on their night turn, so it resolves without ever
+      // putting the hunter's name on the shared screen.
+      expect(next.players.find((player) => player.id === "p1")?.isAlive).toBe(
+        false,
+      );
+      expect(next.winner).toBe(Winner.Village);
+      expect(next.phase).toBe(Phase.GameOver);
     });
   });
 

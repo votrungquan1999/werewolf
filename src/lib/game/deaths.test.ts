@@ -1,8 +1,4 @@
-import {
-  applyDeaths,
-  canHunterShoot,
-  fireHunterShot,
-} from "src/lib/game/deaths";
+import { applyDeaths } from "src/lib/game/deaths";
 import type { GameState, Player } from "src/lib/game/types";
 import { DeathCause, Phase, RoleId } from "src/lib/game/types";
 import { describe, expect, it } from "vitest";
@@ -63,59 +59,61 @@ function createState(
     witchHealAvailable: true,
     witchPoisonAvailable: true,
     lastProtectedId: null,
-    pendingHunterId: null,
+    hunterTargetId: null,
+    pendingHeartbreakId: null,
     winner: null,
     ...overrides,
   };
 }
 
 describe("Feature: Applying deaths", () => {
-  describe("Scenario: The dying hunter aims at themselves", () => {
-    it("should refuse their own name and allow every other player", () => {
+  describe("Scenario: The hunter dies having already marked their quarry", () => {
+    it("should fire the shot they committed to on their night turn", () => {
       const state = createState(
         [
-          createPlayer("h1", RoleId.Hunter, false),
-          createPlayer("w1", RoleId.Werewolf),
+          createPlayer("hunter", RoleId.Hunter),
+          createPlayer("wolf", RoleId.Werewolf),
+          createPlayer("bystander", RoleId.Villager),
         ],
-        { pendingHunterId: "h1" },
+        { hunterTargetId: "wolf" },
       );
 
-      expect(canHunterShoot(state, "h1")).toBe(false);
-      expect(canHunterShoot(state, "w1")).toBe(true);
+      const next = applyDeaths(state, [
+        { playerId: "hunter", cause: DeathCause.WolfAttack },
+      ]);
+
+      expect(next.players.find((player) => player.id === "wolf")?.isAlive).toBe(
+        false,
+      );
+      expect(next.dawnDeaths).toEqual([
+        { playerId: "hunter", cause: DeathCause.WolfAttack },
+        { playerId: "wolf", cause: DeathCause.HunterShot },
+      ]);
     });
   });
 
-  describe("Scenario: The hunter takes one player with them when they die", () => {
-    it("should flag the dying hunter and then kill whoever they shoot", () => {
-      const state = createState([
-        createPlayer("w1", RoleId.Werewolf),
-        createPlayer("h1", RoleId.Hunter),
-        createPlayer("v1", RoleId.Villager),
+  describe("Scenario: A lover is lynched in broad daylight", () => {
+    it("should hold the partner's heartbreak back for the next dawn", () => {
+      const state = createState(
+        [createPlayer("a", RoleId.Villager), createPlayer("b", RoleId.Seer)],
+        {
+          phase: Phase.Day,
+          loverIds: { firstId: "a", secondId: "b" },
+        },
+      );
+
+      const next = applyDeaths(state, [
+        { playerId: "a", cause: DeathCause.Lynch },
       ]);
 
-      const afterAttack = applyDeaths(state, [
-        { playerId: "h1", cause: DeathCause.WolfAttack },
-      ]);
-
-      expect(afterAttack.pendingHunterId).toBe("h1");
-      expect(
-        afterAttack.players.find((player) => player.id === "h1")?.isAlive,
-      ).toBe(false);
-
-      const afterShot = fireHunterShot(afterAttack, "w1");
-
-      expect(afterShot.pendingHunterId).toBeNull();
-      expect(
-        afterShot.players.find((player) => player.id === "w1")?.isAlive,
-      ).toBe(false);
-      expect(afterShot.dawnDeaths).toEqual([
-        { playerId: "h1", cause: DeathCause.WolfAttack },
-        { playerId: "w1", cause: DeathCause.HunterShot },
-      ]);
-
-      expect(state.players.find((player) => player.id === "h1")?.isAlive).toBe(
+      // Dropping them on the spot would announce both the pairing and the cause.
+      expect(next.players.find((player) => player.id === "b")?.isAlive).toBe(
         true,
       );
+      expect(next.pendingHeartbreakId).toBe("b");
+      expect(next.dawnDeaths).toEqual([
+        { playerId: "a", cause: DeathCause.Lynch },
+      ]);
     });
   });
 

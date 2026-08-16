@@ -123,8 +123,6 @@ export function useGameActions() {
     castDayVote: (voterId: string, targetId: string) =>
       dispatch({ type: ActionType.CastDayVote, voterId, targetId }),
     resolveDayVote: () => dispatch({ type: ActionType.ResolveDayVote }),
-    fireHunterShot: (targetId: string) =>
-      dispatch({ type: ActionType.FireHunterShot, targetId }),
     resetGame: () => dispatch({ type: ActionType.ResetGame }),
     undo: () => dispatch({ type: HistoryActionType.Undo }),
   };

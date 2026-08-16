@@ -62,6 +62,7 @@ export enum NightAction {
   Inspect = "inspect",
   Protect = "protect",
   Potion = "potion",
+  MarkTarget = "mark-target",
 }
 
 /**
@@ -166,8 +167,22 @@ export interface GameState {
   witchPoisonAvailable: boolean;
   /** The doctor may not protect the same player two nights running. */
   lastProtectedId: string | null;
-  /** Set when a hunter dies — they must fire before play continues. */
-  pendingHunterId: string | null;
+  /**
+   * Who the hunter takes with them, chosen privately on their night turn.
+   *
+   * Committed before they know whether they die, and never on the shared day screen:
+   * choosing in the open told the table who the hunter was and let them pick under
+   * pressure with full knowledge. Survives the nightly intent reset, and the latest
+   * night's choice stands.
+   */
+  hunterTargetId: string | null;
+  /**
+   * A lover whose partner was lynched, dying at the next dawn rather than on the spot.
+   *
+   * Killing them in the open would announce the pairing and the cause; folded into the
+   * dawn list they are indistinguishable from a wolf kill or a poisoning.
+   */
+  pendingHeartbreakId: string | null;
   winner: Winner | null;
 }
 
@@ -184,7 +199,6 @@ export enum ActionType {
   ResolveNight = "resolve-night",
   CastDayVote = "cast-day-vote",
   ResolveDayVote = "resolve-day-vote",
-  FireHunterShot = "fire-hunter-shot",
   StartNight = "start-night",
   StartDay = "start-day",
   ResetGame = "reset-game",
@@ -252,11 +266,6 @@ export interface ResolveDayVoteAction {
   type: ActionType.ResolveDayVote;
 }
 
-export interface FireHunterShotAction {
-  type: ActionType.FireHunterShot;
-  targetId: string;
-}
-
 export interface StartNightAction {
   type: ActionType.StartNight;
 }
@@ -281,7 +290,6 @@ export type GameAction =
   | ResolveNightAction
   | CastDayVoteAction
   | ResolveDayVoteAction
-  | FireHunterShotAction
   | StartNightAction
   | StartDayAction
   | ResetGameAction;

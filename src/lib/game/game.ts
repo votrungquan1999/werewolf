@@ -3,7 +3,7 @@ import {
   getDayVoteOutcome,
   resolveDayVote,
 } from "src/lib/game/day";
-import { applyDeaths, fireHunterShot } from "src/lib/game/deaths";
+import { applyDeaths } from "src/lib/game/deaths";
 import {
   advanceNightCursor,
   buildNightOrder,
@@ -67,11 +67,6 @@ export function dealRolesAction(): DealRolesAction {
  * @returns The same state, or a finished game naming the winner
  */
 function settleAfterDeaths(state: GameState): GameState {
-  // A dying hunter still has a shot that can flip the result — never call it before they fire.
-  if (state.pendingHunterId !== null) {
-    return state;
-  }
-
   const winner = getWinner(state);
   if (winner === null) {
     return state;
@@ -173,8 +168,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         dayVotes: {},
         revoteCandidateIds: [],
       };
-    case ActionType.FireHunterShot:
-      return settleAfterDeaths(fireHunterShot(state, action.targetId));
     case ActionType.ResetGame:
       return resetGame(state);
     default:

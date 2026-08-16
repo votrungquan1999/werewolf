@@ -6,7 +6,7 @@
  */
 
 import type { Death, GameState, LoverPair } from "src/lib/game/types";
-import { DeathCause, RoleId } from "src/lib/game/types";
+import { DeathCause, Phase, RoleId } from "src/lib/game/types";
 
 /**
  * Names the other half of Cupid's couple.
@@ -30,7 +30,7 @@ function getPartnerId(
 }
 
 /**
- * Kills the listed players, cascading heartbreak and flagging a dying hunter.
+ * Kills the listed players, cascading heartbreak and the hunter's committed shot.
  * @param state - The current game state; never mutated.
  * @param deaths - The deaths to apply, in resolution order.
  * @returns A new state with the dead marked and the deaths appended to the dawn report.
@@ -42,6 +42,7 @@ export function applyDeaths(state: GameState, deaths: Death[]): GameState {
       .map((player) => player.id),
   );
   const resolved: Death[] = [];
+  let deferredHeartbreakId: string | null = null;
 
   // The queue grows as heartbreak claims a partner, who may drag their own lover down.
   const queue = [...deaths];
@@ -55,16 +56,33 @@ export function applyDeaths(state: GameState, deaths: Death[]): GameState {
 
     const partnerId = getPartnerId(state.loverIds, death.playerId);
     if (partnerId !== null && !deadIds.has(partnerId)) {
-      queue.push({ playerId: partnerId, cause: DeathCause.Heartbreak });
+      // By day the heartbreak is held back to the next dawn: dropping the partner
+      // in front of everyone announces both the pairing and the cause of death.
+      if (state.phase === Phase.Day) {
+        deferredHeartbreakId = partnerId;
+      } else {
+        queue.push({ playerId: partnerId, cause: DeathCause.Heartbreak });
+      }
+    }
+
+    // The hunter committed to this privately on their night turn, before they knew
+    // they would die — so it fires here rather than as a prompt on the shared screen.
+    const isHunter =
+      state.players.find((player) => player.id === death.playerId)?.role ===
+      RoleId.Hunter;
+    if (
+      isHunter &&
+      state.hunterTargetId !== null &&
+      !deadIds.has(state.hunterTargetId)
+    ) {
+      queue.push({
+        playerId: state.hunterTargetId,
+        cause: DeathCause.HunterShot,
+      });
     }
   }
 
   const dyingIds = new Set(resolved.map((death) => death.playerId));
-
-  // At this table the hunter fires whatever killed them, the witch's poison included.
-  const dyingHunter = state.players.find(
-    (player) => dyingIds.has(player.id) && player.role === RoleId.Hunter,
-  );
 
   return {
     ...state,
@@ -72,30 +90,6 @@ export function applyDeaths(state: GameState, deaths: Death[]): GameState {
       dyingIds.has(player.id) ? { ...player, isAlive: false } : player,
     ),
     dawnDeaths: [...state.dawnDeaths, ...resolved],
-    pendingHunterId: dyingHunter?.id ?? state.pendingHunterId,
+    pendingHeartbreakId: deferredHeartbreakId ?? state.pendingHeartbreakId,
   };
-}
-
-/**
- * Checks whether the dying hunter may take this player with them.
- * @param state - The current game state.
- * @param targetId - The player they are aiming at.
- * @returns False for the hunter's own name; they are already dying.
- */
-export function canHunterShoot(state: GameState, targetId: string): boolean {
-  return targetId !== state.pendingHunterId;
-}
-
-/**
- * Fires the pending hunter's parting shot.
- * @param state - The current game state; never mutated.
- * @param targetId - The player the hunter takes with them.
- * @returns A new state with the target dead and no hunter left pending.
- */
-export function fireHunterShot(state: GameState, targetId: string): GameState {
-  const afterShot = applyDeaths(state, [
-    { playerId: targetId, cause: DeathCause.HunterShot },
-  ]);
-
-  return { ...afterShot, pendingHunterId: null };
 }

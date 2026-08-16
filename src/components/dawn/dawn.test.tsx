@@ -3,7 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Dawn } from "src/components/dawn/dawn";
 import { GameProvider } from "src/components/game/game.state";
-import { STORAGE_KEY } from "src/lib/game/persistence";
+import { saveGame } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
 import {
   DeathCause,
@@ -20,7 +20,7 @@ const dict = getDictionary(Locale.En);
 
 /**
  * Builds one player at the table.
- * @param id - Stable id that deaths and the pending-hunter flag point at
+ * @param id - Stable id that deaths point at
  * @param name - The name the report prints
  * @param role - The card they were dealt
  * @param isAlive - Whether they made it this far
@@ -40,14 +40,12 @@ function makePlayer(
  * @param overrides - The dawn-specific slice of state under test
  */
 function parkGameAtDawn(overrides: Partial<GameState>): void {
-  const state: GameState = {
+  saveGame({
     ...createInitialState(),
     phase: Phase.Dawn,
     nightNumber: 1,
     ...overrides,
-  };
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  });
 }
 
 describe("Dawn report", () => {
@@ -55,7 +53,7 @@ describe("Dawn report", () => {
     localStorage.clear();
   });
 
-  it("names the player who died overnight and how they died", () => {
+  it("holds the night's dead back until the report is tapped open, then names them without saying how", () => {
     parkGameAtDawn({
       players: [
         makePlayer("p1", "Ann", RoleId.Werewolf, true),
@@ -73,23 +71,25 @@ describe("Dawn report", () => {
       </GameProvider>,
     );
 
+    expect(screen.queryByText("Bob died in the night.")).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tap to see who the night took" }),
+    );
+
     expect(screen.getByText("Bob died in the night.")).toBeInTheDocument();
-    expect(
-      screen.getByText("Torn apart by the werewolves."),
-    ).toBeInTheDocument();
+    // Naming the cause would out the lovers, so the report never explains a death.
+    expect(screen.queryByText("Torn apart by the werewolves.")).toBeNull();
   });
 
-  it("holds the day closed while a hunter is owed a shot, offering targets instead", () => {
+  it("offers the day only once the report has been opened on a quiet night", () => {
     parkGameAtDawn({
       players: [
         makePlayer("p1", "Ann", RoleId.Werewolf, true),
-        makePlayer("p2", "Bob", RoleId.Hunter, false),
+        makePlayer("p2", "Bob", RoleId.Villager, true),
         makePlayer("p3", "Cara", RoleId.Seer, true),
-        makePlayer("p4", "Dan", RoleId.Villager, true),
-        makePlayer("p5", "Eve", RoleId.Doctor, true),
       ],
-      dawnDeaths: [{ playerId: "p2", cause: DeathCause.WolfAttack }],
-      pendingHunterId: "p2",
+      dawnDeaths: [],
     });
 
     render(
@@ -98,14 +98,17 @@ describe("Dawn report", () => {
       </GameProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
-    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Cara" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tap to see who the night took" }),
+    );
 
-    expect(screen.getByText("Cara died in the night.")).toBeInTheDocument();
     expect(
-      screen.getByText("Caught the hunter's last shot."),
+      screen.getByText(
+        "The sun is up and everyone is still here — nobody died.",
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
 });

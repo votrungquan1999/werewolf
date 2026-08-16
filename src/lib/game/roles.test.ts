@@ -19,20 +19,19 @@ describe("Feature: Role registry", () => {
         RoleId.Seer,
         RoleId.Doctor,
         RoleId.Witch,
+        RoleId.Hunter,
       ]);
     });
   });
 
   describe("Scenario: A role has no night turn", () => {
-    it("should keep the hunter, the villager and the fool out of the night order", () => {
+    it("should keep the villager and the fool out of the night order", () => {
       const wakingIds = getNightRolesInOrder().map(
         (definition) => definition.id,
       );
 
-      expect(wakingIds).not.toContain(RoleId.Hunter);
       expect(wakingIds).not.toContain(RoleId.Villager);
       expect(wakingIds).not.toContain(RoleId.Fool);
-      expect(getRoleDefinition(RoleId.Hunter).nightAction).toBeNull();
       expect(getRoleDefinition(RoleId.Villager).nightAction).toBeNull();
       expect(getRoleDefinition(RoleId.Fool).nightAction).toBeNull();
     });

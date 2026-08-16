@@ -126,6 +126,35 @@ describe("Night", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps the player's own card behind a tap and explains it when opened", async () => {
+    parkNightGame([
+      ["Alice", RoleId.Seer],
+      ["Bob", RoleId.Villager],
+    ]);
+    const user = userEvent.setup();
+    renderNight();
+
+    await confirmHandOff(user, "Alice");
+
+    // The phone sits in the open while its holder reads the prompt.
+    expect(screen.queryByText("You are the Seer")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /Tap to see your card/ }),
+    );
+
+    expect(screen.getByText("You are the Seer")).toBeInTheDocument();
+    expect(
+      screen.getByText(/get back one word: wolf, or not a wolf/),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /Tap to hide your card/ }),
+    );
+
+    expect(screen.queryByText("You are the Seer")).not.toBeInTheDocument();
+  });
+
   it("names a wolf's fellow wolves on their turn", async () => {
     parkNightGame([
       ["Alice", RoleId.Werewolf],
@@ -161,6 +190,34 @@ describe("Night", () => {
     expect(screen.getByRole("button", { name: "Cara" })).toBeEnabled();
   });
 
+  it("lets the hunter commit their dying shot before they know they will die", async () => {
+    parkNightGame([
+      ["Alice", RoleId.Hunter],
+      ["Bob", RoleId.Werewolf],
+      ["Cara", RoleId.Villager],
+    ]);
+    const user = userEvent.setup();
+    renderNight();
+
+    await confirmHandOff(user, "Alice");
+
+    // Nobody drags themselves down with them.
+    expect(screen.getByRole("button", { name: "Alice" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Take nobody for now" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cara" }));
+
+    expect(screen.getByText("Pass the phone to Bob")).toBeInTheDocument();
+
+    // The mark outlives the night, so it is read back off the parked game.
+    const parked = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY) ?? "{}",
+    ) as GameState;
+    expect(parked.hunterTargetId).toBe("cara");
+  });
+
   it("asks the witch which potion first, and confirms before it kills", async () => {
     parkNightGame(
       [
@@ -187,11 +244,18 @@ describe("Night", () => {
 
     // Stage one offers bottles, never a bare list of names.
     expect(
-      screen.getByRole("button", { name: "Save Cara" }),
+      screen.getByRole("button", {
+        name: "Save whoever the wolves take tonight",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Bob" }),
     ).not.toBeInTheDocument();
+
+    // She must never learn who the pack picked. The phone travels in seat order,
+    // so whether she acts before or after the wolves is pure luck of the draw —
+    // naming them would hand a better game to whoever happens to sit later.
+    expect(screen.queryByText(/Cara/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Poison someone" }));
     await user.click(screen.getByRole("button", { name: "Bob" }));

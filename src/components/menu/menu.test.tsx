@@ -55,7 +55,8 @@ function parkLiveGame(): void {
     witchHealAvailable: true,
     witchPoisonAvailable: true,
     lastProtectedId: null,
-    pendingHunterId: null,
+    hunterTargetId: null,
+    pendingHeartbreakId: null,
     winner: null,
   };
 

@@ -71,7 +71,8 @@ function createState(
     witchHealAvailable: true,
     witchPoisonAvailable: true,
     lastProtectedId: null,
-    pendingHunterId: null,
+    hunterTargetId: null,
+    pendingHeartbreakId: null,
     winner: null,
     ...overrides,
   };
@@ -369,6 +370,27 @@ describe("Feature: Night phase", () => {
 
       expect(poisoned.night.poisonTargetId).toBe("v1");
       expect(poisoned.night.healsVictim).toBe(false);
+    });
+  });
+
+  describe("Scenario: The hunter names their quarry before they know they die", () => {
+    it("should keep the mark on the game so it survives the nightly intent reset", () => {
+      const state = createState([
+        createPlayer("h1", RoleId.Hunter),
+        createPlayer("w1", RoleId.Werewolf),
+        createPlayer("v1", RoleId.Villager),
+      ]);
+
+      const marked = submitNightChoice(
+        state,
+        "h1",
+        NightAction.MarkTarget,
+        "w1",
+        null,
+        null,
+      );
+
+      expect(marked.hunterTargetId).toBe("w1");
     });
   });
 });

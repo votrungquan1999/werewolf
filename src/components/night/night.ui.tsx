@@ -10,7 +10,6 @@ import {
   canNightTarget,
   getCurrentNightTurn,
   getPackMemberIds,
-  getProvisionalVictimId,
   getWolfVoteTally,
   isPlayerAWolf,
   type NightTurn,
@@ -53,8 +52,6 @@ export interface NightCopy {
   wolfTallyTitle: string;
   seerIsWerewolf: string;
   seerIsNotWerewolf: string;
-  witchVictim: string;
-  witchHealChoice: string;
   witchHealUnknownChoice: string;
   witchPoisonChoice: string;
   witchNoPotionChoice: string;
@@ -62,11 +59,56 @@ export interface NightCopy {
   holdToOpen: string;
   /** Carries `{role}`; filled with a name from `roleNames`. */
   yourRole: string;
+  hunterSkip: string;
+  showRole: string;
+  hideRole: string;
   roleNames: Record<RoleId, string>;
+  roleDescriptions: Record<RoleId, string>;
   continueLabel: string;
   confirmLabel: string;
   declineLabel: string;
   backLabel: string;
+}
+
+/**
+ * The player's own card, kept behind a tap and explained whenever it is open.
+ *
+ * Always-visible was a leak: the phone sits in the open while its holder reads the
+ * prompt, and anyone leaning over saw the card. Restating the description matters
+ * because nobody should have to remember eight role rules to read their own prompt.
+ * @param props.role - The card this player is holding.
+ * @param props.copy - Night copy supplied by the server component.
+ * @returns A toggle carrying the card.
+ */
+function NightRoleCard({ role, copy }: { role: RoleId; copy: NightCopy }) {
+  const [isShown, setIsShown] = useState(false);
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => setIsShown(!isShown)}
+      className={cn(
+        "h-auto w-full whitespace-normal border-phase-border px-4 py-3 text-phase-foreground/80",
+        "grid justify-items-center gap-1",
+      )}
+    >
+      {isShown ? (
+        <>
+          <span className="font-semibold text-base">
+            {fillTemplate(copy.yourRole, { role: copy.roleNames[role] })}
+          </span>
+          <span className="text-sm text-phase-foreground/70 leading-relaxed">
+            {copy.roleDescriptions[role]}
+          </span>
+          <span className="pt-1 text-phase-foreground/50 text-xs">
+            {copy.hideRole}
+          </span>
+        </>
+      ) : (
+        <span className="text-base">{copy.showRole}</span>
+      )}
+    </Button>
+  );
 }
 
 /** One line of a read-only roster: a player, optionally with a vote count. */
@@ -386,8 +428,6 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
   const [stage, setStage] = useState(WitchStage.ChoosePotion);
   const [poisonTargetId, setPoisonTargetId] = useState<string | null>(null);
 
-  const victimId = getProvisionalVictimId(state);
-
   /**
    * Spends the heal on tonight's victim, whoever that turns out to be.
    *
@@ -420,16 +460,9 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
   if (stage === WitchStage.ChoosePotion) {
     return (
       <>
-        {victimId === null ? null : (
-          <p className="font-medium text-lg">
-            {fillTemplate(copy.witchVictim, {
-              name: getPlayerName(state, victimId),
-            })}
-          </p>
-        )}
-
-        {/* Always on offer while she still holds the bottle. She may be reading this
-            before the wolves have voted, in which case it names no one yet. */}
+        {/* The victim is never named. The phone travels in seat order, so whether she
+            acts before or after the pack is luck of the draw — naming them would hand
+            a strictly better game to whoever happens to sit later. */}
         {!state.witchHealAvailable ? null : (
           <Button
             size="lg"
@@ -438,11 +471,7 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
               "h-auto min-h-16 w-full whitespace-normal bg-phase text-base text-phase-foreground",
             )}
           >
-            {victimId === null
-              ? copy.witchHealUnknownChoice
-              : fillTemplate(copy.witchHealChoice, {
-                  name: getPlayerName(state, victimId),
-                })}
+            {copy.witchHealUnknownChoice}
           </Button>
         )}
 
@@ -606,6 +635,51 @@ function NightLoversTurn({ actorId, copy, onDone }: ActTurnProps) {
 }
 
 /**
+ * The hunter's turn: name the shot now, before knowing whether it will ever fire.
+ *
+ * Committed here rather than on the day screen, where a dying hunter picked with the
+ * whole table watching them do it — and with the game already spread out in front of them.
+ * @param props.actorId - The hunter holding the phone.
+ * @param props.copy - Night copy supplied by the server component.
+ * @param props.onDone - Hands the phone on.
+ * @returns The hunter turn.
+ */
+function NightMarkTurn({ actorId, copy, onDone }: ActTurnProps) {
+  const state = useGame();
+  const { submitNightChoice } = useGameActions();
+
+  /** Records the mark; whether it ever fires is settled by whoever kills them. */
+  function markTarget(targetId: string) {
+    submitNightChoice(actorId, NightAction.MarkTarget, targetId);
+    onDone();
+  }
+
+  return (
+    <>
+      <NightChoiceList
+        players={getLivingPlayers(state)}
+        disabledIds={getSelfTargetBlockedIds(
+          state,
+          NightAction.MarkTarget,
+          actorId,
+        )}
+        onChoose={markTarget}
+      />
+
+      {/* Submitting nothing on purpose: an undecided hunter keeps an earlier night's mark. */}
+      <Button
+        variant="ghost"
+        size="lg"
+        onClick={onDone}
+        className={cn("h-auto min-h-16 w-full whitespace-normal text-base")}
+      >
+        {copy.hunterSkip}
+      </Button>
+    </>
+  );
+}
+
+/**
  * Routes a waking player to whatever their role does tonight.
  * @param props.action - The action the engine assigned this turn.
  * @param props.actorId - The player holding the phone.
@@ -630,6 +704,8 @@ function NightActTurn({
       return <NightPotionTurn actorId={actorId} copy={copy} onDone={onDone} />;
     case NightAction.LinkLovers:
       return <NightLoversTurn actorId={actorId} copy={copy} onDone={onDone} />;
+    case NightAction.MarkTarget:
+      return <NightMarkTurn actorId={actorId} copy={copy} onDone={onDone} />;
   }
 }
 
@@ -789,14 +865,7 @@ function NightTurnBody({
       {/* Their own card, restated every turn — nobody should have to remember it
           across a whole game to know what the prompt below is asking of them. */}
       {role === undefined || role === null ? null : (
-        <p
-          className={cn(
-            "rounded-lg border border-phase-border px-4 py-2 text-base text-phase-foreground/80",
-            "grid justify-items-center",
-          )}
-        >
-          {fillTemplate(copy.yourRole, { role: copy.roleNames[role] })}
-        </p>
+        <NightRoleCard role={role} copy={copy} />
       )}
 
       {turn.action === null ? (

@@ -1,0 +1,8 @@
+public/rooster.m4a
+
+Source : https://commons.wikimedia.org/wiki/File:Medium_rooster_crowing.ogg
+Author : alys (Wikimedia Commons)
+Licence: Public domain
+
+Converted from Ogg Vorbis to AAC/m4a with macOS afconvert, because iOS Safari
+does not reliably decode Ogg. Audio is otherwise unmodified (8.3s, mono, 44.1kHz).

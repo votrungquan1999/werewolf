@@ -1,4 +1,4 @@
-import type { DeathCause, RoleId, Winner } from "src/lib/game/types";
+import type { RoleId, Winner } from "src/lib/game/types";
 import type { Locale } from "src/lib/i18n/config";
 
 /** Language names, each written in its own language so either audience recognises it. */
@@ -73,6 +73,10 @@ export interface NightDictionary {
   holdToOpen: string;
   /** Carries `{role}` — every turn reopens with a reminder of your own card. */
   yourRole: string;
+  /** Prompt on the closed card; it stays shut so a neighbour cannot read it. */
+  showRole: string;
+  /** Prompt on the open card, to shut it again before passing the phone on. */
+  hideRole: string;
   decoyTitle: string;
   /** `{name}` = who to pass to once enough time has been burned. */
   decoyBody: string;
@@ -80,8 +84,6 @@ export interface NightDictionary {
   seerPrompt: string;
   doctorPrompt: string;
   witchPrompt: string;
-  /** `{name}` = tonight's victim — the witch's heal only ever rescues them. */
-  witchHealChoice: string;
   /** Used when the pack has not voted yet, so the victim has no name to show. */
   witchHealUnknownChoice: string;
   witchPoisonChoice: string;
@@ -89,6 +91,8 @@ export interface NightDictionary {
   /** `{name}` = who she is about to poison; killing is never one tap. */
   witchPoisonConfirm: string;
   cupidPrompt: string;
+  hunterPrompt: string;
+  hunterSkip: string;
 }
 
 /** What a role is told back after it acts, still inside the night. */
@@ -99,31 +103,26 @@ export interface NightResultsDictionary {
   seerIsNotWerewolf: string;
   wolfPackTitle: string;
   wolfTallyTitle: string;
-  /** `{name}` = tonight's wolf victim, shown to the witch. */
-  witchVictim: string;
-}
-
-/** One line per way a player can die, used in the dawn report. */
-export interface DeathCauseDictionary {
-  [DeathCause.WolfAttack]: string;
-  [DeathCause.WitchPoison]: string;
-  [DeathCause.HunterShot]: string;
-  [DeathCause.Lynch]: string;
-  [DeathCause.Heartbreak]: string;
 }
 
 /** The morning report: who survived the night and who did not. */
 export interface DawnDictionary {
   /** `{number}` = which day is starting. */
   title: string;
+  revealDeaths: string;
   nobodyDied: string;
   /** `{name}` = the player who died. */
   playerDied: string;
-  causes: DeathCauseDictionary;
 }
 
 /** The open day vote and the revote a tie forces. */
 export interface DayDictionary {
+  discussTitle: string;
+  /** `{minutes}`:`{seconds}` are filled separately by the countdown. */
+  discussAddMinute: string;
+  discussSkip: string;
+  discussTimeUp: string;
+  skipVote: string;
   voteTitle: string;
   /** `{name}` = the voter; the target is rendered next to it. */
   playerVotesFor: string;
@@ -132,8 +131,6 @@ export interface DayDictionary {
   votedOut: string;
   tieTitle: string;
   revoteTitle: string;
-  /** `{name}` = a lynched hunter who still owes the table a shot. */
-  hunterShot: string;
 }
 
 /** One headline per possible winner. */
