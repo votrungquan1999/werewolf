@@ -13,9 +13,10 @@ Roles: Werewolf, Villager, Seer, Doctor, Witch, Hunter, Cupid, Fool. Vietnamese 
 **The host is a player, so nobody narrates.** That single constraint drives the whole night design:
 
 - **Every living player receives the phone every night**, in one fixed order. Players whose role has nothing to do get a decoy screen telling them to look busy and pass on. Receiving the phone therefore reveals nothing about who holds which role.
-- **A turn opens by pressing and holding a round button carrying your own name** ("I am An"). Nothing sensitive is on screen while the phone is physically moving between hands. This started as a hold on a full-width bar, became a plain tap when the hold proved fiddly mid-pass, and is now a hold again on a **circle** — the shape is the instruction, because a round target that fills as you hold reads as "hold me" where a rectangle reads as "tap me". Releasing early aborts with no effect, and a keyboard press opens the turn outright, since a timed hold cannot be performed by assistive tech.
+- **A turn opens by pressing and holding a round button that names the gesture and the player at once** ("Hold to confirm you are An"). The label used to read "I am An", which said who but never how. Nothing sensitive is on screen while the phone is physically moving between hands. This started as a hold on a full-width bar, became a plain tap when the hold proved fiddly mid-pass, and is now a hold again on a **circle** — the shape is the instruction, because a round target that fills as you hold reads as "hold me" where a rectangle reads as "tap me". Releasing early aborts with no effect, and a keyboard press opens the turn outright, since a timed hold cannot be performed by assistive tech.
 - **Every turn offers your own role behind a tap**, name and full description, so nobody has to remember eight role rules to read their prompt. It stays shut by default — the phone sits in the open while its holder reads, and an always-visible card was a leak. Formerly this restated your role ("You are the Witch"), decoy turns included. Nobody should have to remember their card across a whole game to understand what the prompt is asking.
-- **The role reveal is press-and-hold, with a one-second delay** before the card appears. Instant reveal let a brush of the thumb flash the card at the table. The card is unmounted from the DOM when not held, so it cannot leak.
+- **The role reveal is press-and-hold, with a one-second delay** before the card appears, and **fills as you hold** exactly like the night hand-off — one gesture, taught once, recognised everywhere. Instant reveal let a brush of the thumb flash the card at the table. The card is unmounted from the DOM when not held, so it cannot leak.
+- **Player names are never set in the body colour.** Every name in a sentence is picked out in `--phase-name`, because a name is the one thing on these screens that has to be read at a glance while a phone is changing hands. `NamedLine` splits copy around its `{name}` placeholder to do it, which is why component tests match those lines with the `namedLine` helper rather than a plain string.
 
 ## Escape hatches
 
@@ -76,7 +77,7 @@ These vary between tables; these are the ones implemented.
 
 ### Phase cycle
 
-`Setup → RoleReveal → Night(1) → Dawn → Day → Night(2) → … → GameOver`
+`Setup → RoleReveal → Nightfall → Night(1) → Dawn → Day → Nightfall → Night(2) → … → GameOver`
 
 `revealNextPlayer` starts night one; `StartNight` lays out the circulation and advances the night count only when coming from a day; `StartDay` opens the vote; `resolveNight` and `resolveDayVote` apply deaths and may end the game.
 

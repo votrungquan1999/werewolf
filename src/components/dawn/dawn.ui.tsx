@@ -6,7 +6,6 @@ import { Button } from "src/components/ui/button";
 import { Card, CardContent } from "src/components/ui/card";
 import { Separator } from "src/components/ui/separator";
 import { type Death, Phase } from "src/lib/game/types";
-import { playDaybreak } from "src/lib/sound";
 import { cn } from "src/lib/utils";
 
 /**
@@ -80,11 +79,7 @@ export function DawnScreen({
 
       {!isRevealed && (
         <Button
-          onClick={() => {
-            // Fired straight from the tap: phones refuse audio no gesture asked for.
-            playDaybreak();
-            setIsRevealed(true);
-          }}
+          onClick={() => setIsRevealed(true)}
           className={cn(
             "bg-phase text-phase-foreground h-24 text-lg font-semibold",
             "w-full",

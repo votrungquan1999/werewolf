@@ -50,6 +50,7 @@
   --color-phase-foreground: var(--phase-foreground);
   --color-phase-muted: var(--phase-muted);
   --color-phase-border: var(--phase-border);
+  --color-phase-name: var(--phase-name);
 }
 
 :root {
@@ -92,6 +93,8 @@
   --phase-foreground: oklch(0.985 0 0);
   --phase-muted: oklch(0.22 0 0);
   --phase-border: oklch(1 0 0 / 12%);
+  /* Player names never share a colour with the sentence around them. */
+  --phase-name: oklch(0.82 0.1 250);
 }
 
 .dark {
@@ -134,6 +137,7 @@
   --phase-foreground: oklch(0.985 0 0);
   --phase-muted: oklch(0.22 0 0);
   --phase-border: oklch(1 0 0 / 12%);
+  --phase-name: oklch(0.82 0.1 250);
 }
 
 [data-phase="night"] {
@@ -141,13 +145,37 @@
   --phase-foreground: oklch(0.97 0.02 274);
   --phase-muted: oklch(0.2 0.05 274);
   --phase-border: oklch(0.55 0.12 274 / 45%);
+  --phase-name: oklch(0.84 0.13 274);
 }
 
+/* Daytime is played with the lights on and everyone talking, so the whole phase
+   flips to a light palette rather than tinting the dark one. These redefine the
+   shared tokens on the shell element itself, so every descendant inherits them. */
 [data-phase="day"] {
-  --phase: oklch(0.78 0.15 72);
-  --phase-foreground: oklch(0.2 0.05 72);
-  --phase-muted: oklch(0.26 0.06 72);
-  --phase-border: oklch(0.62 0.12 72 / 45%);
+  --phase: oklch(0.52 0.16 250);
+  --phase-foreground: oklch(0.99 0.01 250);
+  --phase-muted: oklch(0.95 0.02 240);
+  --phase-border: oklch(0.35 0.06 250 / 30%);
+  --phase-name: oklch(0.45 0.19 255);
+
+  --background: oklch(0.95 0.02 240);
+  --foreground: oklch(0.21 0.02 250);
+  --card: oklch(0.99 0.005 240);
+  --card-foreground: oklch(0.21 0.02 250);
+  --popover: oklch(0.99 0.005 240);
+  --popover-foreground: oklch(0.21 0.02 250);
+  --primary: oklch(0.45 0.16 250);
+  --primary-foreground: oklch(0.99 0.01 250);
+  --secondary: oklch(0.9 0.03 240);
+  --secondary-foreground: oklch(0.25 0.03 250);
+  --muted: oklch(0.9 0.02 240);
+  --muted-foreground: oklch(0.44 0.02 250);
+  --accent: oklch(0.9 0.03 240);
+  --accent-foreground: oklch(0.25 0.03 250);
+  --destructive: oklch(0.52 0.2 27);
+  --border: oklch(0.21 0.02 250 / 14%);
+  --input: oklch(0.21 0.02 250 / 22%);
+  --ring: oklch(0.52 0.1 250);
 }
 
 /* Stack children without absolute positioning. */

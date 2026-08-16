@@ -9,6 +9,7 @@ import { createInitialState } from "src/lib/game/setup";
 import { type GameState, Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
+import { namedLine } from "src/tests/matchers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const dict = getDictionary(Locale.En);
@@ -43,7 +44,8 @@ async function takeTurn(
   voter: string,
   target: string | null,
 ): Promise<void> {
-  await user.click(screen.getByRole("button", { name: `I am ${voter}` }));
+  // No identity gate on the day: the vote is open, so the voter is only named.
+  expect(screen.getByText(namedLine(`${voter} votes for`))).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: target ?? "Abstain" }));
 }
 
@@ -93,13 +95,13 @@ describe("Day", () => {
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
 
-    expect(screen.getByText("Pass the phone to Ann")).toBeInTheDocument();
+    expect(screen.getByText(namedLine("Ann votes for"))).toBeInTheDocument();
     expect(screen.queryByText("Vote tally")).not.toBeInTheDocument();
 
     await takeTurn(user, "Ann", "Ben");
 
     // Ben must not learn how Ann voted before he casts his own vote.
-    expect(screen.getByText("Pass the phone to Ben")).toBeInTheDocument();
+    expect(screen.getByText(namedLine("Ben votes for"))).toBeInTheDocument();
     expect(screen.queryByText("Vote tally")).not.toBeInTheDocument();
 
     await takeTurn(user, "Ben", "Ben");
@@ -126,7 +128,7 @@ describe("Day", () => {
 
     await takeTurn(user, "Ann", null);
 
-    expect(screen.getByText("Pass the phone to Ben")).toBeInTheDocument();
+    expect(screen.getByText(namedLine("Ben votes for"))).toBeInTheDocument();
 
     await takeTurn(user, "Ben", "Cara");
     await takeTurn(user, "Cara", "Cara");
@@ -138,7 +140,7 @@ describe("Day", () => {
     expect(within(rows[0]).getByText("Cara")).toBeInTheDocument();
     expect(within(rows[0]).getByText("2")).toBeInTheDocument();
     expect(
-      screen.getByText("The village has voted out Cara."),
+      screen.getByText(namedLine("The village has voted out Cara.")),
     ).toBeInTheDocument();
   });
 
@@ -167,9 +169,7 @@ describe("Day", () => {
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(screen.getByRole("heading", { name: "Revote" })).toBeInTheDocument();
-    expect(screen.getByText("Pass the phone to Ann")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "I am Ann" }));
+    expect(screen.getByText(namedLine("Ann votes for"))).toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Cara" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dan" })).toBeInTheDocument();

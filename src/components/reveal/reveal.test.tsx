@@ -9,6 +9,7 @@ import { createInitialState } from "src/lib/game/setup";
 import { Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
+import { namedLine } from "src/tests/matchers";
 import { expect, test } from "vitest";
 
 const dict = getDictionary(Locale.En);
@@ -64,15 +65,21 @@ test("steps back to the previous player when the phone was passed too early", as
   renderRevealScreen();
 
   await user.click(screen.getByRole("button", { name: "Next player →" }));
-  expect(screen.getByText("Pass the phone to Long")).toBeInTheDocument();
+  expect(
+    screen.getByText(namedLine("Pass the phone to Long")),
+  ).toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Back" }));
 
-  expect(screen.getByText("Pass the phone to Mai")).toBeInTheDocument();
+  expect(
+    screen.getByText(namedLine("Pass the phone to Mai")),
+  ).toBeInTheDocument();
 });
 
 test("names the player whose turn it is on the hand-off", () => {
   renderRevealScreen();
 
-  expect(screen.getByText("Pass the phone to Mai")).toBeInTheDocument();
+  expect(
+    screen.getByText(namedLine("Pass the phone to Mai")),
+  ).toBeInTheDocument();
 });

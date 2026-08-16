@@ -12,6 +12,7 @@ import {
   useGame,
   useGameActions,
 } from "src/components/game/game.state";
+import { NamedLine } from "src/components/game/game.ui";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -86,28 +87,12 @@ export function RevealHandOff({
 
   return (
     <header className={cn("gap-2 text-center", "grid")}>
-      <p className={cn("text-2xl font-semibold text-foreground")}>
-        {passToTemplate.replace("{name}", player.name)}
+      <p className={cn("font-semibold text-3xl text-balance text-foreground")}>
+        <NamedLine template={passToTemplate} name={player.name} />
       </p>
       {children}
     </header>
   );
-}
-
-/**
- * Warns the final player that finishing drops the table into night one.
- * @param props.children - `dict.reveal.lastRevealPrompt`.
- * @returns The warning, or nothing for every earlier player.
- */
-export function RevealLastPrompt({ children }: RevealChildrenProps) {
-  const state = useGame();
-  const isLastPlayer = state.revealIndex === state.players.length - 1;
-
-  if (!isLastPlayer) {
-    return null;
-  }
-
-  return <p className={cn("text-sm text-muted-foreground")}>{children}</p>;
 }
 
 /**
@@ -117,6 +102,7 @@ export function RevealLastPrompt({ children }: RevealChildrenProps) {
  */
 export function RevealHoldControl({ children }: RevealChildrenProps) {
   const [isHeld, setIsHeld] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
@@ -125,6 +111,7 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
    * @returns Nothing; the card appears after the hold completes.
    */
   function showCard(): void {
+    setIsHolding(true);
     holdTimerRef.current = setTimeout(() => setIsHeld(true), REVEAL_HOLD_MS);
   }
 
@@ -141,6 +128,7 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
       holdTimerRef.current = null;
     }
 
+    setIsHolding(false);
     setIsHeld(false);
   }
 
@@ -157,6 +145,16 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
           "pile h-auto min-h-64 w-full place-items-center",
         )}
       >
+        {/* The same filling affordance the night hand-off uses, so one hold
+            gesture is taught once and recognised everywhere. */}
+        <span
+          aria-hidden="true"
+          data-holding={isHolding ? "" : undefined}
+          className={cn(
+            "rounded-lg bg-phase",
+            "size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
+          )}
+        />
         {children}
       </Button>
     </HoldContext>

@@ -230,8 +230,9 @@ export function revealNextPlayer(state: GameState): GameState {
   return {
     ...state,
     revealIndex: nextIndex,
-    // The last player handing the phone back is what starts night one.
-    phase: everyoneHasLooked ? Phase.Night : state.phase,
+    // The last player handing the phone back drops the table into nightfall,
+    // which is where night one actually begins.
+    phase: everyoneHasLooked ? Phase.Nightfall : state.phase,
     nightNumber: everyoneHasLooked ? 1 : state.nightNumber,
   };
 }

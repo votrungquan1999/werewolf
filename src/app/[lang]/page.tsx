@@ -5,6 +5,7 @@ import { GameScreens, GameShell } from "src/components/game/game.ui";
 import { GameOver } from "src/components/game-over/game-over";
 import { GameMenu } from "src/components/menu/menu";
 import { Night } from "src/components/night/night";
+import { Nightfall } from "src/components/nightfall/nightfall";
 import { Reveal } from "src/components/reveal/reveal";
 import { Setup } from "src/components/setup/setup";
 import { Locale, toLocale } from "src/lib/i18n/config";
@@ -47,6 +48,7 @@ export default async function GamePage({ params }: GamePageProps) {
         <GameScreens>
           <Setup dict={dictionary} />
           <Reveal dict={dictionary} />
+          <Nightfall dict={dictionary} />
           <Night dict={dictionary} />
           <Dawn dict={dictionary} />
           <Day dict={dictionary} />

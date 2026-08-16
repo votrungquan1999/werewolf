@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
+import { NamedLine } from "src/components/game/game.ui";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import { Toggle } from "src/components/ui/toggle";
@@ -22,6 +23,7 @@ import {
   PotionKind,
   type RoleId,
 } from "src/lib/game/types";
+import { playDaybreak } from "src/lib/sound";
 import { cn } from "src/lib/utils";
 
 /**
@@ -56,7 +58,6 @@ export interface NightCopy {
   witchPoisonChoice: string;
   witchNoPotionChoice: string;
   witchPoisonConfirm: string;
-  holdToOpen: string;
   /** Carries `{role}`; filled with a name from `roleNames`. */
   yourRole: string;
   hunterSkip: string;
@@ -366,7 +367,7 @@ function NightInspectTurn({ actorId, copy, onDone }: ActTurnProps) {
   return (
     <>
       <p className="font-medium text-xl">
-        {fillTemplate(answer, { name: getPlayerName(state, inspectedId) })}
+        <NamedLine template={answer} name={getPlayerName(state, inspectedId)} />
       </p>
 
       <Button
@@ -531,9 +532,10 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
   return (
     <>
       <p className="font-medium text-lg">
-        {fillTemplate(copy.witchPoisonConfirm, {
-          name: getPlayerName(state, poisonTargetId ?? ""),
-        })}
+        <NamedLine
+          template={copy.witchPoisonConfirm}
+          name={getPlayerName(state, poisonTargetId ?? "")}
+        />
       </p>
 
       <Button
@@ -764,8 +766,8 @@ function NightHandOff({
 
   return (
     <section className={cn("gap-8 text-center", "grid justify-items-center")}>
-      <p className="font-medium text-2xl">
-        {fillTemplate(copy.passTo, { name })}
+      <p className={cn("font-semibold text-3xl text-balance")}>
+        <NamedLine template={copy.passTo} name={name} />
       </p>
 
       <button
@@ -789,12 +791,10 @@ function NightHandOff({
             "size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
           )}
         />
-        <span className={cn("px-8 font-semibold text-xl text-balance")}>
-          {fillTemplate(copy.confirmIdentity, { name })}
+        <span className={cn("px-8 font-semibold text-lg text-balance")}>
+          <NamedLine template={copy.confirmIdentity} name={name} />
         </span>
       </button>
-
-      <p className={cn("text-base text-muted-foreground")}>{copy.holdToOpen}</p>
     </section>
   );
 }
@@ -822,7 +822,7 @@ function NightDecoyTurn({
       {/* Nobody to name on the last seat — the phone goes back to the table, not to a player. */}
       {nextName === null ? null : (
         <p className="text-lg leading-relaxed">
-          {fillTemplate(copy.decoyBody, { name: nextName })}
+          <NamedLine template={copy.decoyBody} name={nextName} />
         </p>
       )}
 
@@ -899,6 +899,23 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
   const state = useGame();
   const { finishNightTurn } = useGameActions();
   const [isRevealed, setIsRevealed] = useState(false);
+  const isLastSeat =
+    getCurrentNightTurn({ ...state, nightCursor: state.nightCursor + 1 }) ===
+    null;
+
+  /**
+   * Ends this player's turn, crowing the rooster if it also ends the night.
+   *
+   * Called straight from the tap on purpose: the night resolves on this dispatch,
+   * and phones refuse to play audio that no gesture asked for.
+   */
+  function handleTurnDone(): void {
+    if (isLastSeat) {
+      playDaybreak();
+    }
+
+    finishNightTurn();
+  }
 
   if (!isRevealed) {
     return (
@@ -910,7 +927,7 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
     );
   }
 
-  return <NightTurnBody turn={turn} copy={copy} onDone={finishNightTurn} />;
+  return <NightTurnBody turn={turn} copy={copy} onDone={handleTurnDone} />;
 }
 
 /**

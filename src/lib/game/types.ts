@@ -32,6 +32,7 @@ export enum Team {
 export enum Phase {
   Setup = "setup",
   RoleReveal = "role-reveal",
+  Nightfall = "nightfall",
   Night = "night",
   Dawn = "dawn",
   Day = "day",
@@ -199,6 +200,7 @@ export enum ActionType {
   ResolveNight = "resolve-night",
   CastDayVote = "cast-day-vote",
   ResolveDayVote = "resolve-day-vote",
+  StartNightfall = "start-nightfall",
   StartNight = "start-night",
   StartDay = "start-day",
   ResetGame = "reset-game",
@@ -266,6 +268,10 @@ export interface ResolveDayVoteAction {
   type: ActionType.ResolveDayVote;
 }
 
+export interface StartNightfallAction {
+  type: ActionType.StartNightfall;
+}
+
 export interface StartNightAction {
   type: ActionType.StartNight;
 }
@@ -290,6 +296,7 @@ export type GameAction =
   | ResolveNightAction
   | CastDayVoteAction
   | ResolveDayVoteAction
+  | StartNightfallAction
   | StartNightAction
   | StartDayAction
   | ResetGameAction;

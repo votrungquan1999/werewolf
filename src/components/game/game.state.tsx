@@ -100,6 +100,7 @@ export function useGameActions() {
       dispatch({ type: ActionType.SetRoleCount, role, count }),
     dealRoles: () => dispatch(dealRolesAction()),
     revealNextPlayer: () => dispatch({ type: ActionType.RevealNextPlayer }),
+    startNightfall: () => dispatch({ type: ActionType.StartNightfall }),
     startNight: () => dispatch({ type: ActionType.StartNight }),
     startDay: () => dispatch({ type: ActionType.StartDay }),
     submitNightChoice: (

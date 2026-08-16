@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
+import { NamedLine } from "src/components/game/game.ui";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import {
@@ -16,7 +17,6 @@ import { cn } from "src/lib/utils";
 /** Which beat of the day the table is on. */
 export enum DayStage {
   Discuss = "discuss",
-  HandOff = "hand-off",
   Vote = "vote",
   Result = "result",
 }
@@ -36,10 +36,6 @@ export interface DayVoteProps {
   discussAddMinute: string;
   discussSkip: string;
   discussTimeUp: string;
-  /** Carries `{name}` for whoever should take the phone next. */
-  passTo: string;
-  /** Carries `{name}`; the voter confirms who they are before their turn opens. */
-  confirmIdentity: string;
   voteTitle: string;
   revoteTitle: string;
   /** Carries `{name}` for the voter holding the phone. */
@@ -53,16 +49,6 @@ export interface DayVoteProps {
   confirmLabel: string;
   /** Label on the control that ends the day and sends the table into the next night. */
   nightfallLabel: string;
-}
-
-/**
- * Fills the `{name}` placeholder in a copy template.
- * @param template - Copy containing `{name}`
- * @param name - The player name to drop in
- * @returns The finished sentence
- */
-function withName(template: string, name: string): string {
-  return template.replace("{name}", name);
 }
 
 /**
@@ -125,8 +111,6 @@ function DayScreen({
   discussAddMinute,
   discussSkip,
   discussTimeUp,
-  passTo,
-  confirmIdentity,
   voteTitle,
   revoteTitle,
   playerVotesFor,
@@ -138,7 +122,7 @@ function DayScreen({
   nightfallLabel,
 }: DayVoteProps) {
   const state = useGame();
-  const { castDayVote, resolveDayVote, startNight } = useGameActions();
+  const { castDayVote, resolveDayVote, startNightfall } = useGameActions();
   const tallyHeadingId = useId();
   const [stage, setStage] = useState(DayStage.Discuss);
   // The countdown is anchored to a timestamp, not decremented: a backgrounded phone
@@ -206,7 +190,7 @@ function DayScreen({
 
     if (nextIndex < eligibleVoterIds.length) {
       setVoterIndex(nextIndex);
-      setStage(DayStage.HandOff);
+      setStage(DayStage.Vote);
       return;
     }
 
@@ -224,7 +208,7 @@ function DayScreen({
 
     if (willRevote) {
       setVoterIndex(0);
-      setStage(DayStage.HandOff);
+      setStage(DayStage.Vote);
       return;
     }
 
@@ -266,7 +250,7 @@ function DayScreen({
 
             <Button
               size="lg"
-              onClick={() => setStage(DayStage.HandOff)}
+              onClick={() => setStage(DayStage.Vote)}
               className={cn(
                 "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
                 "w-full",
@@ -278,30 +262,12 @@ function DayScreen({
         </div>
       )}
 
-      {/* Nothing but the name on screen mid-pass, so the last voter's screen cannot be read. */}
-      {stage === DayStage.HandOff && currentVoterId !== null && (
-        <div className={cn("gap-4", "grid")}>
-          <p className="text-lg text-muted-foreground">
-            {withName(passTo, currentVoterName)}
-          </p>
-
-          <Button
-            size="lg"
-            onClick={() => setStage(DayStage.Vote)}
-            className={cn(
-              "h-16 bg-phase text-base text-phase-foreground hover:bg-phase/80",
-              "w-full",
-            )}
-          >
-            {withName(confirmIdentity, currentVoterName)}
-          </Button>
-        </div>
-      )}
-
       {stage === DayStage.Vote && currentVoterId !== null && (
         <div className={cn("gap-3", "grid")}>
-          <p className="text-lg text-muted-foreground">
-            {withName(playerVotesFor, currentVoterName)}
+          {/* No identity gate here: the day vote is open, so there is nothing on
+              this screen the next voter should not already have heard out loud. */}
+          <p className={cn("font-semibold text-2xl text-balance")}>
+            <NamedLine template={playerVotesFor} name={currentVoterName} />
           </p>
 
           <div className={cn("gap-3", "grid grid-cols-1 sm:grid-cols-2")}>
@@ -370,12 +336,14 @@ function DayScreen({
       {outcome !== null && (
         <div className={cn("gap-3", "grid")}>
           <p className="text-lg">
-            {outcome.eliminatedId === null
-              ? tieTitle
-              : withName(
-                  votedOut,
-                  getPlayerName(state.players, outcome.eliminatedId),
-                )}
+            {outcome.eliminatedId === null ? (
+              tieTitle
+            ) : (
+              <NamedLine
+                template={votedOut}
+                name={getPlayerName(state.players, outcome.eliminatedId)}
+              />
+            )}
           </p>
 
           <Button
@@ -395,7 +363,7 @@ function DayScreen({
       {isResolved && (
         <Button
           size="lg"
-          onClick={startNight}
+          onClick={startNightfall}
           className={cn(
             "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
             "w-full",

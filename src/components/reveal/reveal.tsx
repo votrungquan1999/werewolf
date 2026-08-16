@@ -12,7 +12,6 @@ import {
   RevealHandOff,
   RevealHoldControl,
   RevealHoldPrompt,
-  RevealLastPrompt,
   RevealPassOn,
   RevealScreen,
   RevealStepBack,
@@ -27,9 +26,7 @@ import type { Dictionary } from "src/lib/i18n/types";
 export function Reveal({ dict }: { dict: Dictionary }) {
   return (
     <RevealScreen>
-      <RevealHandOff passToTemplate={dict.reveal.passTo}>
-        <RevealLastPrompt>{dict.reveal.lastRevealPrompt}</RevealLastPrompt>
-      </RevealHandOff>
+      <RevealHandOff passToTemplate={dict.reveal.passTo}>{null}</RevealHandOff>
       <RevealHoldControl>
         <RevealHoldPrompt>{dict.reveal.holdInstruction}</RevealHoldPrompt>
         <RevealCard roles={dict.roles}>{dict.reveal.yourCard}</RevealCard>

@@ -57,8 +57,13 @@ export interface RevealDictionary {
   holdInstruction: string;
   yourCard: string;
   passItOn: string;
-  /** Shown to the final player: continuing drops the table into night one. */
-  lastRevealPrompt: string;
+}
+
+/** The beat between the last card and the first night turn. */
+export interface NightfallDictionary {
+  title: string;
+  body: string;
+  begin: string;
 }
 
 /** Night phase: the hand-off, the decoy, each role's instruction, and the witch's controls. */
@@ -67,10 +72,8 @@ export interface NightDictionary {
   title: string;
   /** `{name}` = the player who should take the phone. */
   passTo: string;
-  /** Carries `{name}` — the player confirms who they are to open their turn. */
+  /** Carries `{name}` — names the gesture and who it confirms, in one label. */
   confirmIdentity: string;
-  /** Says the control must be held, since a circle alone cannot teach the gesture. */
-  holdToOpen: string;
   /** Carries `{role}` — every turn reopens with a reminder of your own card. */
   yourRole: string;
   /** Prompt on the closed card; it stays shut so a neighbour cannot read it. */
@@ -172,6 +175,7 @@ export interface Dictionary {
   common: CommonDictionary;
   setup: SetupDictionary;
   reveal: RevealDictionary;
+  nightfall: NightfallDictionary;
   night: NightDictionary;
   nightResults: NightResultsDictionary;
   dawn: DawnDictionary;

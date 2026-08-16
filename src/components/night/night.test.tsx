@@ -9,6 +9,7 @@ import { createInitialState } from "src/lib/game/setup";
 import { type GameState, Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
+import { namedLine } from "src/tests/matchers";
 import { beforeEach, describe, expect, it } from "vitest";
 
 const dictionary = getDictionary(Locale.En);
@@ -73,7 +74,9 @@ async function confirmHandOff(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
 ): Promise<void> {
-  const control = screen.getByRole("button", { name: `I am ${name}` });
+  const control = screen.getByRole("button", {
+    name: `Hold to confirm you are ${name}`,
+  });
 
   await user.pointer({ keys: "[MouseLeft>]", target: control });
   // Real timers only: fake ones deadlock user-event inside RTL's act wrapper.
@@ -94,7 +97,9 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    expect(screen.getByText("Pass the phone to Alice")).toBeInTheDocument();
+    expect(
+      screen.getByText(namedLine("Pass the phone to Alice")),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText(
         "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
@@ -122,7 +127,9 @@ describe("Night", () => {
 
     expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
     expect(
-      screen.getByText("Wait a moment, look busy, then pass to Bob."),
+      screen.getByText(
+        namedLine("Wait a moment, look busy, then pass to Bob."),
+      ),
     ).toBeInTheDocument();
   });
 
@@ -209,7 +216,9 @@ describe("Night", () => {
 
     await user.click(screen.getByRole("button", { name: "Cara" }));
 
-    expect(screen.getByText("Pass the phone to Bob")).toBeInTheDocument();
+    expect(
+      screen.getByText(namedLine("Pass the phone to Bob")),
+    ).toBeInTheDocument();
 
     // The mark outlives the night, so it is read back off the parked game.
     const parked = JSON.parse(
@@ -262,11 +271,13 @@ describe("Night", () => {
 
     // Naming a target is not the same as killing them.
     expect(
-      screen.getByText("Poison Bob? They die by morning."),
+      screen.getByText(namedLine("Poison Bob? They die by morning.")),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(screen.getByText("Pass the phone to Bob")).toBeInTheDocument();
+    expect(
+      screen.getByText(namedLine("Pass the phone to Bob")),
+    ).toBeInTheDocument();
   });
 });

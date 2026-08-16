@@ -131,7 +131,7 @@ describe("Feature: running a game through one reducer", () => {
   });
 
   describe("Scenario: the day ends without a winner", () => {
-    it("should fall into the next night rather than repeating night one", () => {
+    it("should hold on a nightfall beat before the next night, counting it once", () => {
       const state: GameState = {
         ...createInitialState(),
         phase: Phase.Day,
@@ -142,10 +142,18 @@ describe("Feature: running a game through one reducer", () => {
         ],
       };
 
-      const next = gameReducer(state, { type: ActionType.StartNight });
+      const nightfall = gameReducer(state, {
+        type: ActionType.StartNightfall,
+      });
 
-      expect(next.phase).toBe(Phase.Night);
-      expect(next.nightNumber).toBe(2);
+      expect(nightfall.phase).toBe(Phase.Nightfall);
+      expect(nightfall.nightNumber).toBe(2);
+
+      const night = gameReducer(nightfall, { type: ActionType.StartNight });
+
+      expect(night.phase).toBe(Phase.Night);
+      expect(night.nightNumber).toBe(2);
+      expect(night.nightOrderIds).toEqual(["p1", "p2"]);
     });
   });
 
@@ -181,7 +189,7 @@ describe("Feature: running a game through one reducer", () => {
       ]);
     });
 
-    it("should lay out the night as part of the last player finishing their reveal", () => {
+    it("should drop the table into nightfall as the last player finishes their reveal", () => {
       const state: GameState = {
         ...createInitialState(),
         phase: Phase.RoleReveal,
@@ -194,9 +202,9 @@ describe("Feature: running a game through one reducer", () => {
 
       const next = gameReducer(state, { type: ActionType.RevealNextPlayer });
 
-      expect(next.phase).toBe(Phase.Night);
-      expect(next.nightOrderIds).toEqual(["p1", "p2"]);
-      expect(next.nightCursor).toBe(0);
+      // Nightfall, not night: the table gets a "close your eyes" beat first.
+      expect(next.phase).toBe(Phase.Nightfall);
+      expect(next.nightNumber).toBe(1);
     });
   });
 
@@ -262,6 +270,7 @@ describe("Feature: running a game through one reducer", () => {
       expect(game.winner).toBe(null);
 
       // Night two: the doctor guesses right and the wolf goes hungry.
+      game = gameReducer(game, { type: ActionType.StartNightfall });
       game = gameReducer(game, { type: ActionType.StartNight });
       expect(game.phase).toBe(Phase.Night);
       expect(game.nightNumber).toBe(2);

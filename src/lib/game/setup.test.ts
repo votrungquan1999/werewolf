@@ -95,7 +95,7 @@ describe("Feature: Setting up a game", () => {
   });
 
   describe("Scenario: Each player sees their own card and passes the phone on", () => {
-    it("should walk the table in order and start night one after the last player", () => {
+    it("should walk the table in order and drop into nightfall after the last player", () => {
       const dealt = dealRoles(createReadyTable(), 42);
 
       const afterFirst = revealNextPlayer(dealt);
@@ -110,7 +110,7 @@ describe("Feature: Setting up a game", () => {
       expect(afterFirst.phase).toBe(Phase.RoleReveal);
       expect(getRevealPlayer(afterAll)).toBeNull();
       expect(afterAll.revealIndex).toBe(5);
-      expect(afterAll.phase).toBe(Phase.Night);
+      expect(afterAll.phase).toBe(Phase.Nightfall);
       expect(afterAll.nightNumber).toBe(1);
     });
   });

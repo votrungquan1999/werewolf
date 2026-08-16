@@ -9,8 +9,8 @@ interface DayProps {
  * The day screen: the village argues against a clock, then votes in private.
  *
  * Who is voting is runtime state, so the copy travels down as plain strings rather
- * than as composed children. The vote is now passed around exactly like the night,
- * so the hand-off reuses the night's own copy rather than duplicating it.
+ * than as composed children. The vote needs no identity gate — it is open, and the
+ * screen holds nothing the table has not already heard out loud.
  * @param props.dict - Every UI string for the active language
  * @returns The day screen, gated on the day phase by its client shell
  */
@@ -21,8 +21,6 @@ export function Day({ dict }: DayProps) {
       discussAddMinute={dict.day.discussAddMinute}
       discussSkip={dict.day.discussSkip}
       discussTimeUp={dict.day.discussTimeUp}
-      passTo={dict.night.passTo}
-      confirmIdentity={dict.night.confirmIdentity}
       voteTitle={dict.day.voteTitle}
       revoteTitle={dict.day.revoteTitle}
       playerVotesFor={dict.day.playerVotesFor}

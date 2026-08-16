@@ -33,7 +33,6 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     witchPoisonChoice: dict.night.witchPoisonChoice,
     witchNoPotionChoice: dict.night.witchNoPotionChoice,
     witchPoisonConfirm: dict.night.witchPoisonConfirm,
-    holdToOpen: dict.night.holdToOpen,
     yourRole: dict.night.yourRole,
     hunterSkip: dict.night.hunterSkip,
     showRole: dict.night.showRole,

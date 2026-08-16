@@ -38,14 +38,16 @@ const vietnamese: Dictionary = {
     holdInstruction: "Nhấn giữ để xem bài của mình",
     yourCard: "Đây là bài của bạn",
     passItOn: "Người tiếp theo →",
-    lastRevealPrompt:
-      "Bạn là người cuối cùng — bấm tiếp là trời tối, đêm thứ nhất bắt đầu.",
+  },
+  nightfall: {
+    title: "Trời tối rồi",
+    body: "Cả làng nhắm mắt đi ngủ. Máy sẽ đi một vòng, ai có việc thì làm.",
+    begin: "Bắt đầu đêm",
   },
   night: {
     title: "Đêm {number}",
     passTo: "Đưa máy cho {name}",
-    confirmIdentity: "Tôi là {name}",
-    holdToOpen: "Nhấn giữ nút để mở lượt của bạn",
+    confirmIdentity: "Nhấn giữ để xác nhận bạn là {name}",
     yourRole: "Bạn là {role}",
     showRole: "Chạm để xem lại bài của bạn",
     hideRole: "Chạm để giấu bài đi",
@@ -196,14 +198,16 @@ const english: Dictionary = {
     holdInstruction: "Press and hold to see your card",
     yourCard: "This is your card",
     passItOn: "Next player →",
-    lastRevealPrompt:
-      "You are the last one — tap continue and night one begins.",
+  },
+  nightfall: {
+    title: "Night falls",
+    body: "Everyone close your eyes. The phone goes round the table; act when it is your turn.",
+    begin: "Begin the night",
   },
   night: {
     title: "Night {number}",
     passTo: "Pass the phone to {name}",
-    confirmIdentity: "I am {name}",
-    holdToOpen: "Press and hold the button to open your turn",
+    confirmIdentity: "Hold to confirm you are {name}",
     yourRole: "You are the {role}",
     showRole: "Tap to see your card",
     hideRole: "Tap to hide your card",

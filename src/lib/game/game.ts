@@ -91,29 +91,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return setRoleCount(state, action.role, action.count);
     case ActionType.DealRoles:
       return dealRoles(state, action.seed);
-    // One dispatch, so one undo takes the whole step back. Splitting the reveal
-    // from laying out the night left an undo stranded on a night with no order.
-    case ActionType.RevealNextPlayer: {
-      const revealed = revealNextPlayer(state);
-      if (revealed.phase !== Phase.Night) {
-        return revealed;
-      }
-
+    case ActionType.RevealNextPlayer:
+      return revealNextPlayer(state);
+    // The "everyone close your eyes" beat. It owns the night count, so StartNight
+    // below never has to guess which phase it was entered from.
+    case ActionType.StartNightfall:
       return {
-        ...revealed,
-        nightOrderIds: buildNightOrder(revealed),
-        nightCursor: 0,
+        ...state,
+        phase: Phase.Nightfall,
+        nightNumber: state.nightNumber + 1,
       };
-    }
     // buildNightOrder only computes the order; the reducer owns writing it.
     case ActionType.StartNight:
       return {
         ...state,
         phase: Phase.Night,
-        // Night one is already numbered by the last role reveal, so only a night
-        // that follows a day advances the count.
-        nightNumber:
-          state.phase === Phase.Day ? state.nightNumber + 1 : state.nightNumber,
         nightOrderIds: buildNightOrder(state),
         nightCursor: 0,
       };

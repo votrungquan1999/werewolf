@@ -24,6 +24,8 @@ function getPhaseAccent(phase: Phase): PhaseAccent {
   switch (phase) {
     case Phase.Night:
       return PhaseAccent.Night;
+    case Phase.Nightfall:
+      return PhaseAccent.Night;
     case Phase.Dawn:
     case Phase.Day:
       return PhaseAccent.Day;
@@ -68,5 +70,44 @@ export function GameShell({ children }: { children: ReactNode }) {
 export function GameScreens({ children }: { children: ReactNode }) {
   return (
     <div className={cn("grid min-h-0 content-center-safe")}>{children}</div>
+  );
+}
+
+/**
+ * A player's name, always in the phase's name colour rather than the body colour.
+ *
+ * Names are the one thing on these screens that has to be read at a glance while a
+ * phone changes hands, and a name set in the same ink as the sentence around it
+ * disappears into it.
+ * @param props.children - The player's name.
+ * @returns The name, visually separated from its sentence.
+ */
+export function PlayerName({ children }: { children: ReactNode }) {
+  return (
+    <strong className={cn("font-semibold text-phase-name")}>{children}</strong>
+  );
+}
+
+/**
+ * Renders copy built around a single `{name}` placeholder, highlighting the name.
+ * @param props.template - Dictionary copy containing `{name}`.
+ * @param props.name - The player to drop in.
+ * @returns The sentence, with the name picked out.
+ */
+export function NamedLine({
+  template,
+  name,
+}: {
+  template: string;
+  name: string;
+}) {
+  const [before, after] = template.split("{name}");
+
+  return (
+    <>
+      {before}
+      <PlayerName>{name}</PlayerName>
+      {after ?? ""}
+    </>
   );
 }
