@@ -61,20 +61,13 @@ describe("Feature: Setting up a game", () => {
         "Cuong",
       );
 
-      const balanced = setRoleCount(
-        setRoleCount(table, RoleId.Werewolf, 1),
-        RoleId.Villager,
-        2,
-      );
-      const tooFew = setRoleCount(balanced, RoleId.Villager, 1);
-      const tooMany = setRoleCount(balanced, RoleId.Villager, 3);
+      // Villagers backfill whatever is left, so a shortfall can no longer occur —
+      // the only way to be off now is to pick more specialists than there are seats.
+      const balanced = setRoleCount(table, RoleId.Werewolf, 1);
+      const tooMany = setRoleCount(table, RoleId.Werewolf, 4);
 
+      expect(balanced.roleCounts[RoleId.Villager]).toBe(2);
       expect(getRoleCountIssue(balanced)).toBeNull();
-      expect(getRoleCountIssue(tooFew)).toEqual({
-        kind: RoleCountIssueKind.TooFewRoles,
-        playerCount: 3,
-        roleCount: 2,
-      });
       expect(getRoleCountIssue(tooMany)).toEqual({
         kind: RoleCountIssueKind.TooManyRoles,
         playerCount: 3,
@@ -118,6 +111,21 @@ describe("Feature: Setting up a game", () => {
       expect(afterAll.revealIndex).toBe(5);
       expect(afterAll.phase).toBe(Phase.Night);
       expect(afterAll.nightNumber).toBe(1);
+    });
+  });
+
+  describe("Scenario: The host picks the special roles and leaves the rest", () => {
+    it("should fill the remaining seats with villagers automatically", () => {
+      const table = ["An", "Binh", "Cuc", "Dung", "Em"].reduce(
+        (state, name, index) => addPlayer(state, `p${index + 1}`, name),
+        createInitialState(),
+      );
+
+      const withWolf = setRoleCount(table, RoleId.Werewolf, 1);
+      const withSeer = setRoleCount(withWolf, RoleId.Seer, 1);
+
+      expect(withSeer.roleCounts[RoleId.Villager]).toBe(3);
+      expect(getRoleCountIssue(withSeer)).toBeNull();
     });
   });
 });

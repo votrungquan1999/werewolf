@@ -33,6 +33,20 @@ export interface SetupDictionary {
   tooFewRoles: string;
   /** `{count}` = how many cards are surplus. */
   tooManyRoles: string;
+  /** Accessible label on a role's increment control. */
+  increaseRole: string;
+  /** Accessible label on a role's decrement control. */
+  decreaseRole: string;
+  /** Explains why the villager count has no control of its own. */
+  villagerAuto: string;
+}
+
+/** The overflow menu: the escape hatches, kept out of the way of play. */
+export interface MenuDictionary {
+  open: string;
+  undo: string;
+  newGame: string;
+  confirmReset: string;
 }
 
 /** Pass-the-phone role reveal, one player at a time. */
@@ -52,7 +66,8 @@ export interface NightDictionary {
   title: string;
   /** `{name}` = the player who should take the phone. */
   passTo: string;
-  tapToContinue: string;
+  /** Carries `{name}` — the player confirms who they are to open their turn. */
+  confirmIdentity: string;
   decoyTitle: string;
   /** `{name}` = who to pass to once enough time has been burned. */
   decoyBody: string;
@@ -150,5 +165,6 @@ export interface Dictionary {
   dawn: DawnDictionary;
   day: DayDictionary;
   gameOver: GameOverDictionary;
+  menu: MenuDictionary;
   roles: RolesDictionary;
 }

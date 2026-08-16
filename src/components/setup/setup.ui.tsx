@@ -1,13 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
-import {
-  type ChangeEvent,
-  type FormEvent,
-  type ReactNode,
-  useId,
-  useState,
-} from "react";
+import { Minus, Plus, X } from "lucide-react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
@@ -235,35 +229,31 @@ export function RoleCounterList({ children }: { children: ReactNode }) {
 
 /**
  * How many copies of one role are dealt into tonight's deck.
- * @param props.role - The role this counter sets.
- * @param props.label - The role's name, used as the field's label.
+ * @param props.role - The role this stepper sets.
+ * @param props.label - The role's name, which also names the stepper group.
+ * @param props.decreaseLabel - Accessible name for the take-one-away control.
+ * @param props.increaseLabel - Accessible name for the add-one control.
  * @param props.children - The role's description.
  * @returns One row of the composition list.
  */
 export function RoleCounter({
   role,
   label,
+  decreaseLabel,
+  increaseLabel,
   children,
 }: {
   role: RoleId;
   label: string;
+  decreaseLabel: string;
+  increaseLabel: string;
   children: ReactNode;
 }) {
   const { roleCounts } = useGame();
   const { setRoleCount } = useGameActions();
-  const fieldId = useId();
+  const labelId = useId();
   const { maxPerGame } = getRoleDefinition(role);
-
-  /**
-   * Writes the typed count into the deck.
-   * @param event - The change on the number field; an emptied field means zero.
-   */
-  function handleCountChange(event: ChangeEvent<HTMLInputElement>) {
-    const typed = Number.parseInt(event.target.value, 10);
-
-    // A negative count would deal a deck the shuffle cannot build.
-    setRoleCount(role, Number.isNaN(typed) ? 0 : Math.max(0, typed));
-  }
+  const count = roleCounts[role];
 
   return (
     <li
@@ -272,25 +262,104 @@ export function RoleCounter({
         "grid grid-cols-[1fr_auto] items-center",
       )}
     >
-      <label htmlFor={fieldId} className="font-medium text-base">
+      <span id={labelId} className="font-medium text-base">
         {label}
-      </label>
+      </span>
       <p className={cn("text-muted-foreground text-sm", "col-start-1")}>
         {children}
       </p>
-      <Input
-        id={fieldId}
-        type="number"
-        inputMode="numeric"
-        min={0}
-        max={maxPerGame ?? undefined}
-        value={roleCounts[role]}
-        onChange={handleCountChange}
+      {/* Named by the role so a screen reader hears which card the two buttons move. */}
+      <fieldset
+        aria-labelledby={labelId}
         className={cn(
-          "size-14 text-center text-lg",
-          "col-start-2 row-span-2 row-start-1",
+          "gap-1",
+          "col-start-2 row-span-2 row-start-1 grid grid-flow-col items-center",
         )}
-      />
+      >
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={decreaseLabel}
+          disabled={count === 0}
+          onClick={() => setRoleCount(role, count - 1)}
+          className="size-14 rounded-full"
+        >
+          <Minus className="size-6" />
+        </Button>
+        <span className="min-w-8 text-center text-xl tabular-nums">
+          {count}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={increaseLabel}
+          // A null cap means the role has no limit, so the plus never locks.
+          disabled={maxPerGame !== null && count >= maxPerGame}
+          onClick={() => setRoleCount(role, count + 1)}
+          className="size-14 rounded-full"
+        >
+          <Plus className="size-6" />
+        </Button>
+      </fieldset>
+    </li>
+  );
+}
+
+/**
+ * A role whose count the engine works out, shown but never tapped.
+ * @param props.role - The role whose derived count is displayed.
+ * @param props.label - The role's name, which also names the read-only count.
+ * @param props.note - Why this row has no controls.
+ * @param props.children - The role's description.
+ * @returns One row of the composition list.
+ */
+export function DerivedRoleCounter({
+  role,
+  label,
+  note,
+  children,
+}: {
+  role: RoleId;
+  label: string;
+  note: string;
+  children: ReactNode;
+}) {
+  const { roleCounts } = useGame();
+  const labelId = useId();
+
+  return (
+    <li
+      className={cn(
+        "gap-x-3 rounded-lg border border-border bg-card p-3",
+        "grid grid-cols-[1fr_auto] items-center",
+      )}
+    >
+      <span id={labelId} className="font-medium text-base">
+        {label}
+      </span>
+      <p className={cn("text-muted-foreground text-sm", "col-start-1")}>
+        {children}
+      </p>
+      {/* `output` states it plainly: this number is a result, not a choice. */}
+      <output
+        aria-labelledby={labelId}
+        className={cn(
+          "min-w-8 text-center text-xl tabular-nums",
+          "col-start-2 row-span-2 row-start-1 block",
+        )}
+      >
+        {roleCounts[role]}
+      </output>
+      <p
+        className={cn(
+          "text-muted-foreground text-xs",
+          "col-span-full row-start-3",
+        )}
+      >
+        {note}
+      </p>
     </li>
   );
 }

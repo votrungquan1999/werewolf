@@ -13,8 +13,15 @@ Roles: Werewolf, Villager, Seer, Doctor, Witch, Hunter, Cupid, Fool. Vietnamese 
 **The host is a player, so nobody narrates.** That single constraint drives the whole night design:
 
 - **Every living player receives the phone every night**, in one fixed order. Players whose role has nothing to do get a decoy screen telling them to look busy and pass on. Receiving the phone therefore reveals nothing about who holds which role.
-- **A press-and-hold gate sits in front of every turn**, so nothing sensitive is on screen while the phone is physically moving between hands.
-- **The role reveal is press-and-hold too** — the card is unmounted from the DOM when not held, so a glance across the table cannot expose it.
+- **A turn opens only when the player confirms their own name** ("I am An"). Nothing sensitive is on screen while the phone is physically moving between hands. A hold gate was tried here first and replaced — holding is fiddly while a phone is mid-pass.
+- **The role reveal is press-and-hold, with a one-second delay** before the card appears. Instant reveal let a brush of the thumb flash the card at the table. The card is unmounted from the DOM when not held, so it cannot leak.
+
+## Escape hatches
+
+An options menu, stacked over every screen with the `pile` utility rather than absolute positioning, holds the two controls that must never be one stray tap away from play:
+
+- **Undo** steps the whole game back one action — a mis-tapped vote, the wrong night target, an accidental pass. History lives in `history.ts` as a wrapper reducer over `GameState`, capped at 25 steps, and is deliberately **not** persisted: only the live game is parked.
+- **New game** asks for confirmation before wiping, then clears storage and resets.
 
 ## House rules
 
@@ -36,7 +43,8 @@ These vary between tables; these are the ones implemented.
 - `types.ts` — the shared contract: every enum, interface, and the `GameAction` union
 - `roles.ts` — role registry: team, night action, night order, first-night-only, max per game
 - `shuffle.ts` — seeded mulberry32 + Fisher-Yates, so deals are random in play and reproducible in tests
-- `setup.ts` — player list, role composition, the deal, the reveal cursor
+- `setup.ts` — player list, role composition, the deal, the reveal cursor. **Villagers are derived, never chosen**: every change to the table or another role refills the villager count to `players − everyone else`, so the host picks the specials and never does the arithmetic. A short deck is therefore unreachable; only picking more specialists than seats still warns.
+- `history.ts` — undo, as a wrapper reducer holding past states alongside the live one
 - `night.ts` — circulation order, per-turn routing, wolf tally, night intents
 - `deaths.ts` — `applyDeaths`, shared by night resolution and the day vote; heartbreak cascade; hunter flag
 - `resolve-night.ts` — dawn resolution
@@ -98,7 +106,7 @@ Dark-only (`<html class="dark">`) — it is played in dim rooms.
 
 ## Testing
 
-`npm test` — 55 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
+`npm test` — 61 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
 
 Test style is `describe("Feature: …") → describe("Scenario: …") → it("should …")` with literal expected values. `game.test.ts` includes a full-game integration test that plays two complete night-day cycles through the reducer to a village win.
 

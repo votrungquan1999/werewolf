@@ -1,6 +1,7 @@
 import {
   AddPlayerForm,
   CompositionWarning,
+  DerivedRoleCounter,
   PlayerList,
   RoleCounter,
   RoleCounterList,
@@ -40,11 +41,29 @@ export function Setup({ dict }: SetupProps) {
       <SetupSection>
         <SetupSectionTitle>{dict.setup.roleCompositionTitle}</SetupSectionTitle>
         <RoleCounterList>
-          {Object.values(RoleId).map((role) => (
-            <RoleCounter key={role} role={role} label={dict.roles[role].name}>
-              {dict.roles[role].description}
-            </RoleCounter>
-          ))}
+          {Object.values(RoleId).map((role) =>
+            // The engine backfills villagers, so that row is a readout, not a control.
+            role === RoleId.Villager ? (
+              <DerivedRoleCounter
+                key={role}
+                role={role}
+                label={dict.roles[role].name}
+                note={dict.setup.villagerAuto}
+              >
+                {dict.roles[role].description}
+              </DerivedRoleCounter>
+            ) : (
+              <RoleCounter
+                key={role}
+                role={role}
+                label={dict.roles[role].name}
+                decreaseLabel={dict.setup.decreaseRole}
+                increaseLabel={dict.setup.increaseRole}
+              >
+                {dict.roles[role].description}
+              </RoleCounter>
+            ),
+          )}
         </RoleCounterList>
       </SetupSection>
 

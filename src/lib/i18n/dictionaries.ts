@@ -29,19 +29,22 @@ const vietnamese: Dictionary = {
     startGame: "Bắt đầu ván",
     tooFewRoles: "Còn thiếu {count} lá bài — mỗi người phải cầm đúng một lá.",
     tooManyRoles: "Thừa {count} lá bài — bớt đi cho vừa số người chơi.",
+    increaseRole: "Thêm một lá",
+    decreaseRole: "Bớt một lá",
+    villagerAuto: "Tự động điền cho đủ số người",
   },
   reveal: {
     passTo: "Đưa máy cho {name}",
     holdInstruction: "Nhấn giữ để xem bài của mình",
     yourCard: "Đây là bài của bạn",
-    passItOn: "Nhớ bài rồi thì thả tay ra và đưa máy cho người kế tiếp",
+    passItOn: "Người tiếp theo →",
     lastRevealPrompt:
       "Bạn là người cuối cùng — bấm tiếp là trời tối, đêm thứ nhất bắt đầu.",
   },
   night: {
     title: "Đêm {number}",
     passTo: "Đưa máy cho {name}",
-    tapToContinue: "Chạm vào màn hình khi bạn đã cầm máy",
+    confirmIdentity: "Tôi là {name}",
     decoyTitle: "Đêm nay bạn không phải làm gì",
     decoyBody:
       "Chờ một chút, giả vờ bấm bấm cho giống người ta, rồi đưa máy cho {name}.",
@@ -94,11 +97,17 @@ const vietnamese: Dictionary = {
     },
     playAgain: "Chơi ván nữa",
   },
+  menu: {
+    open: "Tùy chọn",
+    undo: "Lùi lại một bước",
+    newGame: "Ván mới",
+    confirmReset: "Bỏ ván đang chơi và bắt đầu lại từ đầu?",
+  },
   roles: {
     [RoleId.Werewolf]: {
       name: "Ma Sói",
       description:
-        "Đêm nào cũng thức cùng bầy và cùng chọn một người để cắn; ai nhiều phiếu nhất thì chết, hòa phiếu thì tha.",
+        'Đêm nào cũng họp bầy chọn người để "ăn"; ai bị nhiều phiếu nhất thì đi, còn bầy cãi nhau hòa phiếu thì cả làng được ngủ yên.',
     },
     [RoleId.Villager]: {
       name: "Dân Làng",
@@ -108,32 +117,32 @@ const vietnamese: Dictionary = {
     [RoleId.Seer]: {
       name: "Tiên Tri",
       description:
-        "Mỗi đêm soi một người và chỉ biết người đó có phải Sói hay không, chứ không biết vai cụ thể.",
+        "Mỗi đêm soi đúng một người và nhận đúng một chữ: Sói hay không Sói. Biết thì dễ, nói ra mà còn sống mới khó.",
     },
     [RoleId.Doctor]: {
       name: "Bác Sĩ",
       description:
-        "Mỗi đêm cứu một người khỏi nanh Sói; được tự cứu mình nhưng không được cứu lại người đã cứu đêm trước.",
+        "Mỗi đêm che chắn cho một người, được tự cứu mình, nhưng đêm qua cứu ai thì đêm nay phải đổi — cấm có bệnh nhân ruột.",
     },
     [RoleId.Witch]: {
       name: "Phù Thủy",
       description:
-        "Có một bình cứu và một bình độc, mỗi bình một lần cả ván, và một đêm chỉ được dùng một bình.",
+        "Một bình cứu, một bình độc, mỗi bình đúng một lần cả ván và một đêm chỉ được rút một bình. Xài sớm thì tiếc, để dành thì ôm nguyên xuống mồ.",
     },
     [RoleId.Hunter]: {
       name: "Thợ Săn",
       description:
-        "Lúc chết được bắn một phát cuối, kéo theo một người bất kỳ xuống mồ.",
+        "Chết cũng không chịu đi một mình — lúc ngã xuống còn kịp bóp cò lôi theo một người bất kỳ.",
     },
     [RoleId.Cupid]: {
       name: "Thần Tình Yêu",
       description:
-        "Đêm đầu se duyên hai người; một người chết thì người kia chết theo, và cặp đôi thành một phe riêng thắng cùng nhau.",
+        "Đêm đầu se duyên hai người. Một đứa chết thì đứa kia đau lòng chết theo, kể cả khi hai đứa khác phe. Còn lại đúng hai đứa thì cùng nhau thắng cả làng.",
     },
     [RoleId.Fool]: {
       name: "Thằng Ngốc",
       description:
-        "Ban ngày cố chọc cho cả làng treo cổ mình — bị treo cổ là thắng một mình.",
+        "Cả ván chỉ có một việc: chọc cho cả làng tức đến mức treo cổ mình. Bị treo là thắng một mình, còn cả làng ngồi ngẩn mặt ra nhìn nhau.",
     },
   },
 };
@@ -167,19 +176,22 @@ const english: Dictionary = {
       "You are {count} card(s) short — everyone needs exactly one card.",
     tooManyRoles:
       "You have {count} card(s) too many — drop some to match the table.",
+    increaseRole: "Add one",
+    decreaseRole: "Remove one",
+    villagerAuto: "Fills the remaining seats automatically",
   },
   reveal: {
     passTo: "Pass the phone to {name}",
     holdInstruction: "Press and hold to see your card",
     yourCard: "This is your card",
-    passItOn: "Got it? Let go and pass the phone on",
+    passItOn: "Next player →",
     lastRevealPrompt:
       "You are the last one — tap continue and night one begins.",
   },
   night: {
     title: "Night {number}",
     passTo: "Pass the phone to {name}",
-    tapToContinue: "Tap the screen once the phone is in your hands",
+    confirmIdentity: "I am {name}",
     decoyTitle: "Nothing to do tonight",
     decoyBody: "Wait a moment, look busy, then pass to {name}.",
     wolvesPrompt:
@@ -232,11 +244,17 @@ const english: Dictionary = {
     },
     playAgain: "Play again",
   },
+  menu: {
+    open: "Options",
+    undo: "Undo last step",
+    newGame: "New game",
+    confirmReset: "Discard this game and start over?",
+  },
   roles: {
     [RoleId.Werewolf]: {
       name: "Werewolf",
       description:
-        "Wakes with the pack every night to pick one victim; the most-voted player dies and a tie spares everyone.",
+        "Meets the pack every night to pick dinner. Most votes gets eaten; if the pack can't agree, the whole village gets a lie-in.",
     },
     [RoleId.Villager]: {
       name: "Villager",
@@ -246,32 +264,32 @@ const english: Dictionary = {
     [RoleId.Seer]: {
       name: "Seer",
       description:
-        "Checks one player each night and learns only whether they are a werewolf, never their exact role.",
+        "Checks one person a night and gets exactly one word back: wolf, or not. Knowing is the easy part — surviving after you say it out loud is not.",
     },
     [RoleId.Doctor]: {
       name: "Doctor",
       description:
-        "Shields one player from the wolves each night, may pick themselves, but never the same player two nights running.",
+        "Shields one person each night and may shield themselves, but can't pick last night's patient again. No favourites.",
     },
     [RoleId.Witch]: {
       name: "Witch",
       description:
-        "Carries one heal and one poison, each usable once per game, and may use only one of them in a night.",
+        "One healing potion, one poison, each once per game, and never both in the same night. Use them early and regret it, hoard them and take them to the grave.",
     },
     [RoleId.Hunter]: {
       name: "Hunter",
       description:
-        "On dying, fires one last shot and takes another player down with them.",
+        "Refuses to die alone — gets one last shot on the way down and drags somebody with them.",
     },
     [RoleId.Cupid]: {
       name: "Cupid",
       description:
-        "Links two players as lovers on the first night; if one dies the other follows, and the pair is its own side that wins together.",
+        "Ties two players together on the first night. If one dies the other dies of a broken heart, even on opposite sides — and if those two are the last ones standing, they win the whole thing together.",
     },
     [RoleId.Fool]: {
       name: "Fool",
       description:
-        "Spends the day baiting the village into a lynch — get voted out and they win alone.",
+        "Has exactly one job: be insufferable enough that the village lynches them. Get voted out and they win alone, while everyone else stares at each other.",
     },
   },
 };

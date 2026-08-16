@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
@@ -22,14 +22,11 @@ import {
 } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
 
-/** How long the phone must be held before a turn opens, so a pass in mid-air never opens one. */
-const HOLD_DURATION_MS = 600;
-
 /** Every string the night screen can render, handed down from the server component. */
 export interface NightCopy {
   title: string;
   passTo: string;
-  tapToContinue: string;
+  confirmIdentity: string;
   decoyTitle: string;
   decoyBody: string;
   prompts: Record<NightAction, string>;
@@ -486,35 +483,18 @@ function NightActTurn({
  * The hand-off beat: who should be holding the phone, and the control that opens their turn.
  * @param props.name - The player the phone is being passed to.
  * @param props.copy - Night copy supplied by the server component.
- * @param props.onHoldComplete - Called once the phone has been held still long enough.
+ * @param props.onConfirm - Called once the right player has confirmed they hold the phone.
  * @returns The hand-off screen.
  */
 function NightHandOff({
   name,
   copy,
-  onHoldComplete,
+  onConfirm,
 }: {
   name: string;
   copy: NightCopy;
-  onHoldComplete: () => void;
+  onConfirm: () => void;
 }) {
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  /** Starts the hold; only a finger that stays down opens the turn. */
-  function handleHoldStart() {
-    holdTimerRef.current = setTimeout(onHoldComplete, HOLD_DURATION_MS);
-  }
-
-  /** Aborts a hold that ended early — a lifted or strayed finger means the pass is unfinished. */
-  function handleHoldEnd() {
-    if (holdTimerRef.current === null) {
-      return;
-    }
-
-    clearTimeout(holdTimerRef.current);
-    holdTimerRef.current = null;
-  }
-
   return (
     <section
       className={cn(
@@ -526,17 +506,15 @@ function NightHandOff({
         {fillTemplate(copy.passTo, { name })}
       </p>
 
+      {/* Confirming your own name is the gate: a hold is fiddly with the phone mid-pass. */}
       <Button
         size="lg"
-        onPointerDown={handleHoldStart}
-        onPointerUp={handleHoldEnd}
-        onPointerLeave={handleHoldEnd}
-        onPointerCancel={handleHoldEnd}
+        onClick={onConfirm}
         className={cn(
-          "h-auto min-h-32 w-full whitespace-normal bg-phase px-6 py-8 text-base text-phase-foreground",
+          "h-auto min-h-24 w-full whitespace-normal bg-phase px-6 py-8 font-semibold text-lg text-phase-foreground",
         )}
       >
-        {copy.tapToContinue}
+        {fillTemplate(copy.confirmIdentity, { name })}
       </Button>
     </section>
   );
@@ -653,7 +631,7 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
       <NightHandOff
         name={getPlayerName(state, turn.playerId)}
         copy={copy}
-        onHoldComplete={() => setIsRevealed(true)}
+        onConfirm={() => setIsRevealed(true)}
       />
     );
   }

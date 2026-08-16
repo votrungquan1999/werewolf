@@ -1,11 +1,6 @@
 // @vitest-environment jsdom
 
-import {
-  render,
-  screen,
-  waitForElementToBeRemoved,
-  within,
-} from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameProvider } from "src/components/game/game.state";
 import { Night } from "src/components/night/night";
@@ -17,9 +12,6 @@ import { getDictionary } from "src/lib/i18n/dictionaries";
 import { beforeEach, describe, expect, it } from "vitest";
 
 const dictionary = getDictionary(Locale.En);
-
-/** Comfortably longer than the screen's hold, so the reveal always lands inside it. */
-const HOLD_TIMEOUT_MS = 3000;
 
 /** One seat at the table: the player's name and the card they hold. */
 type Seat = [name: string, role: RoleId];
@@ -61,19 +53,15 @@ function renderNight(): void {
 }
 
 /**
- * Presses the hand-off control and keeps holding it until the turn opens.
- * @param user - The user-event session driving the pointer.
+ * Confirms the named player is the one now holding the phone, which opens their turn.
+ * @param user - The user-event session driving the clicks.
+ * @param name - The player the phone was passed to.
  */
-async function completeHold(
+async function confirmHandOff(
   user: ReturnType<typeof userEvent.setup>,
+  name: string,
 ): Promise<void> {
-  const control = screen.getByRole("button", {
-    name: "Tap the screen once the phone is in your hands",
-  });
-
-  await user.pointer({ keys: "[MouseLeft>]", target: control });
-  await waitForElementToBeRemoved(control, { timeout: HOLD_TIMEOUT_MS });
-  await user.pointer({ keys: "[/MouseLeft]" });
+  await user.click(screen.getByRole("button", { name: `I am ${name}` }));
 }
 
 describe("Night", () => {
@@ -81,7 +69,7 @@ describe("Night", () => {
     window.localStorage.clear();
   });
 
-  it("keeps the turn hidden until the hold completes", async () => {
+  it("keeps the turn hidden until the right player confirms their name", async () => {
     parkNightGame([
       ["Alice", RoleId.Seer],
       ["Bob", RoleId.Villager],
@@ -96,23 +84,11 @@ describe("Night", () => {
       ),
     ).not.toBeInTheDocument();
 
-    const control = screen.getByRole("button", {
-      name: "Tap the screen once the phone is in your hands",
-    });
-    await user.pointer({ keys: "[MouseLeft>]", target: control });
-
-    // The gesture has started but not finished — the phone may still be in mid-air.
-    expect(
-      screen.queryByText(
-        "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
-      ),
-    ).not.toBeInTheDocument();
+    await confirmHandOff(user, "Alice");
 
     expect(
       await screen.findByText(
         "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
-        undefined,
-        { timeout: HOLD_TIMEOUT_MS },
       ),
     ).toBeInTheDocument();
   });
@@ -125,7 +101,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await completeHold(user);
+    await confirmHandOff(user, "Alice");
 
     expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
     expect(
@@ -142,7 +118,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await completeHold(user);
+    await confirmHandOff(user, "Alice");
 
     expect(screen.getByText("Your pack")).toBeInTheDocument();
 

@@ -10,9 +10,14 @@ import { createReducerContext } from "src/contexts/createReducerContext";
 import {
   addPlayerAction,
   dealRolesAction,
-  gameReducer,
   removePlayerAction,
 } from "src/lib/game/game";
+import {
+  canUndo,
+  createHistory,
+  HistoryActionType,
+  historyReducer,
+} from "src/lib/game/history";
 import { loadGame, saveGame } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
 import {
@@ -23,7 +28,7 @@ import {
 } from "src/lib/game/types";
 
 const [GameProviderBase, useRawGameState, useRawGameDispatch] =
-  createReducerContext(gameReducer, createInitialState());
+  createReducerContext(historyReducer, createHistory(createInitialState()));
 
 /** Never fires — the store is constant per environment, we only need server vs client. */
 function subscribeToNothing(): () => void {
@@ -36,10 +41,10 @@ function subscribeToNothing(): () => void {
 function GamePersistence(): null {
   const state = useRawGameState();
 
-  // Syncing React state to an external store is the one sanctioned use of an effect.
+  // Only the live game is parked; undo history is deliberately not persisted.
   useEffect(() => {
-    saveGame(state);
-  }, [state]);
+    saveGame(state.present);
+  }, [state.present]);
 
   return null;
 }
@@ -65,7 +70,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <GameProviderBase {...(restored ?? {})}>
+    <GameProviderBase {...(restored === null ? {} : { present: restored })}>
       <GamePersistence />
       {children}
     </GameProviderBase>
@@ -77,7 +82,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
  * @returns The whole game state
  */
 export function useGame(): GameState {
-  return useRawGameState();
+  return useRawGameState().present;
 }
 
 /**
@@ -117,5 +122,14 @@ export function useGameActions() {
     fireHunterShot: (targetId: string) =>
       dispatch({ type: ActionType.FireHunterShot, targetId }),
     resetGame: () => dispatch({ type: ActionType.ResetGame }),
+    undo: () => dispatch({ type: HistoryActionType.Undo }),
   };
+}
+
+/**
+ * Whether there is a step to take back, so the menu can disable Back when there isn't.
+ * @returns True once at least one action has been taken
+ */
+export function useCanUndo(): boolean {
+  return canUndo(useRawGameState());
 }

@@ -14,7 +14,7 @@ function buildNightCopy(dict: Dictionary): NightCopy {
   return {
     title: dict.night.title,
     passTo: dict.night.passTo,
-    tapToContinue: dict.night.tapToContinue,
+    confirmIdentity: dict.night.confirmIdentity,
     decoyTitle: dict.night.decoyTitle,
     decoyBody: dict.night.decoyBody,
     prompts: {

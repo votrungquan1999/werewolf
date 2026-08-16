@@ -36,7 +36,7 @@ function renderRevealScreen(): void {
   );
 }
 
-test("shows the role only while the hold control is pressed", async () => {
+test("keeps the card hidden until the control has been held for a moment", async () => {
   const user = userEvent.setup();
   renderRevealScreen();
 
@@ -47,7 +47,12 @@ test("shows the role only while the hold control is pressed", async () => {
   });
   await user.pointer({ keys: "[MouseLeft>]", target: holdControl });
 
-  expect(screen.getByText("Seer")).toBeInTheDocument();
+  // A brush of the thumb must not flash the card at the rest of the table.
+  expect(screen.queryByText("Seer")).not.toBeInTheDocument();
+
+  expect(
+    await screen.findByText("Seer", undefined, { timeout: 4000 }),
+  ).toBeInTheDocument();
 
   await user.pointer({ keys: "[/MouseLeft]" });
 

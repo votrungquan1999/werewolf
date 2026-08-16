@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
 import {
@@ -15,8 +21,11 @@ import { Phase } from "src/lib/game/types";
 import type { RolesDictionary } from "src/lib/i18n/types";
 import { cn } from "src/lib/utils";
 
-/** Whether a finger is pressing the hold control right now. */
+/** Whether the card is currently uncovered. */
 const HoldContext = createContext(false);
+
+/** How long the card must be held before it shows — long enough that a glance cannot catch it. */
+const REVEAL_HOLD_MS = 1000;
 
 /** A wrapper that only lays out and gates whatever the server composed. */
 interface RevealChildrenProps {
@@ -113,23 +122,30 @@ export function RevealLastPrompt({ children }: RevealChildrenProps) {
  */
 export function RevealHoldControl({ children }: RevealChildrenProps) {
   const [isHeld, setIsHeld] = useState(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * Uncovers the card for as long as the finger stays down.
-   * @returns Nothing; the card becomes visible.
+   * Starts the hold. The card only appears once the finger has stayed down,
+   * so a brush of the thumb cannot flash it at the rest of the table.
+   * @returns Nothing; the card appears after the hold completes.
    */
   function showCard(): void {
-    setIsHeld(true);
+    holdTimerRef.current = setTimeout(() => setIsHeld(true), REVEAL_HOLD_MS);
   }
 
   /**
-   * Covers the card again.
+   * Covers the card again and abandons any hold still in progress.
    *
    * Wired to up, leave and cancel alike: a finger dragged off the control must not
    * leave a card face-up for the rest of the table to read.
    * @returns Nothing; the card is hidden.
    */
   function hideCard(): void {
+    if (holdTimerRef.current !== null) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
     setIsHeld(false);
   }
 

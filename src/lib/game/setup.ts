@@ -78,10 +78,10 @@ export function addPlayer(
   id: string,
   name: string,
 ): GameState {
-  return {
+  return withAutoVillagers({
     ...state,
     players: [...state.players, { id, name, role: null, isAlive: true }],
-  };
+  });
 }
 
 /**
@@ -91,28 +91,50 @@ export function addPlayer(
  * @returns A new state without that player.
  */
 export function removePlayer(state: GameState, playerId: string): GameState {
-  return {
+  return withAutoVillagers({
     ...state,
     players: state.players.filter((player) => player.id !== playerId),
+  });
+}
+
+/**
+ * Refills the villager count so the deck always covers exactly the table.
+ *
+ * Villagers are the filler role, so the host picks the specials and never does
+ * the arithmetic — which is why the villager count has no control of its own.
+ * @param state - The state whose composition should be rebalanced.
+ * @returns A new state with the villager count derived from the rest.
+ */
+function withAutoVillagers(state: GameState): GameState {
+  const specialists = Object.entries(state.roleCounts)
+    .filter(([role]) => role !== RoleId.Villager)
+    .reduce((total, [, count]) => total + count, 0);
+
+  return {
+    ...state,
+    roleCounts: {
+      ...state.roleCounts,
+      [RoleId.Villager]: Math.max(0, state.players.length - specialists),
+    },
   };
 }
 
 /**
- * Sets how many copies of one role will be dealt.
+ * Sets how many of a role are in play, then refills the villagers around it.
  * @param state - The current game state; never mutated.
- * @param role - The role whose count is being set.
- * @param count - How many copies of that role to deal.
- * @returns A new state with the updated composition.
+ * @param role - The role being adjusted.
+ * @param count - How many of that role to deal.
+ * @returns A new state with the deck rebalanced.
  */
 export function setRoleCount(
   state: GameState,
   role: RoleId,
   count: number,
 ): GameState {
-  return {
+  return withAutoVillagers({
     ...state,
     roleCounts: { ...state.roleCounts, [role]: count },
-  };
+  });
 }
 
 /**
