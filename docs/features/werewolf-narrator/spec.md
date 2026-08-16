@@ -58,7 +58,7 @@ These vary between tables; these are the ones implemented.
 - `setup.ts` — player list, role composition, the deal, the reveal cursor, and `resetGame` (which carries the table and the deck into the next game). **Villagers are derived, never chosen**: every change to the table or another role refills the villager count to `players − everyone else`, so the host picks the specials and never does the arithmetic. A short deck is therefore unreachable; only picking more specialists than seats still warns.
 - `history.ts` — undo, as a wrapper reducer holding past states alongside the live one. **One player action must be one dispatch**: `RevealNextPlayer` lays out the night itself and `FinishNightTurn` resolves the night itself, because splitting either into two dispatches left a single undo stranded between them on a phase with nothing to render.
 - `night.ts` — circulation order, per-turn routing, wolf tally, night intents
-- `deaths.ts` — `applyDeaths`, shared by night resolution and the day vote; heartbreak cascade; hunter flag
+- `deaths.ts` — `applyDeaths`, shared by night resolution and the day vote; heartbreak cascade (deferred to the next dawn when the death was a daytime lynch); the hunter's pre-committed shot
 - `resolve-night.ts` — dawn resolution
 - `day.ts` — open vote, tally, revote
 - `win.ts` — win conditions
@@ -72,7 +72,7 @@ These vary between tables; these are the ones implemented.
 
 **Ids and seeds are minted in action creators, never in the reducer**, so the reducer stays pure.
 
-**A dying hunter holds the game open.** `settleAfterDeaths` refuses to name a winner while `pendingHunterId` is set, because the hunter's shot can still flip the result.
+**The hunter's shot resolves inside `applyDeaths`, never as a prompt.** It was once an interactive panel that held the game open via `pendingHunterId` until the hunter picked; that state, `fireHunterShot` and `canHunterShoot` are all gone. Because the target is committed a night in advance, the shot is just another cascading death — so a win can be declared the moment the dust settles, with nothing left pending.
 
 ### Phase cycle
 
@@ -112,12 +112,12 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 6. The wolves recognise each other, see the running tally, and the majority pick dies
 7. The seer learns whether a player is a wolf
 8. The doctor protects a player and cannot repeat last night's target
-9. The village wakes to learn who died; a doctor-protected player survives
-10. The village votes openly; a tie forces a revote
+9. The village wakes, taps to learn who died — never how — and a doctor-protected player survives
+10. The village passes the phone round to vote, anyone may abstain, and a tie forces a revote
 11. The witch saves the night's victim or poisons someone
-12. The hunter takes one player with them when they die
+12. The hunter names their quarry in advance, at night, and takes them along whenever they die
 13. The game announces the winner the moment one side has won
-14. Cupid links two lovers; a lover dying breaks the other's heart; the pair can win alone
+14. Cupid links two lovers; a lover dying breaks the other's heart at the next dawn; the pair can win alone
 15. The fool wins alone if the village votes them out
 16. The host resumes an interrupted game after the phone locks or refreshes
 17. Anyone can take back a mis-tap, or start a fresh game after confirming
@@ -128,11 +128,12 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 - **The page is blank until hydration.** `GameProvider` cannot read `localStorage` on the server, so it renders nothing until the client takes over — a brief flash on cold load. Fixable by rendering the setup screen server-side and gating only the *resume* on the client.
 - **Not a static export.** `next.config.ts` uses `redirects()` for `/` → `/vi`, which `output: "export"` does not support, so this deploys as a Next server app.
 - **The engine does not validate actors.** It never checks that a doctor's target passes `canDoctorProtect` or that the actor's role matches the action — gating is the UI's job.
+- **A day where everybody abstains shows the wrong words.** With no votes recorded, `getDayVoteOutcome` returns no eliminated player and no tied players, so the result screen falls back to the tie copy ("It's a tie — revote between the tied players") before correctly moving on to nightfall. It neither crashes nor loops; the sentence is simply wrong for that case, and fixing it needs its own line of copy.
 - **Edge cases are untested by design.** The brief was happy-path-only to reach a playable release.
 
 ## Testing
 
-`npm test` — 71 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
+`npm test` — 77 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
 
 Test style is `describe("Feature: …") → describe("Scenario: …") → it("should …")` with literal expected values. `game.test.ts` includes a full-game integration test that plays two complete night-day cycles through the reducer to a village win.
 
