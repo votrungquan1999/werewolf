@@ -41,7 +41,7 @@ function createDayState(overrides: Partial<GameState> = {}): GameState {
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },

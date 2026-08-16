@@ -25,11 +25,7 @@ export function SetupScreen({ children }: { children: ReactNode }) {
 
   return (
     <main
-      className={cn(
-        "gap-6 p-4 pb-10",
-        "grid content-start",
-        "sm:mx-auto sm:w-full sm:max-w-md",
-      )}
+      className={cn("gap-6 p-4 pb-10", "grid w-full", "sm:mx-auto sm:max-w-md")}
     >
       {children}
     </main>

@@ -1,6 +1,13 @@
+import { submitNightChoice } from "src/lib/game/night";
 import { resolveNight } from "src/lib/game/resolve-night";
 import type { GameState, Player } from "src/lib/game/types";
-import { DeathCause, Phase, RoleId } from "src/lib/game/types";
+import {
+  DeathCause,
+  NightAction,
+  Phase,
+  PotionKind,
+  RoleId,
+} from "src/lib/game/types";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -43,7 +50,7 @@ function createState(
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },
@@ -80,7 +87,7 @@ describe("Feature: Dawn resolution", () => {
             wolfVotes: { w1: "v1" },
             protectedId: null,
             inspectedId: null,
-            healTargetId: null,
+            healsVictim: false,
             poisonTargetId: null,
             loverIds: { firstId: "c1", secondId: "v2" },
           },
@@ -120,7 +127,7 @@ describe("Feature: Dawn resolution", () => {
             wolfVotes: { w1: "v1" },
             protectedId: "v1",
             inspectedId: null,
-            healTargetId: null,
+            healsVictim: false,
             poisonTargetId: null,
             loverIds: null,
           },
@@ -152,7 +159,7 @@ describe("Feature: Dawn resolution", () => {
           wolfVotes: { w1: "v1" },
           protectedId: null,
           inspectedId: null,
-          healTargetId: "v1",
+          healsVictim: true,
           poisonTargetId: null,
           loverIds: null,
         },
@@ -172,7 +179,7 @@ describe("Feature: Dawn resolution", () => {
           wolfVotes: { w1: "v1" },
           protectedId: null,
           inspectedId: null,
-          healTargetId: null,
+          healsVictim: false,
           poisonTargetId: "v2",
           loverIds: null,
         },
@@ -189,6 +196,62 @@ describe("Feature: Dawn resolution", () => {
       ).toBe(false);
       expect(poisonedDawn.witchPoisonAvailable).toBe(false);
       expect(poisonedDawn.witchHealAvailable).toBe(true);
+    });
+  });
+
+  describe("Scenario: The witch heals before the pack has settled on a victim", () => {
+    it("should rescue whoever the wolves finally choose, not whoever was ahead when she acted", () => {
+      const night = createState([
+        createPlayer("t1", RoleId.Witch),
+        createPlayer("w1", RoleId.Werewolf),
+        createPlayer("w2", RoleId.Werewolf),
+        createPlayer("v1", RoleId.Villager),
+        createPlayer("v2", RoleId.Villager),
+      ]);
+
+      // The pack is mid-vote when the phone reaches the witch: v1 is ahead on one vote.
+      const firstVote = submitNightChoice(
+        night,
+        "w1",
+        NightAction.WolfVote,
+        "v1",
+        null,
+        null,
+      );
+      const healed = submitNightChoice(
+        firstVote,
+        "t1",
+        NightAction.Potion,
+        null,
+        null,
+        PotionKind.Heal,
+      );
+
+      // Both wolves then settle on v2 instead.
+      const swung = submitNightChoice(
+        healed,
+        "w1",
+        NightAction.WolfVote,
+        "v2",
+        null,
+        null,
+      );
+      const settled = submitNightChoice(
+        swung,
+        "w2",
+        NightAction.WolfVote,
+        "v2",
+        null,
+        null,
+      );
+
+      const dawn = resolveNight(settled);
+
+      expect(dawn.dawnDeaths).toEqual([]);
+      expect(dawn.players.find((player) => player.id === "v2")?.isAlive).toBe(
+        true,
+      );
+      expect(dawn.witchHealAvailable).toBe(false);
     });
   });
 });

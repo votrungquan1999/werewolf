@@ -23,6 +23,7 @@ export function Day({ dict }: DayProps) {
       votedOut={dict.day.votedOut}
       tieTitle={dict.day.tieTitle}
       confirmLabel={dict.common.confirm}
+      hunterShotTitle={dict.day.hunterShot}
       nightfallLabel={dict.common.continue}
     />
   );

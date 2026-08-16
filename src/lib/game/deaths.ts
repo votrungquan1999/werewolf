@@ -77,6 +77,16 @@ export function applyDeaths(state: GameState, deaths: Death[]): GameState {
 }
 
 /**
+ * Checks whether the dying hunter may take this player with them.
+ * @param state - The current game state.
+ * @param targetId - The player they are aiming at.
+ * @returns False for the hunter's own name; they are already dying.
+ */
+export function canHunterShoot(state: GameState, targetId: string): boolean {
+  return targetId !== state.pendingHunterId;
+}
+
+/**
  * Fires the pending hunter's parting shot.
  * @param state - The current game state; never mutated.
  * @param targetId - The player the hunter takes with them.

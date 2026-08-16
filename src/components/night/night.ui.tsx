@@ -1,13 +1,13 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import { Toggle } from "src/components/ui/toggle";
 import {
   canDoctorProtect,
-  canWolfTarget,
+  canNightTarget,
   getCurrentNightTurn,
   getPackMemberIds,
   getProvisionalVictimId,
@@ -21,8 +21,18 @@ import {
   Phase,
   type Player,
   PotionKind,
+  type RoleId,
 } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
+
+/**
+ * How long the hand-off button must be held before a turn opens.
+ *
+ * Comfortably past the ~500 ms at which iOS and Android fire their own long-press,
+ * so the gesture cannot be mistaken for an accidental one, but short enough to
+ * repeat once per player per night without becoming a chore.
+ */
+const HOLD_TO_CONFIRM_MS = 1000;
 
 /** Which step of the witch's turn is on screen. */
 enum WitchStage {
@@ -45,9 +55,14 @@ export interface NightCopy {
   seerIsNotWerewolf: string;
   witchVictim: string;
   witchHealChoice: string;
+  witchHealUnknownChoice: string;
   witchPoisonChoice: string;
   witchNoPotionChoice: string;
   witchPoisonConfirm: string;
+  holdToOpen: string;
+  /** Carries `{role}`; filled with a name from `roleNames`. */
+  yourRole: string;
+  roleNames: Record<RoleId, string>;
   continueLabel: string;
   confirmLabel: string;
   declineLabel: string;
@@ -104,6 +119,23 @@ function getPlayerName(state: GameState, playerId: string): string {
  */
 function getLivingPlayers(state: GameState): Player[] {
   return state.players.filter((player) => player.isAlive);
+}
+
+/**
+ * Lists the players this actor is barred from choosing for this action.
+ * @param state - The current game state.
+ * @param action - The action being taken tonight.
+ * @param actorId - The player holding the phone.
+ * @returns The ids to disable, which today is only ever their own.
+ */
+function getSelfTargetBlockedIds(
+  state: GameState,
+  action: NightAction,
+  actorId: string,
+): string[] {
+  return getLivingPlayers(state)
+    .filter((player) => !canNightTarget(action, actorId, player.id))
+    .map((player) => player.id);
 }
 
 /**
@@ -215,7 +247,9 @@ function NightWolfTurn({ actorId, copy, onDone }: ActTurnProps) {
 
   const livingPlayers = getLivingPlayers(state);
   const disabledIds = livingPlayers
-    .filter((player) => !canWolfTarget(actorId, player.id))
+    .filter(
+      (player) => !canNightTarget(NightAction.WolfVote, actorId, player.id),
+    )
     .map((player) => player.id);
 
   const packEntries = getPackMemberIds(state).map((playerId) => ({
@@ -272,7 +306,11 @@ function NightInspectTurn({ actorId, copy, onDone }: ActTurnProps) {
     return (
       <NightChoiceList
         players={getLivingPlayers(state)}
-        disabledIds={[]}
+        disabledIds={getSelfTargetBlockedIds(
+          state,
+          NightAction.Inspect,
+          actorId,
+        )}
         onChoose={inspect}
       />
     );
@@ -350,15 +388,14 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
 
   const victimId = getProvisionalVictimId(state);
 
-  /** Rescues tonight's victim and hands the phone straight on. */
+  /**
+   * Spends the heal on tonight's victim, whoever that turns out to be.
+   *
+   * No target is sent: the pack may still be voting, so dawn binds the rescue to
+   * their final choice rather than to whoever happens to be ahead right now.
+   */
   function healVictim() {
-    submitNightChoice(
-      actorId,
-      NightAction.Potion,
-      victimId,
-      null,
-      PotionKind.Heal,
-    );
+    submitNightChoice(actorId, NightAction.Potion, null, null, PotionKind.Heal);
     onDone();
   }
 
@@ -391,8 +428,9 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
           </p>
         )}
 
-        {/* No victim tonight means nobody to rescue, so the heal is not on offer. */}
-        {victimId === null || !state.witchHealAvailable ? null : (
+        {/* Always on offer while she still holds the bottle. She may be reading this
+            before the wolves have voted, in which case it names no one yet. */}
+        {!state.witchHealAvailable ? null : (
           <Button
             size="lg"
             onClick={healVictim}
@@ -400,9 +438,11 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
               "h-auto min-h-16 w-full whitespace-normal bg-phase text-base text-phase-foreground",
             )}
           >
-            {fillTemplate(copy.witchHealChoice, {
-              name: getPlayerName(state, victimId),
-            })}
+            {victimId === null
+              ? copy.witchHealUnknownChoice
+              : fillTemplate(copy.witchHealChoice, {
+                  name: getPlayerName(state, victimId),
+                })}
           </Button>
         )}
 
@@ -436,7 +476,11 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
       <>
         <NightChoiceList
           players={getLivingPlayers(state)}
-          disabledIds={[]}
+          disabledIds={getSelfTargetBlockedIds(
+            state,
+            NightAction.Potion,
+            actorId,
+          )}
           onChoose={(targetId) => {
             setPoisonTargetId(targetId);
             setStage(WitchStage.ConfirmPoison);
@@ -591,9 +635,12 @@ function NightActTurn({
 
 /**
  * The hand-off beat: who should be holding the phone, and the control that opens their turn.
+ *
+ * The control is a circle, not a bar, because the shape is the instruction — a round
+ * target that fills as you hold reads as "hold me" where a rectangle reads as "tap me".
  * @param props.name - The player the phone is being passed to.
  * @param props.copy - Night copy supplied by the server component.
- * @param props.onConfirm - Called once the right player has confirmed they hold the phone.
+ * @param props.onConfirm - Called once the right player has held long enough.
  * @returns The hand-off screen.
  */
 function NightHandOff({
@@ -605,27 +652,73 @@ function NightHandOff({
   copy: NightCopy;
   onConfirm: () => void;
 }) {
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Starts the hold; the turn only opens once the finger has stayed down. */
+  function startHold(): void {
+    setIsHolding(true);
+    holdTimerRef.current = setTimeout(onConfirm, HOLD_TO_CONFIRM_MS);
+  }
+
+  /**
+   * Abandons a hold in progress with no side effect.
+   *
+   * Wired to up, leave and cancel alike — a finger sliding off the control while the
+   * phone changes hands must not open somebody else's turn.
+   */
+  function cancelHold(): void {
+    if (holdTimerRef.current !== null) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
+    setIsHolding(false);
+  }
+
+  /**
+   * Opens the turn outright for anyone who cannot perform a timed hold.
+   * @param event - The activation, whose `detail` of 0 marks a keyboard press.
+   */
+  function handleClick(event: { detail: number }): void {
+    if (event.detail === 0) {
+      onConfirm();
+    }
+  }
+
   return (
-    <section
-      className={cn(
-        "gap-8 text-center",
-        "grid content-center justify-items-center",
-      )}
-    >
+    <section className={cn("gap-8 text-center", "grid justify-items-center")}>
       <p className="font-medium text-2xl">
         {fillTemplate(copy.passTo, { name })}
       </p>
 
-      {/* Confirming your own name is the gate: a hold is fiddly with the phone mid-pass. */}
-      <Button
-        size="lg"
-        onClick={onConfirm}
+      <button
+        type="button"
+        onPointerDown={startHold}
+        onPointerUp={cancelHold}
+        onPointerLeave={cancelHold}
+        onPointerCancel={cancelHold}
+        onClick={handleClick}
         className={cn(
-          "h-auto min-h-24 w-full whitespace-normal bg-phase px-6 py-8 font-semibold text-lg text-phase-foreground",
+          "touch-manipulation rounded-full border-2 border-phase-border bg-phase-muted text-phase-foreground",
+          "pile size-52 place-items-center",
         )}
       >
-        {fillTemplate(copy.confirmIdentity, { name })}
-      </Button>
+        {/* Purely the progress read-out; the button's own label carries the meaning. */}
+        <span
+          aria-hidden="true"
+          data-holding={isHolding ? "" : undefined}
+          className={cn(
+            "rounded-full bg-phase",
+            "size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
+          )}
+        />
+        <span className={cn("px-8 font-semibold text-xl text-balance")}>
+          {fillTemplate(copy.confirmIdentity, { name })}
+        </span>
+      </button>
+
+      <p className={cn("text-base text-muted-foreground")}>{copy.holdToOpen}</p>
     </section>
   );
 }
@@ -687,9 +780,25 @@ function NightTurnBody({
   onDone: () => void;
 }) {
   const state = useGame();
+  const role = state.players.find(
+    (player) => player.id === turn.playerId,
+  )?.role;
 
   return (
     <section className={cn("gap-6 pb-6", "grid content-start")}>
+      {/* Their own card, restated every turn — nobody should have to remember it
+          across a whole game to know what the prompt below is asking of them. */}
+      {role === undefined || role === null ? null : (
+        <p
+          className={cn(
+            "rounded-lg border border-phase-border px-4 py-2 text-base text-phase-foreground/80",
+            "grid justify-items-center",
+          )}
+        >
+          {fillTemplate(copy.yourRole, { role: copy.roleNames[role] })}
+        </p>
+      )}
+
       {turn.action === null ? (
         <NightDecoyTurn
           nextName={getNextPlayerName(state)}
@@ -719,22 +828,8 @@ function NightTurnBody({
  */
 function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
   const state = useGame();
-  const { advanceNightCursor, resolveNight } = useGameActions();
+  const { finishNightTurn } = useGameActions();
   const [isRevealed, setIsRevealed] = useState(false);
-
-  /** Passes the phone on, and resolves the night once the last seat is done. */
-  function finishTurn() {
-    advanceNightCursor();
-
-    // The engine reports no turn past the last seat — that is the night being over.
-    const nextTurn = getCurrentNightTurn({
-      ...state,
-      nightCursor: state.nightCursor + 1,
-    });
-    if (nextTurn === null) {
-      resolveNight();
-    }
-  }
 
   if (!isRevealed) {
     return (
@@ -746,7 +841,7 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
     );
   }
 
-  return <NightTurnBody turn={turn} copy={copy} onDone={finishTurn} />;
+  return <NightTurnBody turn={turn} copy={copy} onDone={finishNightTurn} />;
 }
 
 /**
@@ -767,7 +862,7 @@ export function NightScreen({ copy }: { copy: NightCopy }) {
   }
 
   return (
-    <main className={cn("min-h-full p-6", "grid grid-rows-[auto_1fr] gap-6")}>
+    <main className={cn("w-full p-6", "grid gap-6")}>
       <h1 className="font-semibold text-xl tracking-tight">
         {fillTemplate(copy.title, { number: String(state.nightNumber) })}
       </h1>

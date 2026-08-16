@@ -125,8 +125,14 @@ export interface NightIntents {
   protectedId: string | null;
   /** Seer's target; the answer is shown immediately and does not affect dawn. */
   inspectedId: string | null;
-  /** Witch's heal, only ever the night's wolf victim. */
-  healTargetId: string | null;
+  /**
+   * Whether the witch spent her heal on tonight's wolf victim.
+   *
+   * A flag rather than an id on purpose: the phone reaches her in seating order, so
+   * she may act while the pack is still voting. Naming a target there would freeze
+   * whoever was ahead at that moment, and dawn would heal the wrong player.
+   */
+  healsVictim: boolean;
   /** Witch's poison target. */
   poisonTargetId: string | null;
   /** Cupid's pair, first night only. */
@@ -174,6 +180,7 @@ export enum ActionType {
   RevealNextPlayer = "reveal-next-player",
   SubmitNightChoice = "submit-night-choice",
   AdvanceNightCursor = "advance-night-cursor",
+  FinishNightTurn = "finish-night-turn",
   ResolveNight = "resolve-night",
   CastDayVote = "cast-day-vote",
   ResolveDayVote = "resolve-day-vote",
@@ -227,6 +234,10 @@ export interface AdvanceNightCursorAction {
   type: ActionType.AdvanceNightCursor;
 }
 
+export interface FinishNightTurnAction {
+  type: ActionType.FinishNightTurn;
+}
+
 export interface ResolveNightAction {
   type: ActionType.ResolveNight;
 }
@@ -266,6 +277,7 @@ export type GameAction =
   | RevealNextPlayerAction
   | SubmitNightChoiceAction
   | AdvanceNightCursorAction
+  | FinishNightTurnAction
   | ResolveNightAction
   | CastDayVoteAction
   | ResolveDayVoteAction

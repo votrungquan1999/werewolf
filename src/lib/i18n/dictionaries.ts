@@ -45,6 +45,8 @@ const vietnamese: Dictionary = {
     title: "Đêm {number}",
     passTo: "Đưa máy cho {name}",
     confirmIdentity: "Tôi là {name}",
+    holdToOpen: "Nhấn giữ nút để mở lượt của bạn",
+    yourRole: "Bạn là {role}",
     decoyTitle: "Đêm nay bạn không phải làm gì",
     decoyBody:
       "Chờ một chút, giả vờ bấm bấm cho giống người ta, rồi đưa máy cho {name}.",
@@ -57,6 +59,7 @@ const vietnamese: Dictionary = {
     witchPrompt:
       "Phù Thủy, cứu nạn nhân đêm nay hoặc đầu độc một người — một đêm chỉ được một trong hai. Mỗi bình dùng một lần cả ván.",
     witchHealChoice: "Cứu {name}",
+    witchHealUnknownChoice: "Cứu nạn nhân của Sói đêm nay",
     witchPoisonChoice: "Đầu độc một người",
     witchNoPotionChoice: "Đêm nay không dùng bình nào",
     witchPoisonConfirm: "Đầu độc {name}? Sáng mai họ chết.",
@@ -89,6 +92,7 @@ const vietnamese: Dictionary = {
     votedOut: "Cả làng đã treo cổ {name}.",
     tieTitle: "Hòa phiếu — bỏ phiếu lại giữa những người bằng phiếu nhau.",
     revoteTitle: "Bỏ phiếu lại",
+    hunterShot: "{name} là Thợ Săn — trước khi tắt thở còn kịp bắn một người.",
   },
   gameOver: {
     headlines: {
@@ -105,48 +109,50 @@ const vietnamese: Dictionary = {
     open: "Tùy chọn",
     undo: "Lùi lại một bước",
     newGame: "Ván mới",
-    confirmReset: "Bỏ ván đang chơi và bắt đầu lại từ đầu?",
+    confirmReset:
+      "Bỏ ván đang chơi? Danh sách người chơi và số lượng vai vẫn được giữ lại.",
+    close: "Đóng",
   },
   roles: {
     [RoleId.Werewolf]: {
       name: "Ma Sói",
       description:
-        'Đêm nào cũng họp bầy chọn người để "ăn"; ai bị nhiều phiếu nhất thì đi, còn bầy cãi nhau hòa phiếu thì cả làng được ngủ yên.',
+        "Đêm mở mắt là thấy mặt đồng bọn và thấy luôn phiếu của cả bầy chạy từng nhịp. Ai nhiều phiếu nhất thì đi, hòa phiếu thì cả bầy nhịn đói, và đừng hòng bỏ phiếu cho chính mình.",
     },
     [RoleId.Villager]: {
       name: "Dân Làng",
       description:
-        "Ngủ suốt đêm, không có phép gì — vũ khí chỉ là cái miệng và lá phiếu ban ngày.",
+        "Không kỹ năng, không nhiệm vụ đêm, không ai báo cho bạn cái gì. Vũ khí duy nhất là cái mồm, nên liệu mà nói cho hay.",
     },
     [RoleId.Seer]: {
       name: "Tiên Tri",
       description:
-        "Mỗi đêm soi đúng một người và nhận đúng một chữ: Sói hay không Sói. Biết thì dễ, nói ra mà còn sống mới khó.",
+        "Một đêm một người, kết quả chỉ có hai loại: sói hoặc không phải sói. Đừng hỏi nó là bảo vệ hay phù thủy — bạn không được biết đâu.",
     },
     [RoleId.Doctor]: {
-      name: "Bác Sĩ",
+      name: "Bảo Vệ",
       description:
-        "Mỗi đêm che chắn cho một người, được tự cứu mình, nhưng đêm qua cứu ai thì đêm nay phải đổi — cấm có bệnh nhân ruột.",
+        "Mỗi đêm chọn một người để đỡ đòn thay, kể cả chính mình. Nhưng cấm chọn trùng một người hai đêm liên tiếp — chung thủy quá là lộ bài.",
     },
     [RoleId.Witch]: {
       name: "Phù Thủy",
       description:
-        "Một bình cứu, một bình độc, mỗi bình đúng một lần cả ván và một đêm chỉ được rút một bình. Xài sớm thì tiếc, để dành thì ôm nguyên xuống mồ.",
+        "Bình cứu kéo nạn nhân của sói về, bình độc tiễn bất kỳ ai bạn thấy ngứa mắt. Xài xong là hết sạch, và một đêm chỉ được chọn một bình thôi.",
     },
     [RoleId.Hunter]: {
       name: "Thợ Săn",
       description:
-        "Chết cũng không chịu đi một mình — lúc ngã xuống còn kịp bóp cò lôi theo một người bất kỳ.",
+        "Chết kiểu gì cũng kịp bóp cò: bị treo cổ, bị sói ăn, hay dính bình độc của phù thủy đều tính. Đi thì đi, nhưng phải lôi theo đúng một người.",
     },
     [RoleId.Cupid]: {
       name: "Thần Tình Yêu",
       description:
-        "Đêm đầu se duyên hai người. Một đứa chết thì đứa kia đau lòng chết theo, kể cả khi hai đứa khác phe. Còn lại đúng hai đứa thì cùng nhau thắng cả làng.",
+        "Chỉ đêm đầu tiên, bạn ghép hai người thành một cặp: một người chết thì người kia chết theo vì đau tim. Nếu cuối ván chỉ còn đúng hai người đó, họ thắng — cả làng lẫn bầy sói cùng thua.",
     },
     [RoleId.Fool]: {
       name: "Thằng Ngốc",
       description:
-        "Cả ván chỉ có một việc: chọc cho cả làng tức đến mức treo cổ mình. Bị treo là thắng một mình, còn cả làng ngồi ngẩn mặt ra nhìn nhau.",
+        "Cả bàn cố tỏ ra vô tội, riêng bạn cố tỏ ra có tội. Chỉ cần làng bỏ phiếu treo cổ bạn là bạn thắng một mình.",
     },
   },
 };
@@ -196,6 +202,8 @@ const english: Dictionary = {
     title: "Night {number}",
     passTo: "Pass the phone to {name}",
     confirmIdentity: "I am {name}",
+    holdToOpen: "Press and hold the button to open your turn",
+    yourRole: "You are the {role}",
     decoyTitle: "Nothing to do tonight",
     decoyBody: "Wait a moment, look busy, then pass to {name}.",
     wolvesPrompt:
@@ -207,6 +215,7 @@ const english: Dictionary = {
     witchPrompt:
       "Witch, heal tonight's victim or poison someone — never both in one night. Each potion works once per game.",
     witchHealChoice: "Save {name}",
+    witchHealUnknownChoice: "Save whoever the wolves take tonight",
     witchPoisonChoice: "Poison someone",
     witchNoPotionChoice: "Use neither potion tonight",
     witchPoisonConfirm: "Poison {name}? They die by morning.",
@@ -239,6 +248,7 @@ const english: Dictionary = {
     votedOut: "The village has voted out {name}.",
     tieTitle: "It's a tie — revote between the tied players.",
     revoteTitle: "Revote",
+    hunterShot: "{name} was the hunter — one last shot before they go.",
   },
   gameOver: {
     headlines: {
@@ -256,48 +266,50 @@ const english: Dictionary = {
     open: "Options",
     undo: "Undo last step",
     newGame: "New game",
-    confirmReset: "Discard this game and start over?",
+    confirmReset:
+      "Discard this game? The player list and role counts are kept.",
+    close: "Close",
   },
   roles: {
     [RoleId.Werewolf]: {
       name: "Werewolf",
       description:
-        "Meets the pack every night to pick dinner. Most votes gets eaten; if the pack can't agree, the whole village gets a lie-in.",
+        "You wake with the pack, see their faces, and watch the vote tally move in real time. Majority eats; a tie means everyone goes hungry, and no, you can't vote for yourself.",
     },
     [RoleId.Villager]: {
       name: "Villager",
       description:
-        "Sleeps through every night with no power — all they have is talk and a vote by day.",
+        "No powers, no night job, no notes from the moderator. You get a mouth and an opinion, and one of those had better be good.",
     },
     [RoleId.Seer]: {
       name: "Seer",
       description:
-        "Checks one person a night and gets exactly one word back: wolf, or not. Knowing is the easy part — surviving after you say it out loud is not.",
+        "Each night you point at one person and get back one word: wolf, or not a wolf. Never their actual role, and never anyone's trust.",
     },
     [RoleId.Doctor]: {
       name: "Doctor",
       description:
-        "Shields one person each night and may shield themselves, but can't pick last night's patient again. No favourites.",
+        "Every night you shield one player, and yes, that can be you. Just not the same name two nights running — even devotion has a cooldown.",
     },
     [RoleId.Witch]: {
       name: "Witch",
       description:
-        "One healing potion, one poison, each once per game, and never both in the same night. Use them early and regret it, hoard them and take them to the grave.",
+        "Two potions for the whole game: one heals the wolves' victim, one kills anyone you like. One per night, never both, and when they're gone they're gone.",
     },
     [RoleId.Hunter]: {
       name: "Hunter",
       description:
-        "Refuses to die alone — gets one last shot on the way down and drags somebody with them.",
+        "When you die you take someone with you: rope, teeth, or the witch's poison, the gun still goes off. Dying is your whole ability, so don't waste it on a villager.",
     },
     [RoleId.Cupid]: {
       name: "Cupid",
       description:
-        "Ties two players together on the first night. If one dies the other dies of a broken heart, even on opposite sides — and if those two are the last ones standing, they win the whole thing together.",
+        "First night only: you bind two players so that if one dies, the other dies of heartbreak. If those two are the last ones alive, they win together — village and wolves both lose.",
     },
     [RoleId.Fool]: {
       name: "Fool",
       description:
-        "Has exactly one job: be insufferable enough that the village lynches them. Get voted out and they win alone, while everyone else stares at each other.",
+        "Everyone at this table is trying to look innocent; you want the rope. Get the village to vote you out and you win the entire game by yourself.",
     },
   },
 };

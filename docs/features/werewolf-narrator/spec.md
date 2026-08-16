@@ -13,12 +13,13 @@ Roles: Werewolf, Villager, Seer, Doctor, Witch, Hunter, Cupid, Fool. Vietnamese 
 **The host is a player, so nobody narrates.** That single constraint drives the whole night design:
 
 - **Every living player receives the phone every night**, in one fixed order. Players whose role has nothing to do get a decoy screen telling them to look busy and pass on. Receiving the phone therefore reveals nothing about who holds which role.
-- **A turn opens only when the player confirms their own name** ("I am An"). Nothing sensitive is on screen while the phone is physically moving between hands. A hold gate was tried here first and replaced — holding is fiddly while a phone is mid-pass.
+- **A turn opens by pressing and holding a round button carrying your own name** ("I am An"). Nothing sensitive is on screen while the phone is physically moving between hands. This started as a hold on a full-width bar, became a plain tap when the hold proved fiddly mid-pass, and is now a hold again on a **circle** — the shape is the instruction, because a round target that fills as you hold reads as "hold me" where a rectangle reads as "tap me". Releasing early aborts with no effect, and a keyboard press opens the turn outright, since a timed hold cannot be performed by assistive tech.
+- **Every turn restates your own role** ("You are the Witch"), decoy turns included. Nobody should have to remember their card across a whole game to understand what the prompt is asking.
 - **The role reveal is press-and-hold, with a one-second delay** before the card appears. Instant reveal let a brush of the thumb flash the card at the table. The card is unmounted from the DOM when not held, so it cannot leak.
 
 ## Escape hatches
 
-An options menu sits in a **header row above the screens**, not floating over them. It was piled on top at first and covered the phase headings, so the page is now `grid-rows-[auto_1fr]` and each screen fills the content row with `min-h-full` rather than claiming `min-h-dvh` for itself. Nothing overlaps anything.
+An options menu sits in a **header row above the screens**, not floating over them. It was piled on top at first and covered the phase headings, so the page is now `grid-rows-[auto_1fr]`. Nothing overlaps anything.
 
 The menu holds everything that must never be one stray tap away from play:
 
@@ -28,6 +29,8 @@ The menu holds everything that must never be one stray tap away from play:
 
 **Undo is also surfaced inline**, side by side with the primary advance control, so the common case — a phone passed on before its owner looked — is one tap and never needs the menu.
 
+The menu opens as a **modal bottom sheet**, not an inline panel. Two reasons: a panel rendered in flow pushed the whole screen down every time it opened, and an anchored popover would drop out of the top corner the trigger sits in — the hardest part of a tall phone to reach. A sheet renders in the top layer, so it cannot shift anything, and it lands under the thumb.
+
 ## House rules
 
 These vary between tables; these are the ones implemented.
@@ -35,7 +38,9 @@ These vary between tables; these are the ones implemented.
 - The **seer** learns only **wolf or not a wolf**, never the exact role.
 - The **doctor** may protect themselves, but may **not** repeat last night's target.
 - The **witch** may heal the night's victim **or** poison someone, never both in one night, each potion once per game. She picks the **bottle first and the person second**, so she can poison the very player the wolves went for, and poisoning takes a confirmation — a list of bare names could not say which potion a tap meant, and killing should never be one mis-tap.
-- A **wolf may not vote for their own name.** The rest of the pack is still selectable.
+- **Her heal is late-bound**: it means "save tonight's victim", never a named player. She is often handed the phone before the pack has finished voting, so the button may read "save whoever the wolves take tonight". Dawn binds it to the pack's final choice. It is only spent if it actually pulled somebody back — a pack that tied killed nobody, so the bottle stays corked.
+- **No role may aim its night action at itself** — not the wolves' kill, the seer's check, the witch's poison, nor the hunter's dying shot. The two exceptions are deliberate: the **doctor** may shield themselves, and **Cupid** may put themselves in the pair, both of which are real plays rather than mis-taps.
+- The **hunter fires wherever they die**, including on the day screen when the village lynches them. Their shot can still decide the game, so the day cannot end around it.
 - The **hunter** fires even when killed by the witch's poison.
 - **Wolves are informed, not blind** — a wolf's turn names the pack and shows the running vote tally from wolves who already voted. Majority dies; a tie inside the pack kills nobody.
 - **Day votes are open** — the table argues out loud and the app only counts. A tie forces a revote between the tied players; a second tie kills nobody.
@@ -50,7 +55,7 @@ These vary between tables; these are the ones implemented.
 - `roles.ts` — role registry: team, night action, night order, first-night-only, max per game
 - `shuffle.ts` — seeded mulberry32 + Fisher-Yates, so deals are random in play and reproducible in tests
 - `setup.ts` — player list, role composition, the deal, the reveal cursor, and `resetGame` (which carries the table and the deck into the next game). **Villagers are derived, never chosen**: every change to the table or another role refills the villager count to `players − everyone else`, so the host picks the specials and never does the arithmetic. A short deck is therefore unreachable; only picking more specialists than seats still warns.
-- `history.ts` — undo, as a wrapper reducer holding past states alongside the live one
+- `history.ts` — undo, as a wrapper reducer holding past states alongside the live one. **One player action must be one dispatch**: `RevealNextPlayer` lays out the night itself and `FinishNightTurn` resolves the night itself, because splitting either into two dispatches left a single undo stranded between them on a phase with nothing to render.
 - `night.ts` — circulation order, per-turn routing, wolf tally, night intents
 - `deaths.ts` — `applyDeaths`, shared by night resolution and the day vote; heartbreak cascade; hunter flag
 - `resolve-night.ts` — dawn resolution
@@ -80,7 +85,11 @@ Each screen is a directory under `src/components/` with a server component holdi
 
 Phase-driven colour comes from `data-phase`, resolving `--color-phase*` tokens: night is deep indigo, day warm amber, setup neutral. The neutral `:root` block is declared **ahead** of the `[data-phase]` blocks — they match at equal specificity, so source order decides. `text-phase-foreground` is only ever used on a `bg-phase` surface; page text uses `text-foreground`.
 
-**`GameShell` is the only thing that sets `data-phase` or paints a background.** Each screen used to set its own, which left the header row outside every one of them and therefore black against an indigo night — it read as a rendering bug on a phone. The mapping is not one-to-one with `Phase`: the reveal borrows the setup accent (it is still the deal) and dawn borrows the day's (the village is already awake). Screens now size themselves with `min-h-full` and paint nothing. A control that needs to sit *above* the page — the reveal's hold cover — uses `bg-card`, not `bg-phase-muted`, which is now the page itself.
+**`GameShell` is the only thing that sets `data-phase` or paints a background.** Each screen used to set its own, which left the header row outside every one of them and therefore black against an indigo night — it read as a rendering bug on a phone. The mapping is not one-to-one with `Phase`: the reveal borrows the setup accent (it is still the deal) and dawn borrows the day's (the village is already awake). A control that needs to sit *above* the page — the reveal's hold cover — uses `bg-card`, not `bg-phase-muted`, which is now the page itself.
+
+**Screens are sized by their content and centred by `GameScreens`, not stretched.** They used to claim the full height, which left a short screen's text stranded in the top third of a tall phone with two-thirds of dead space under it. The content row centres with `content-center-safe` rather than plain centring: on a screen that overflows — a twelve-player vote list — plain centring pushes the top of the content out of the scrollport where it can never be scrolled back to, while safe centring falls back to top-aligned automatically.
+
+**Pinch-zoom is not blocked.** `maximumScale: 1` was set early to keep the pass-around steady and has been removed: it fails WCAG 1.4.4, and nothing was zooming by accident. `overscroll-none` on the body is the setting that actually matters here — without it, an Android pull-to-refresh reloads the page and takes a live game with it.
 
 Dark-only (`<html class="dark">`) — it is played in dim rooms.
 
@@ -122,7 +131,7 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 
 ## Testing
 
-`npm test` — 67 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
+`npm test` — 71 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
 
 Test style is `describe("Feature: …") → describe("Scenario: …") → it("should …")` with literal expected values. `game.test.ts` includes a full-game integration test that plays two complete night-day cycles through the reducer to a village win.
 

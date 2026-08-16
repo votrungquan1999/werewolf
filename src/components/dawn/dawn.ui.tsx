@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "src/components/ui/card";
 import { Separator } from "src/components/ui/separator";
+import { canHunterShoot } from "src/lib/game/deaths";
 import { type Death, Phase, type Player } from "src/lib/game/types";
 import type { DeathCauseDictionary } from "src/lib/i18n/types";
 import { cn } from "src/lib/utils";
@@ -81,7 +82,7 @@ export function DawnScreen({
   const livingPlayers = state.players.filter((player) => player.isAlive);
 
   return (
-    <section className={cn("grid min-h-full content-start gap-6 p-4")}>
+    <section className={cn("grid w-full gap-6 p-4")}>
       <h1
         className={cn(
           "bg-phase text-phase-foreground rounded-xl px-4 py-3 text-2xl font-semibold",
@@ -132,6 +133,7 @@ export function DawnScreen({
               <Button
                 key={player.id}
                 variant="outline"
+                disabled={!canHunterShoot(state, player.id)}
                 onClick={() => fireHunterShot(player.id)}
                 className={cn(
                   "border-phase-border text-phase h-14 text-base",

@@ -28,6 +28,7 @@ export function GameMenu({
       resetPrompt={dict.menu.confirmReset}
       confirmLabel={dict.common.confirm}
       cancelLabel={dict.common.cancel}
+      closeLabel={dict.menu.close}
     >
       {Object.values(Locale).map((target) => (
         <Link

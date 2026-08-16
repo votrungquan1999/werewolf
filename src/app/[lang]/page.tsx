@@ -1,7 +1,7 @@
 import { Dawn } from "src/components/dawn/dawn";
 import { Day } from "src/components/day/day";
 import { GameProvider } from "src/components/game/game.state";
-import { GameShell } from "src/components/game/game.ui";
+import { GameScreens, GameShell } from "src/components/game/game.ui";
 import { GameOver } from "src/components/game-over/game-over";
 import { GameMenu } from "src/components/menu/menu";
 import { Night } from "src/components/night/night";
@@ -44,14 +44,14 @@ export default async function GamePage({ params }: GamePageProps) {
           <GameMenu dict={dictionary} locale={locale} />
         </header>
 
-        <div className={cn("grid")}>
+        <GameScreens>
           <Setup dict={dictionary} />
           <Reveal dict={dictionary} />
           <Night dict={dictionary} />
           <Dawn dict={dictionary} />
           <Day dict={dictionary} />
           <GameOver dict={dictionary} />
-        </div>
+        </GameScreens>
       </GameShell>
     </GameProvider>
   );

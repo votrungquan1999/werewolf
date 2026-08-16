@@ -1,5 +1,5 @@
 import { type NightCopy, NightScreen } from "src/components/night/night.ui";
-import { NightAction } from "src/lib/game/types";
+import { NightAction, type RoleId } from "src/lib/game/types";
 import type { Dictionary } from "src/lib/i18n/types";
 
 /**
@@ -30,9 +30,15 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     seerIsNotWerewolf: dict.nightResults.seerIsNotWerewolf,
     witchVictim: dict.nightResults.witchVictim,
     witchHealChoice: dict.night.witchHealChoice,
+    witchHealUnknownChoice: dict.night.witchHealUnknownChoice,
     witchPoisonChoice: dict.night.witchPoisonChoice,
     witchNoPotionChoice: dict.night.witchNoPotionChoice,
     witchPoisonConfirm: dict.night.witchPoisonConfirm,
+    holdToOpen: dict.night.holdToOpen,
+    yourRole: dict.night.yourRole,
+    roleNames: Object.fromEntries(
+      Object.entries(dict.roles).map(([role, copy]) => [role, copy.name]),
+    ) as Record<RoleId, string>,
     continueLabel: dict.common.continue,
     confirmLabel: dict.common.confirm,
     declineLabel: dict.common.cancel,

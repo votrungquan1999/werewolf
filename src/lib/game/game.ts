@@ -7,6 +7,7 @@ import { applyDeaths, fireHunterShot } from "src/lib/game/deaths";
 import {
   advanceNightCursor,
   buildNightOrder,
+  getCurrentNightTurn,
   submitNightChoice,
 } from "src/lib/game/night";
 import { resolveNight } from "src/lib/game/resolve-night";
@@ -95,8 +96,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return setRoleCount(state, action.role, action.count);
     case ActionType.DealRoles:
       return dealRoles(state, action.seed);
-    case ActionType.RevealNextPlayer:
-      return revealNextPlayer(state);
+    // One dispatch, so one undo takes the whole step back. Splitting the reveal
+    // from laying out the night left an undo stranded on a night with no order.
+    case ActionType.RevealNextPlayer: {
+      const revealed = revealNextPlayer(state);
+      if (revealed.phase !== Phase.Night) {
+        return revealed;
+      }
+
+      return {
+        ...revealed,
+        nightOrderIds: buildNightOrder(revealed),
+        nightCursor: 0,
+      };
+    }
     // buildNightOrder only computes the order; the reducer owns writing it.
     case ActionType.StartNight:
       return {
@@ -120,6 +133,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       );
     case ActionType.AdvanceNightCursor:
       return advanceNightCursor(state);
+    // Likewise one step: passing the phone on and, at the last seat, resolving
+    // the night are a single thing the table did.
+    case ActionType.FinishNightTurn: {
+      const advanced = advanceNightCursor(state);
+      if (getCurrentNightTurn(advanced) !== null) {
+        return advanced;
+      }
+
+      return settleAfterDeaths(resolveNight(advanced));
+    }
     case ActionType.ResolveNight:
       return settleAfterDeaths(resolveNight(state));
     case ActionType.CastDayVote:

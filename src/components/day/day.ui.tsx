@@ -11,6 +11,7 @@ import {
   getVoteCandidateIds,
   isDayVoteComplete,
 } from "src/lib/game/day";
+import { canHunterShoot } from "src/lib/game/deaths";
 import { Phase, type Player } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
 
@@ -27,6 +28,8 @@ export interface DayVoteProps {
   confirmLabel: string;
   /** Label on the control that ends the day and sends the table into the next night. */
   nightfallLabel: string;
+  /** Carries `{name}` for a lynched hunter who still owes the table a shot. */
+  hunterShotTitle: string;
 }
 
 /**
@@ -63,9 +66,11 @@ export function DayVote({
   tieTitle,
   confirmLabel,
   nightfallLabel,
+  hunterShotTitle,
 }: DayVoteProps) {
   const state = useGame();
-  const { castDayVote, resolveDayVote, startNight } = useGameActions();
+  const { castDayVote, fireHunterShot, resolveDayVote, startNight } =
+    useGameActions();
   const tallyHeadingId = useId();
   // Keyed by night rather than a bare flag: the screen only hides itself between
   // days, so a plain boolean would still be set when the next day opens.
@@ -87,9 +92,11 @@ export function DayVote({
   const outcome = isDayVoteComplete(state) ? getDayVoteOutcome(state) : null;
   // A first tie sends the table round again; only an empty revote list means the day is spent.
   const isDayDone = resolvedOnNight === state.nightNumber && !isRevote;
+  const pendingHunter =
+    state.players.find((player) => player.id === state.pendingHunterId) ?? null;
 
   return (
-    <section className={cn("min-h-full", "grid content-start gap-6 p-4")}>
+    <section className={cn("w-full", "grid gap-6 p-4")}>
       <h1 className="font-heading font-semibold text-2xl tracking-tight">
         {isRevote ? revoteTitle : voteTitle}
       </h1>
@@ -176,8 +183,35 @@ export function DayVote({
         </div>
       )}
 
+      {/* A hunter the village just lynched fires here, not at the next dawn —
+          their shot can still decide the game, so the day cannot end around it. */}
+      {pendingHunter !== null && (
+        <div className={cn("gap-3", "grid")}>
+          <p className="text-lg">
+            {withName(hunterShotTitle, pendingHunter.name)}
+          </p>
+
+          <div className={cn("gap-2", "grid")}>
+            {state.players
+              .filter((player) => player.isAlive)
+              .map((player) => (
+                <Button
+                  key={player.id}
+                  variant="outline"
+                  size="lg"
+                  disabled={!canHunterShoot(state, player.id)}
+                  onClick={() => fireHunterShot(player.id)}
+                  className={cn("h-16 border-phase-border text-base", "w-full")}
+                >
+                  {player.name}
+                </Button>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* The day is spent and no revote is pending, so night falls. */}
-      {isDayDone && (
+      {isDayDone && pendingHunter === null && (
         <Button
           size="lg"
           onClick={startNight}

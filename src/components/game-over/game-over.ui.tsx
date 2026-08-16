@@ -32,7 +32,7 @@ export function GameOverScreen({
   }
 
   return (
-    <main className={cn("grid min-h-full content-start gap-6 p-4")}>
+    <main className={cn("grid w-full gap-6 p-4")}>
       <header
         className={cn(
           "rounded-xl bg-phase px-5 py-10 text-phase-foreground",

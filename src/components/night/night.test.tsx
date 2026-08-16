@@ -13,6 +13,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 const dictionary = getDictionary(Locale.En);
 
+/** Mirrors the hand-off hold in night.ui.tsx. */
+const HOLD_MS = 1000;
+
 /** One seat at the table: the player's name and the card they hold. */
 type Seat = [name: string, role: RoleId];
 
@@ -60,14 +63,22 @@ function renderNight(): void {
 
 /**
  * Confirms the named player is the one now holding the phone, which opens their turn.
- * @param user - The user-event session driving the clicks.
+ *
+ * Performs the real gesture — press, wait out the hold, release — rather than the
+ * keyboard fallback, since the hold is the path every player actually takes.
+ * @param user - The user-event session driving the pointer.
  * @param name - The player the phone was passed to.
  */
 async function confirmHandOff(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
 ): Promise<void> {
-  await user.click(screen.getByRole("button", { name: `I am ${name}` }));
+  const control = screen.getByRole("button", { name: `I am ${name}` });
+
+  await user.pointer({ keys: "[MouseLeft>]", target: control });
+  // Real timers only: fake ones deadlock user-event inside RTL's act wrapper.
+  await new Promise((resolve) => setTimeout(resolve, HOLD_MS + 100));
+  await user.pointer({ keys: "[/MouseLeft]", target: control });
 }
 
 describe("Night", () => {
@@ -163,7 +174,7 @@ describe("Night", () => {
           wolfVotes: { bob: "cara" },
           protectedId: null,
           inspectedId: null,
-          healTargetId: null,
+          healsVictim: false,
           poisonTargetId: null,
           loverIds: null,
         },

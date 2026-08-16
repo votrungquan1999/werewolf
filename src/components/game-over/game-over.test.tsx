@@ -39,7 +39,7 @@ function parkFinishedGame(winner: Winner, players: Player[]): void {
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },

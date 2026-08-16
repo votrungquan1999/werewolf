@@ -63,14 +63,7 @@ export function RevealScreen({ children }: RevealChildrenProps) {
   }
 
   return (
-    <section
-      className={cn(
-        "gap-6 p-6",
-        "grid min-h-full grid-rows-[auto_1fr_auto] content-between",
-      )}
-    >
-      {children}
-    </section>
+    <section className={cn("gap-6 p-6", "grid w-full")}>{children}</section>
   );
 }
 
@@ -256,27 +249,12 @@ export function RevealStepBack({ children }: RevealChildrenProps) {
  * @returns The advance button.
  */
 export function RevealPassOn({ children }: RevealChildrenProps) {
-  const state = useGame();
-  const { revealNextPlayer, startNight } = useGameActions();
-  const isLastPlayer = state.revealIndex === state.players.length - 1;
-
-  /**
-   * Advances the reveal, laying out night one when the last player is done.
-   * @returns Nothing; the game state moves on.
-   */
-  function handlePassOn(): void {
-    revealNextPlayer();
-
-    // That dispatch flips the phase to night but leaves the circulation order empty.
-    if (isLastPlayer) {
-      startNight();
-    }
-  }
+  const { revealNextPlayer } = useGameActions();
 
   return (
     <Button
       size="lg"
-      onClick={handlePassOn}
+      onClick={revealNextPlayer}
       className={cn("text-base", "h-14 w-full")}
     >
       {children}

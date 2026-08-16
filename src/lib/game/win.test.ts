@@ -46,7 +46,7 @@ function createState(
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },

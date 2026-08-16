@@ -41,7 +41,7 @@ function parkLiveGame(): void {
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },
@@ -91,7 +91,9 @@ describe("GameMenu", () => {
     await userEvent.click(screen.getByRole("button", { name: "New game" }));
 
     expect(
-      screen.getByText("Discard this game and start over?"),
+      screen.getByText(
+        "Discard this game? The player list and role counts are kept.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Players at the table: 3")).toBeInTheDocument();
   });

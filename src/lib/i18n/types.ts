@@ -47,6 +47,7 @@ export interface MenuDictionary {
   undo: string;
   newGame: string;
   confirmReset: string;
+  close: string;
 }
 
 /** Pass-the-phone role reveal, one player at a time. */
@@ -68,6 +69,10 @@ export interface NightDictionary {
   passTo: string;
   /** Carries `{name}` — the player confirms who they are to open their turn. */
   confirmIdentity: string;
+  /** Says the control must be held, since a circle alone cannot teach the gesture. */
+  holdToOpen: string;
+  /** Carries `{role}` — every turn reopens with a reminder of your own card. */
+  yourRole: string;
   decoyTitle: string;
   /** `{name}` = who to pass to once enough time has been burned. */
   decoyBody: string;
@@ -77,6 +82,8 @@ export interface NightDictionary {
   witchPrompt: string;
   /** `{name}` = tonight's victim — the witch's heal only ever rescues them. */
   witchHealChoice: string;
+  /** Used when the pack has not voted yet, so the victim has no name to show. */
+  witchHealUnknownChoice: string;
   witchPoisonChoice: string;
   witchNoPotionChoice: string;
   /** `{name}` = who she is about to poison; killing is never one tap. */
@@ -125,6 +132,8 @@ export interface DayDictionary {
   votedOut: string;
   tieTitle: string;
   revoteTitle: string;
+  /** `{name}` = a lynched hunter who still owes the table a shot. */
+  hunterShot: string;
 }
 
 /** One headline per possible winner. */

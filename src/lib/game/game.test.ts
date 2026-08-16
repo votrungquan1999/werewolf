@@ -65,7 +65,7 @@ describe("Feature: running a game through one reducer", () => {
           wolfVotes: { p1: "p2" },
           protectedId: null,
           inspectedId: null,
-          healTargetId: null,
+          healsVictim: false,
           poisonTargetId: "p1",
           loverIds: null,
         },
@@ -93,7 +93,7 @@ describe("Feature: running a game through one reducer", () => {
           wolfVotes: { p1: "p2" },
           protectedId: null,
           inspectedId: null,
-          healTargetId: null,
+          healsVictim: false,
           poisonTargetId: null,
           loverIds: null,
         },
@@ -141,6 +141,57 @@ describe("Feature: running a game through one reducer", () => {
 
       expect(next.phase).toBe(Phase.Night);
       expect(next.nightNumber).toBe(2);
+    });
+  });
+
+  describe("Scenario: one tap ends a turn, so one undo takes it back", () => {
+    it("should resolve the night as part of finishing the last seat's turn", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Night,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Seer, isAlive: true },
+        ],
+        nightOrderIds: ["p1", "p2", "p3", "p4"],
+        nightCursor: 3,
+        night: {
+          wolfVotes: { p1: "p2" },
+          protectedId: null,
+          inspectedId: null,
+          healsVictim: false,
+          poisonTargetId: null,
+          loverIds: null,
+        },
+      };
+
+      const next = gameReducer(state, { type: ActionType.FinishNightTurn });
+
+      expect(next.phase).toBe(Phase.Dawn);
+      expect(next.dawnDeaths).toEqual([
+        { playerId: "p2", cause: DeathCause.WolfAttack },
+      ]);
+    });
+
+    it("should lay out the night as part of the last player finishing their reveal", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.RoleReveal,
+        revealIndex: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+        ],
+      };
+
+      const next = gameReducer(state, { type: ActionType.RevealNextPlayer });
+
+      expect(next.phase).toBe(Phase.Night);
+      expect(next.nightOrderIds).toEqual(["p1", "p2"]);
+      expect(next.nightCursor).toBe(0);
     });
   });
 

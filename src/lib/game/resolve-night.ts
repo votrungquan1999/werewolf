@@ -24,9 +24,9 @@ export function resolveNight(state: GameState): GameState {
   const victimId = getProvisionalVictimId(state);
   const isProtected = victimId !== null && victimId === protectedId;
 
-  const healTargetId = state.night.healTargetId;
   const poisonTargetId = state.night.poisonTargetId;
-  const isHealed = victimId !== null && victimId === healTargetId;
+  // Late-bound: the heal follows whoever the pack finally settled on.
+  const isHealed = victimId !== null && state.night.healsVictim;
 
   // Collected in resolution order, so the dawn report reads attack before poison.
   const deaths: Death[] = [];
@@ -43,8 +43,9 @@ export function resolveNight(state: GameState): GameState {
       ...state,
       loverIds,
       dawnDeaths: [],
-      // A potion pointed at anyone is spent, even if protection made it moot.
-      witchHealAvailable: state.witchHealAvailable && healTargetId === null,
+      // The heal is only spent when there was somebody to pull back; a pack that
+      // tied killed nobody, so she never uncorked it.
+      witchHealAvailable: state.witchHealAvailable && !isHealed,
       witchPoisonAvailable:
         state.witchPoisonAvailable && poisonTargetId === null,
     },
@@ -60,7 +61,7 @@ export function resolveNight(state: GameState): GameState {
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },

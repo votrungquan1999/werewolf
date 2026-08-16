@@ -149,13 +149,30 @@ export function getProvisionalVictimId(state: GameState): string | null {
 }
 
 /**
- * Checks whether a wolf may vote to kill a player.
- * @param actorId - The wolf casting the vote.
- * @param targetId - The player they are considering.
- * @returns False for a wolf's own name; the rest of the pack is fair game.
+ * Night actions a player is allowed to aim at themselves.
+ *
+ * The doctor's self-shield is a house rule, and a cupid who puts themselves in the
+ * pair is a standard play. Everything else — eating, checking, poisoning — makes no
+ * sense pointed inward and is almost always a mis-tap.
  */
-export function canWolfTarget(actorId: string, targetId: string): boolean {
-  return targetId !== actorId;
+const SELF_TARGETING_ACTIONS: ReadonlySet<NightAction> = new Set([
+  NightAction.Protect,
+  NightAction.LinkLovers,
+]);
+
+/**
+ * Checks whether a player may point their night action at somebody.
+ * @param action - The action being taken tonight.
+ * @param actorId - The player whose turn it is.
+ * @param targetId - The player they are considering.
+ * @returns Whether that pairing is a legal choice.
+ */
+export function canNightTarget(
+  action: NightAction,
+  actorId: string,
+  targetId: string,
+): boolean {
+  return targetId !== actorId || SELF_TARGETING_ACTIONS.has(action);
 }
 
 /**
@@ -195,7 +212,7 @@ export function isPlayerAWolf(state: GameState, playerId: string): boolean {
  */
 function recordPotion(
   state: GameState,
-  targetId: string,
+  targetId: string | null,
   potionKind: PotionKind | null,
 ): GameState {
   // One potion a night: whichever was used tonight locks the other out.
@@ -204,13 +221,15 @@ function recordPotion(
     state.witchHealAvailable &&
     state.night.poisonTargetId === null
   ) {
-    return { ...state, night: { ...state.night, healTargetId: targetId } };
+    // No target: the heal always means "tonight's victim", settled at dawn.
+    return { ...state, night: { ...state.night, healsVictim: true } };
   }
 
   if (
     potionKind === PotionKind.Poison &&
+    targetId !== null &&
     state.witchPoisonAvailable &&
-    state.night.healTargetId === null
+    !state.night.healsVictim
   ) {
     return { ...state, night: { ...state.night, poisonTargetId: targetId } };
   }
@@ -236,6 +255,12 @@ export function submitNightChoice(
   secondTargetId: string | null,
   potionKind: PotionKind | null,
 ): GameState {
+  // The witch is the one role that can act without naming anybody, so her branch
+  // runs before the decline check.
+  if (action === NightAction.Potion) {
+    return recordPotion(state, targetId, potionKind);
+  }
+
   // A null target is the actor declining — nothing is recorded, so dawn sees no intent.
   if (targetId === null) {
     return state;
@@ -269,8 +294,5 @@ export function submitNightChoice(
           loverIds: { firstId: targetId, secondId: secondTargetId },
         },
       };
-
-    case NightAction.Potion:
-      return recordPotion(state, targetId, potionKind);
   }
 }

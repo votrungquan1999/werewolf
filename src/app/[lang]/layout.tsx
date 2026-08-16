@@ -13,10 +13,12 @@ export const metadata: Metadata = {
   description: "Một chiếc điện thoại, cả làng cùng chơi.",
 };
 
-// Dark-only game played in dim rooms; cover + no zoom keeps the phone pass-around steady.
+// Dark-only game played in dim rooms. `maximumScale` was dropped deliberately:
+// blocking pinch-zoom fails WCAG 1.4.4, and nobody was zooming by accident anyway.
 export const viewport: Viewport = {
   viewportFit: "cover",
-  maximumScale: 1,
+  colorScheme: "dark",
+  themeColor: "#141218",
 };
 
 /**
@@ -43,7 +45,8 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className="dark">
-      <body className="grid min-h-dvh bg-background text-foreground antialiased">
+      {/* overscroll-none stops Android pull-to-refresh reloading away a live game. */}
+      <body className="grid min-h-dvh overscroll-none bg-background text-foreground antialiased">
         {children}
       </body>
     </html>

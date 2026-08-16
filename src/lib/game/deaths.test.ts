@@ -1,4 +1,8 @@
-import { applyDeaths, fireHunterShot } from "src/lib/game/deaths";
+import {
+  applyDeaths,
+  canHunterShoot,
+  fireHunterShot,
+} from "src/lib/game/deaths";
 import type { GameState, Player } from "src/lib/game/types";
 import { DeathCause, Phase, RoleId } from "src/lib/game/types";
 import { describe, expect, it } from "vitest";
@@ -43,7 +47,7 @@ function createState(
       wolfVotes: {},
       protectedId: null,
       inspectedId: null,
-      healTargetId: null,
+      healsVictim: false,
       poisonTargetId: null,
       loverIds: null,
     },
@@ -66,6 +70,21 @@ function createState(
 }
 
 describe("Feature: Applying deaths", () => {
+  describe("Scenario: The dying hunter aims at themselves", () => {
+    it("should refuse their own name and allow every other player", () => {
+      const state = createState(
+        [
+          createPlayer("h1", RoleId.Hunter, false),
+          createPlayer("w1", RoleId.Werewolf),
+        ],
+        { pendingHunterId: "h1" },
+      );
+
+      expect(canHunterShoot(state, "h1")).toBe(false);
+      expect(canHunterShoot(state, "w1")).toBe(true);
+    });
+  });
+
   describe("Scenario: The hunter takes one player with them when they die", () => {
     it("should flag the dying hunter and then kill whoever they shoot", () => {
       const state = createState([

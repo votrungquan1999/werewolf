@@ -118,6 +118,7 @@ export function useGameActions() {
         potionKind,
       }),
     advanceNightCursor: () => dispatch({ type: ActionType.AdvanceNightCursor }),
+    finishNightTurn: () => dispatch({ type: ActionType.FinishNightTurn }),
     resolveNight: () => dispatch({ type: ActionType.ResolveNight }),
     castDayVote: (voterId: string, targetId: string) =>
       dispatch({ type: ActionType.CastDayVote, voterId, targetId }),
