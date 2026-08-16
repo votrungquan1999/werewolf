@@ -90,6 +90,7 @@ Dark-only (`<html class="dark">`) — it is played in dim rooms.
 ## Known gaps
 
 - **No offline support.** There is no service worker and no PWA manifest. The app keeps working if the network drops mid-game, but a cold load needs a connection. Deliberately deferred.
+- **The page is blank until hydration.** `GameProvider` cannot read `localStorage` on the server, so it renders nothing until the client takes over — a brief flash on cold load. Fixable by rendering the setup screen server-side and gating only the *resume* on the client.
 - **Not a static export.** `next.config.ts` uses `redirects()` for `/` → `/vi`, which `output: "export"` does not support, so this deploys as a Next server app.
 - **The witch cannot poison the wolves' own victim.** Heal-vs-poison is inferred by comparing the target to tonight's victim, so pointing at the victim always reads as a heal. Only matters when the doctor already saved them; needs a potion-kind field on the action to fix.
 - **The engine does not validate actors.** It never checks that a doctor's target passes `canDoctorProtect` or that the actor's role matches the action — gating is the UI's job.
@@ -103,11 +104,19 @@ Test style is `describe("Feature: …") → describe("Scenario: …") → it("sh
 
 ## Deployment
 
+Live at **https://werewolf.quanvo.dev**.
+
 App code deploys via **Vercel's native Git integration** — pushing this repo builds and deploys. No Pulumi in this repo.
 
-DNS and the Vercel project live in `github.com/votrungquan1999/personal-infra` and need two entries there:
+DNS and the Vercel project live in `github.com/votrungquan1999/personal-infra` (PR #22, merged):
 
 - a `werewolf.quanvo.dev` CNAME subdomain in `config.ts`
 - a `werewolf-project` entry in `resources/vercel-projects.ts` (`repo: votrungquan1999/werewolf`, `nodeVersion: 24.x`, framework nextjs)
 
-Unlike every other project there, this one is **created** by Pulumi rather than adopted via `pulumi import`, so this repo must exist and be pushed before `pulumi up` runs.
+### Push the repo before Pulumi creates the project
+
+Unlike every other project there, this one is **created** by Pulumi rather than adopted via `pulumi import`. An existing repo is **not** enough — Vercel sets the project's production branch at create time and fails with `git_branch_not_found` if that branch does not exist yet.
+
+The first apply hit exactly this: the repo had been created empty, Vercel created the project and *then* errored on the branch, leaving the project orphaned outside Pulumi state. Recovering meant pushing `main`, then `pulumi import`-ing the orphan before the follow-up apply could add the `ProjectDomain`.
+
+**Order matters: create the repo, push `main`, then let Pulumi run.**
