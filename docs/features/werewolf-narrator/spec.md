@@ -23,7 +23,7 @@ An options menu sits in a **header row above the screens**, not floating over th
 The menu holds everything that must never be one stray tap away from play:
 
 - **Undo** steps the whole game back one action — a mis-tapped vote, the wrong night target, an accidental pass. History lives in `history.ts` as a wrapper reducer over `GameState`, capped at 25 steps, and is deliberately **not** persisted: only the live game is parked. This is the deep recovery route: if the table is already on the day and something went wrong back in the night, tapping it repeatedly walks the whole game back.
-- **New game** asks for confirmation before wiping, then clears storage and resets.
+- **New game** asks for confirmation first, then returns to setup **keeping the players and the chosen role counts** — re-typing eight names between back-to-back games is the tedious part, and it is the same table playing again. Everything the finished game produced — cards, deaths, votes, the winner — is cleared. The play-again button on the end screen goes through the same action.
 - **The language switch** lives here too. It used to float on the screen, where it sat on top of the card.
 
 **Undo is also surfaced inline**, side by side with the primary advance control, so the common case — a phone passed on before its owner looked — is one tap and never needs the menu.
@@ -34,7 +34,8 @@ These vary between tables; these are the ones implemented.
 
 - The **seer** learns only **wolf or not a wolf**, never the exact role.
 - The **doctor** may protect themselves, but may **not** repeat last night's target.
-- The **witch** may heal the night's victim **or** poison someone, never both in one night, each potion once per game.
+- The **witch** may heal the night's victim **or** poison someone, never both in one night, each potion once per game. She picks the **bottle first and the person second**, so she can poison the very player the wolves went for, and poisoning takes a confirmation — a list of bare names could not say which potion a tap meant, and killing should never be one mis-tap.
+- A **wolf may not vote for their own name.** The rest of the pack is still selectable.
 - The **hunter** fires even when killed by the witch's poison.
 - **Wolves are informed, not blind** — a wolf's turn names the pack and shows the running vote tally from wolves who already voted. Majority dies; a tie inside the pack kills nobody.
 - **Day votes are open** — the table argues out loud and the app only counts. A tie forces a revote between the tied players; a second tie kills nobody.
@@ -48,7 +49,7 @@ These vary between tables; these are the ones implemented.
 - `types.ts` — the shared contract: every enum, interface, and the `GameAction` union
 - `roles.ts` — role registry: team, night action, night order, first-night-only, max per game
 - `shuffle.ts` — seeded mulberry32 + Fisher-Yates, so deals are random in play and reproducible in tests
-- `setup.ts` — player list, role composition, the deal, the reveal cursor. **Villagers are derived, never chosen**: every change to the table or another role refills the villager count to `players − everyone else`, so the host picks the specials and never does the arithmetic. A short deck is therefore unreachable; only picking more specialists than seats still warns.
+- `setup.ts` — player list, role composition, the deal, the reveal cursor, and `resetGame` (which carries the table and the deck into the next game). **Villagers are derived, never chosen**: every change to the table or another role refills the villager count to `players − everyone else`, so the host picks the specials and never does the arithmetic. A short deck is therefore unreachable; only picking more specialists than seats still warns.
 - `history.ts` — undo, as a wrapper reducer holding past states alongside the live one
 - `night.ts` — circulation order, per-turn routing, wolf tally, night intents
 - `deaths.ts` — `applyDeaths`, shared by night resolution and the day vote; heartbreak cascade; hunter flag
@@ -77,7 +78,9 @@ These vary between tables; these are the ones implemented.
 
 Each screen is a directory under `src/components/` with a server component holding **all** copy and a `"use client"` half holding only interactivity. Every screen is mounted at once on `/[lang]` and gates itself on the phase, so moving between phases is pure state and there is no navigation to lose mid-game.
 
-Phase-driven colour comes from `data-phase` on each screen root, resolving `--color-phase*` tokens: night is deep indigo, day warm amber, setup neutral. The neutral `:root` block is declared **ahead** of the `[data-phase]` blocks — they match at equal specificity, so source order decides. `text-phase-foreground` is only ever used on a `bg-phase` surface; page text uses `text-foreground`.
+Phase-driven colour comes from `data-phase`, resolving `--color-phase*` tokens: night is deep indigo, day warm amber, setup neutral. The neutral `:root` block is declared **ahead** of the `[data-phase]` blocks — they match at equal specificity, so source order decides. `text-phase-foreground` is only ever used on a `bg-phase` surface; page text uses `text-foreground`.
+
+**`GameShell` is the only thing that sets `data-phase` or paints a background.** Each screen used to set its own, which left the header row outside every one of them and therefore black against an indigo night — it read as a rendering bug on a phone. The mapping is not one-to-one with `Phase`: the reveal borrows the setup accent (it is still the deal) and dawn borrows the day's (the village is already awake). Screens now size themselves with `min-h-full` and paint nothing. A control that needs to sit *above* the page — the reveal's hold cover — uses `bg-card`, not `bg-phase-muted`, which is now the page itself.
 
 Dark-only (`<html class="dark">`) — it is played in dim rooms.
 
@@ -114,13 +117,12 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 - **No offline support.** There is no service worker and no PWA manifest. The app keeps working if the network drops mid-game, but a cold load needs a connection. Deliberately deferred.
 - **The page is blank until hydration.** `GameProvider` cannot read `localStorage` on the server, so it renders nothing until the client takes over — a brief flash on cold load. Fixable by rendering the setup screen server-side and gating only the *resume* on the client.
 - **Not a static export.** `next.config.ts` uses `redirects()` for `/` → `/vi`, which `output: "export"` does not support, so this deploys as a Next server app.
-- **The witch cannot poison the wolves' own victim.** Heal-vs-poison is inferred by comparing the target to tonight's victim, so pointing at the victim always reads as a heal. Only matters when the doctor already saved them; needs a potion-kind field on the action to fix.
 - **The engine does not validate actors.** It never checks that a doctor's target passes `canDoctorProtect` or that the actor's role matches the action — gating is the UI's job.
 - **Edge cases are untested by design.** The brief was happy-path-only to reach a playable release.
 
 ## Testing
 
-`npm test` — 61 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
+`npm test` — 67 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
 
 Test style is `describe("Feature: …") → describe("Scenario: …") → it("should …")` with literal expected values. `game.test.ts` includes a full-game integration test that plays two complete night-day cycles through the reducer to a village win.
 

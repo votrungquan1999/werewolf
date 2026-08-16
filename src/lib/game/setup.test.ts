@@ -6,11 +6,12 @@ import {
   getRoleCountIssue,
   RoleCountIssueKind,
   removePlayer,
+  resetGame,
   revealNextPlayer,
   setRoleCount,
 } from "src/lib/game/setup";
 import type { GameState } from "src/lib/game/types";
-import { Phase, RoleId } from "src/lib/game/types";
+import { Phase, RoleId, Winner } from "src/lib/game/types";
 import { describe, expect, it } from "vitest";
 
 /** Builds a five-player table with a composition of 1 wolf, 2 villagers, a seer and a doctor. */
@@ -111,6 +112,35 @@ describe("Feature: Setting up a game", () => {
       expect(afterAll.revealIndex).toBe(5);
       expect(afterAll.phase).toBe(Phase.Night);
       expect(afterAll.nightNumber).toBe(1);
+    });
+  });
+
+  describe("Scenario: The table plays another game with the same people", () => {
+    it("should keep the names and the chosen roles, and clear everything the last game left behind", () => {
+      const dealt = dealRoles(createReadyTable(), 7);
+      const finished = {
+        ...dealt,
+        phase: Phase.GameOver,
+        winner: Winner.Village,
+        players: dealt.players.map((player) => ({ ...player, isAlive: false })),
+      };
+
+      const next = resetGame(finished);
+
+      expect(next.players.map((player) => player.name)).toEqual([
+        "An",
+        "Binh",
+        "Cuong",
+        "Dung",
+        "Em",
+      ]);
+      expect(next.players.every((player) => player.isAlive)).toBe(true);
+      expect(next.players.every((player) => player.role === null)).toBe(true);
+      expect(next.roleCounts[RoleId.Werewolf]).toBe(1);
+      expect(next.roleCounts[RoleId.Seer]).toBe(1);
+      expect(next.roleCounts[RoleId.Villager]).toBe(2);
+      expect(next.phase).toBe(Phase.Setup);
+      expect(next.winner).toBeNull();
     });
   });
 

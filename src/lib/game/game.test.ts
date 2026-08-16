@@ -169,6 +169,7 @@ describe("Feature: running a game through one reducer", () => {
         action: NightAction.WolfVote,
         targetId: "p4",
         secondTargetId: null,
+        potionKind: null,
       });
       game = gameReducer(game, {
         type: ActionType.SubmitNightChoice,
@@ -176,6 +177,7 @@ describe("Feature: running a game through one reducer", () => {
         action: NightAction.Protect,
         targetId: "p2",
         secondTargetId: null,
+        potionKind: null,
       });
       game = gameReducer(game, { type: ActionType.ResolveNight });
 
@@ -215,6 +217,7 @@ describe("Feature: running a game through one reducer", () => {
         action: NightAction.WolfVote,
         targetId: "p3",
         secondTargetId: null,
+        potionKind: null,
       });
       game = gameReducer(game, {
         type: ActionType.SubmitNightChoice,
@@ -222,6 +225,7 @@ describe("Feature: running a game through one reducer", () => {
         action: NightAction.Protect,
         targetId: "p3",
         secondTargetId: null,
+        potionKind: null,
       });
       game = gameReducer(game, { type: ActionType.ResolveNight });
 

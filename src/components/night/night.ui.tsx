@@ -7,6 +7,7 @@ import { Button } from "src/components/ui/button";
 import { Toggle } from "src/components/ui/toggle";
 import {
   canDoctorProtect,
+  canWolfTarget,
   getCurrentNightTurn,
   getPackMemberIds,
   getProvisionalVictimId,
@@ -19,8 +20,16 @@ import {
   NightAction,
   Phase,
   type Player,
+  PotionKind,
 } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
+
+/** Which step of the witch's turn is on screen. */
+enum WitchStage {
+  ChoosePotion = "choose-potion",
+  ChoosePoisonTarget = "choose-poison-target",
+  ConfirmPoison = "confirm-poison",
+}
 
 /** Every string the night screen can render, handed down from the server component. */
 export interface NightCopy {
@@ -35,9 +44,14 @@ export interface NightCopy {
   seerIsWerewolf: string;
   seerIsNotWerewolf: string;
   witchVictim: string;
+  witchHealChoice: string;
+  witchPoisonChoice: string;
+  witchNoPotionChoice: string;
+  witchPoisonConfirm: string;
   continueLabel: string;
   confirmLabel: string;
   declineLabel: string;
+  backLabel: string;
 }
 
 /** One line of a read-only roster: a player, optionally with a vote count. */
@@ -199,6 +213,11 @@ function NightWolfTurn({ actorId, copy, onDone }: ActTurnProps) {
   const state = useGame();
   const { submitNightChoice } = useGameActions();
 
+  const livingPlayers = getLivingPlayers(state);
+  const disabledIds = livingPlayers
+    .filter((player) => !canWolfTarget(actorId, player.id))
+    .map((player) => player.id);
+
   const packEntries = getPackMemberIds(state).map((playerId) => ({
     id: playerId,
     name: getPlayerName(state, playerId),
@@ -223,8 +242,8 @@ function NightWolfTurn({ actorId, copy, onDone }: ActTurnProps) {
       <NightRoster title={copy.wolfPackTitle} entries={packEntries} />
       <NightRoster title={copy.wolfTallyTitle} entries={tallyEntries} />
       <NightChoiceList
-        players={getLivingPlayers(state)}
-        disabledIds={[]}
+        players={livingPlayers}
+        disabledIds={disabledIds}
         onChoose={chooseVictim}
       />
     </>
@@ -314,7 +333,10 @@ function NightProtectTurn({ actorId, onDone }: ActTurnProps) {
 }
 
 /**
- * The witch's turn: heal tonight's victim, poison somebody else, or keep both bottles corked.
+ * The witch's turn: pick a bottle first, then who it goes to.
+ *
+ * Split in two because a flat list of names cannot say which potion a tap means —
+ * and because poisoning somebody should never be a single mis-tap.
  * @param props.actorId - The witch holding the phone.
  * @param props.copy - Night copy supplied by the server component.
  * @param props.onDone - Hands the phone on.
@@ -323,21 +345,32 @@ function NightProtectTurn({ actorId, onDone }: ActTurnProps) {
 function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
   const state = useGame();
   const { submitNightChoice } = useGameActions();
+  const [stage, setStage] = useState(WitchStage.ChoosePotion);
+  const [poisonTargetId, setPoisonTargetId] = useState<string | null>(null);
 
   const victimId = getProvisionalVictimId(state);
-  const livingPlayers = getLivingPlayers(state);
-  // Picking the victim is the heal, anyone else is the poison — so a spent bottle disables its own targets.
-  const disabledIds = livingPlayers
-    .filter((player) =>
-      player.id === victimId
-        ? !state.witchHealAvailable
-        : !state.witchPoisonAvailable,
-    )
-    .map((player) => player.id);
 
-  /** Records the potion; the engine reads heal or poison off the target itself. */
-  function spendPotion(targetId: string) {
-    submitNightChoice(actorId, NightAction.Potion, targetId);
+  /** Rescues tonight's victim and hands the phone straight on. */
+  function healVictim() {
+    submitNightChoice(
+      actorId,
+      NightAction.Potion,
+      victimId,
+      null,
+      PotionKind.Heal,
+    );
+    onDone();
+  }
+
+  /** Commits the poison, now that it has been named and confirmed. */
+  function poisonTarget() {
+    submitNightChoice(
+      actorId,
+      NightAction.Potion,
+      poisonTargetId,
+      null,
+      PotionKind.Poison,
+    );
     onDone();
   }
 
@@ -347,26 +380,103 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
     onDone();
   }
 
+  if (stage === WitchStage.ChoosePotion) {
+    return (
+      <>
+        {victimId === null ? null : (
+          <p className="font-medium text-lg">
+            {fillTemplate(copy.witchVictim, {
+              name: getPlayerName(state, victimId),
+            })}
+          </p>
+        )}
+
+        {/* No victim tonight means nobody to rescue, so the heal is not on offer. */}
+        {victimId === null || !state.witchHealAvailable ? null : (
+          <Button
+            size="lg"
+            onClick={healVictim}
+            className={cn(
+              "h-auto min-h-16 w-full whitespace-normal bg-phase text-base text-phase-foreground",
+            )}
+          >
+            {fillTemplate(copy.witchHealChoice, {
+              name: getPlayerName(state, victimId),
+            })}
+          </Button>
+        )}
+
+        {!state.witchPoisonAvailable ? null : (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setStage(WitchStage.ChoosePoisonTarget)}
+            className={cn(
+              "h-auto min-h-16 w-full border-phase-border text-base",
+            )}
+          >
+            {copy.witchPoisonChoice}
+          </Button>
+        )}
+
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={declinePotion}
+          className={cn("h-auto min-h-16 w-full whitespace-normal text-base")}
+        >
+          {copy.witchNoPotionChoice}
+        </Button>
+      </>
+    );
+  }
+
+  if (stage === WitchStage.ChoosePoisonTarget) {
+    return (
+      <>
+        <NightChoiceList
+          players={getLivingPlayers(state)}
+          disabledIds={[]}
+          onChoose={(targetId) => {
+            setPoisonTargetId(targetId);
+            setStage(WitchStage.ConfirmPoison);
+          }}
+        />
+
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={() => setStage(WitchStage.ChoosePotion)}
+          className={cn("h-auto min-h-16 w-full text-base")}
+        >
+          {copy.backLabel}
+        </Button>
+      </>
+    );
+  }
+
   return (
     <>
-      {victimId === null ? null : (
-        <p className="font-medium text-lg">
-          {fillTemplate(copy.witchVictim, {
-            name: getPlayerName(state, victimId),
-          })}
-        </p>
-      )}
+      <p className="font-medium text-lg">
+        {fillTemplate(copy.witchPoisonConfirm, {
+          name: getPlayerName(state, poisonTargetId ?? ""),
+        })}
+      </p>
 
-      <NightChoiceList
-        players={livingPlayers}
-        disabledIds={disabledIds}
-        onChoose={spendPotion}
-      />
+      <Button
+        size="lg"
+        onClick={poisonTarget}
+        className={cn(
+          "h-auto min-h-16 w-full bg-phase text-base text-phase-foreground",
+        )}
+      >
+        {copy.confirmLabel}
+      </Button>
 
       <Button
         variant="ghost"
         size="lg"
-        onClick={declinePotion}
+        onClick={() => setStage(WitchStage.ChoosePoisonTarget)}
         className={cn("h-auto min-h-16 w-full text-base")}
       >
         {copy.declineLabel}
@@ -657,13 +767,7 @@ export function NightScreen({ copy }: { copy: NightCopy }) {
   }
 
   return (
-    <main
-      data-phase="night"
-      className={cn(
-        "min-h-full bg-phase-muted p-6 text-foreground",
-        "grid grid-rows-[auto_1fr] gap-6",
-      )}
-    >
+    <main className={cn("min-h-full p-6", "grid grid-rows-[auto_1fr] gap-6")}>
       <h1 className="font-semibold text-xl tracking-tight">
         {fillTemplate(copy.title, { number: String(state.nightNumber) })}
       </h1>

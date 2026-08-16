@@ -8,7 +8,7 @@
 
 import { getRoleDefinition } from "src/lib/game/roles";
 import type { GameState, Player } from "src/lib/game/types";
-import { NightAction, RoleId } from "src/lib/game/types";
+import { NightAction, PotionKind, RoleId } from "src/lib/game/types";
 
 /** Whether the player holding the phone actually does something this turn. */
 export enum NightTurnKind {
@@ -149,6 +149,16 @@ export function getProvisionalVictimId(state: GameState): string | null {
 }
 
 /**
+ * Checks whether a wolf may vote to kill a player.
+ * @param actorId - The wolf casting the vote.
+ * @param targetId - The player they are considering.
+ * @returns False for a wolf's own name; the rest of the pack is fair game.
+ */
+export function canWolfTarget(actorId: string, targetId: string): boolean {
+  return targetId !== actorId;
+}
+
+/**
  * Checks whether the doctor may protect a player tonight.
  * @param state - The current game state.
  * @param targetId - The player the doctor is considering.
@@ -171,20 +181,26 @@ export function isPlayerAWolf(state: GameState, playerId: string): boolean {
 }
 
 /**
- * Records the witch's potion, choosing heal or poison from the target alone.
+ * Records the witch's potion as the bottle she declared.
+ *
+ * Reading heal-vs-poison off the target instead would make the victim un-poisonable,
+ * since pointing at them would always look like a rescue.
  *
  * The flags stay untouched — dawn owns spending a potion, so a re-submitted choice
  * this night simply overwrites the previous one.
  * @param state - The current game state.
  * @param targetId - The player the witch pointed at.
- * @returns A new state with the heal or the poison recorded, or the old one if neither is open.
+ * @param potionKind - The bottle she reached for.
+ * @returns A new state with that potion recorded, or the old one when it is not open to her.
  */
-function recordPotion(state: GameState, targetId: string): GameState {
-  const isHeal = targetId === getProvisionalVictimId(state);
-
+function recordPotion(
+  state: GameState,
+  targetId: string,
+  potionKind: PotionKind | null,
+): GameState {
   // One potion a night: whichever was used tonight locks the other out.
   if (
-    isHeal &&
+    potionKind === PotionKind.Heal &&
     state.witchHealAvailable &&
     state.night.poisonTargetId === null
   ) {
@@ -192,7 +208,7 @@ function recordPotion(state: GameState, targetId: string): GameState {
   }
 
   if (
-    !isHeal &&
+    potionKind === PotionKind.Poison &&
     state.witchPoisonAvailable &&
     state.night.healTargetId === null
   ) {
@@ -209,6 +225,7 @@ function recordPotion(state: GameState, targetId: string): GameState {
  * @param action - The action their role performs tonight.
  * @param targetId - Their target, or null when they decline to act.
  * @param secondTargetId - Cupid's second target; unused by every other action.
+ * @param potionKind - Which bottle the witch chose; unused by every other action.
  * @returns A new state with the intent recorded on `night`.
  */
 export function submitNightChoice(
@@ -217,6 +234,7 @@ export function submitNightChoice(
   action: NightAction,
   targetId: string | null,
   secondTargetId: string | null,
+  potionKind: PotionKind | null,
 ): GameState {
   // A null target is the actor declining — nothing is recorded, so dawn sees no intent.
   if (targetId === null) {
@@ -253,6 +271,6 @@ export function submitNightChoice(
       };
 
     case NightAction.Potion:
-      return recordPotion(state, targetId);
+      return recordPotion(state, targetId, potionKind);
   }
 }

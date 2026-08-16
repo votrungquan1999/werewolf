@@ -64,8 +64,6 @@ export function RevealScreen({ children }: RevealChildrenProps) {
 
   return (
     <section
-      // Still the deal, not yet night — the screen keeps the setup accent.
-      data-phase="setup"
       className={cn(
         "gap-6 p-6",
         "grid min-h-full grid-rows-[auto_1fr_auto] content-between",
@@ -162,7 +160,7 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
         onPointerLeave={hideCard}
         onPointerCancel={hideCard}
         className={cn(
-          "rounded-xl border border-phase-border bg-phase-muted p-4 text-base whitespace-normal",
+          "rounded-xl border border-phase-border bg-card p-4 text-base whitespace-normal",
           "pile h-auto min-h-64 w-full place-items-center",
         )}
       >

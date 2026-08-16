@@ -60,7 +60,7 @@ export interface RevealDictionary {
   lastRevealPrompt: string;
 }
 
-/** Night phase: the hand-off, the decoy, and each waking role's instruction. */
+/** Night phase: the hand-off, the decoy, each role's instruction, and the witch's controls. */
 export interface NightDictionary {
   /** `{number}` = which night this is. */
   title: string;
@@ -75,6 +75,12 @@ export interface NightDictionary {
   seerPrompt: string;
   doctorPrompt: string;
   witchPrompt: string;
+  /** `{name}` = tonight's victim — the witch's heal only ever rescues them. */
+  witchHealChoice: string;
+  witchPoisonChoice: string;
+  witchNoPotionChoice: string;
+  /** `{name}` = who she is about to poison; killing is never one tap. */
+  witchPoisonConfirm: string;
   cupidPrompt: string;
 }
 

@@ -24,6 +24,7 @@ import {
   ActionType,
   type GameState,
   type NightAction,
+  type PotionKind,
   type RoleId,
 } from "src/lib/game/types";
 
@@ -106,6 +107,7 @@ export function useGameActions() {
       action: NightAction,
       targetId: string | null,
       secondTargetId: string | null = null,
+      potionKind: PotionKind | null = null,
     ) =>
       dispatch({
         type: ActionType.SubmitNightChoice,
@@ -113,6 +115,7 @@ export function useGameActions() {
         action,
         targetId,
         secondTargetId,
+        potionKind,
       }),
     advanceNightCursor: () => dispatch({ type: ActionType.AdvanceNightCursor }),
     resolveNight: () => dispatch({ type: ActionType.ResolveNight }),

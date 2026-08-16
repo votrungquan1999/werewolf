@@ -12,9 +12,9 @@ import {
 import { resolveNight } from "src/lib/game/resolve-night";
 import {
   addPlayer,
-  createInitialState,
   dealRoles,
   removePlayer,
+  resetGame,
   revealNextPlayer,
   setRoleCount,
 } from "src/lib/game/setup";
@@ -116,6 +116,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         action.action,
         action.targetId,
         action.secondTargetId,
+        action.potionKind,
       );
     case ActionType.AdvanceNightCursor:
       return advanceNightCursor(state);
@@ -152,7 +153,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case ActionType.FireHunterShot:
       return settleAfterDeaths(fireHunterShot(state, action.targetId));
     case ActionType.ResetGame:
-      return createInitialState();
+      return resetGame(state);
     default:
       return state;
   }

@@ -81,13 +81,7 @@ export function DawnScreen({
   const livingPlayers = state.players.filter((player) => player.isAlive);
 
   return (
-    <section
-      data-phase="day"
-      className={cn(
-        "bg-phase-muted text-foreground",
-        "grid min-h-full content-start gap-6 p-4",
-      )}
-    >
+    <section className={cn("grid min-h-full content-start gap-6 p-4")}>
       <h1
         className={cn(
           "bg-phase text-phase-foreground rounded-xl px-4 py-3 text-2xl font-semibold",

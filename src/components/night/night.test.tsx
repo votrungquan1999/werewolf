@@ -20,8 +20,13 @@ type Seat = [name: string, role: RoleId];
  * Seats a table on night one and parks it where the provider will resume it.
  * @param seats - The table in seating order, which is also tonight's pass order.
  * @param cursor - Which seat is currently holding the phone.
+ * @param overrides - Night state to set up before this turn, e.g. votes already cast.
  */
-function parkNightGame(seats: Seat[], cursor = 0): void {
+function parkNightGame(
+  seats: Seat[],
+  cursor = 0,
+  overrides: Partial<GameState> = {},
+): void {
   const players = seats.map(([name, role]) => ({
     id: name.toLowerCase(),
     name,
@@ -36,6 +41,7 @@ function parkNightGame(seats: Seat[], cursor = 0): void {
     players,
     nightOrderIds: players.map((player) => player.id),
     nightCursor: cursor,
+    ...overrides,
   };
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -126,5 +132,66 @@ describe("Night", () => {
     expect(within(pack).getByText("Alice")).toBeInTheDocument();
     expect(within(pack).getByText("Bob")).toBeInTheDocument();
     expect(within(pack).queryByText("Cara")).not.toBeInTheDocument();
+  });
+
+  it("refuses to let a wolf vote to kill themselves", async () => {
+    parkNightGame([
+      ["Alice", RoleId.Werewolf],
+      ["Bob", RoleId.Werewolf],
+      ["Cara", RoleId.Villager],
+    ]);
+    const user = userEvent.setup();
+    renderNight();
+
+    await confirmHandOff(user, "Alice");
+
+    expect(screen.getByRole("button", { name: "Alice" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Bob" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Cara" })).toBeEnabled();
+  });
+
+  it("asks the witch which potion first, and confirms before it kills", async () => {
+    parkNightGame(
+      [
+        ["Alice", RoleId.Witch],
+        ["Bob", RoleId.Werewolf],
+        ["Cara", RoleId.Villager],
+      ],
+      0,
+      {
+        night: {
+          wolfVotes: { bob: "cara" },
+          protectedId: null,
+          inspectedId: null,
+          healTargetId: null,
+          poisonTargetId: null,
+          loverIds: null,
+        },
+      },
+    );
+    const user = userEvent.setup();
+    renderNight();
+
+    await confirmHandOff(user, "Alice");
+
+    // Stage one offers bottles, never a bare list of names.
+    expect(
+      screen.getByRole("button", { name: "Save Cara" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Bob" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Poison someone" }));
+    await user.click(screen.getByRole("button", { name: "Bob" }));
+
+    // Naming a target is not the same as killing them.
+    expect(
+      screen.getByText("Poison Bob? They die by morning."),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.getByText("Pass the phone to Bob")).toBeInTheDocument();
   });
 });

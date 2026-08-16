@@ -1,6 +1,7 @@
 import { Dawn } from "src/components/dawn/dawn";
 import { Day } from "src/components/day/day";
 import { GameProvider } from "src/components/game/game.state";
+import { GameShell } from "src/components/game/game.ui";
 import { GameOver } from "src/components/game-over/game-over";
 import { GameMenu } from "src/components/menu/menu";
 import { Night } from "src/components/night/night";
@@ -38,7 +39,7 @@ export default async function GamePage({ params }: GamePageProps) {
   return (
     <GameProvider>
       {/* A real row rather than an overlay — floating the menu covered the screen headings. */}
-      <div className={cn("grid min-h-dvh grid-rows-[auto_1fr]")}>
+      <GameShell>
         <header className={cn("px-3 pt-3", "grid justify-items-end")}>
           <GameMenu dict={dictionary} locale={locale} />
         </header>
@@ -51,7 +52,7 @@ export default async function GamePage({ params }: GamePageProps) {
           <Day dict={dictionary} />
           <GameOver dict={dictionary} />
         </div>
-      </div>
+      </GameShell>
     </GameProvider>
   );
 }

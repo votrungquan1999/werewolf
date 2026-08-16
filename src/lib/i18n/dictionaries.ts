@@ -56,6 +56,10 @@ const vietnamese: Dictionary = {
       "Bác Sĩ, chọn một người để cứu đêm nay. Được tự cứu mình, nhưng không được cứu lại người đêm qua.",
     witchPrompt:
       "Phù Thủy, cứu nạn nhân đêm nay hoặc đầu độc một người — một đêm chỉ được một trong hai. Mỗi bình dùng một lần cả ván.",
+    witchHealChoice: "Cứu {name}",
+    witchPoisonChoice: "Đầu độc một người",
+    witchNoPotionChoice: "Đêm nay không dùng bình nào",
+    witchPoisonConfirm: "Đầu độc {name}? Sáng mai họ chết.",
     cupidPrompt:
       "Thần Tình Yêu, chọn hai người để se duyên. Một người chết thì người kia cũng chết theo.",
   },
@@ -202,6 +206,10 @@ const english: Dictionary = {
       "Doctor, choose who to protect tonight. You may protect yourself, but not whoever you protected last night.",
     witchPrompt:
       "Witch, heal tonight's victim or poison someone — never both in one night. Each potion works once per game.",
+    witchHealChoice: "Save {name}",
+    witchPoisonChoice: "Poison someone",
+    witchNoPotionChoice: "Use neither potion tonight",
+    witchPoisonConfirm: "Poison {name}? They die by morning.",
     cupidPrompt:
       "Cupid, choose two players to fall in love. If one dies, the other dies too.",
   },

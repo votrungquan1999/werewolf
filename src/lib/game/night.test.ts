@@ -2,6 +2,7 @@ import {
   advanceNightCursor,
   buildNightOrder,
   canDoctorProtect,
+  canWolfTarget,
   getCurrentNightTurn,
   getPackMemberIds,
   getProvisionalVictimId,
@@ -11,7 +12,7 @@ import {
   submitNightChoice,
 } from "src/lib/game/night";
 import type { GameState, Player } from "src/lib/game/types";
-import { NightAction, Phase, RoleId } from "src/lib/game/types";
+import { NightAction, Phase, PotionKind, RoleId } from "src/lib/game/types";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -126,6 +127,7 @@ describe("Feature: Night phase", () => {
         NightAction.LinkLovers,
         "w1",
         "v1",
+        null,
       );
 
       expect(linked.night.loverIds).toEqual({ firstId: "w1", secondId: "v1" });
@@ -166,12 +168,14 @@ describe("Feature: Night phase", () => {
         NightAction.WolfVote,
         "v1",
         null,
+        null,
       );
       const tiedVotes = submitNightChoice(
         oneVote,
         "w2",
         NightAction.WolfVote,
         "v2",
+        null,
         null,
       );
 
@@ -188,10 +192,19 @@ describe("Feature: Night phase", () => {
         NightAction.WolfVote,
         "v1",
         null,
+        null,
       );
 
       expect(getWolfVoteTally(decidedVotes.night.wolfVotes)).toEqual({ v1: 2 });
       expect(getProvisionalVictimId(decidedVotes)).toBe("v1");
+    });
+  });
+
+  describe("Scenario: A wolf may not vote to kill themselves", () => {
+    it("should refuse a wolf their own name and allow every other player", () => {
+      expect(canWolfTarget("w1", "w1")).toBe(false);
+      expect(canWolfTarget("w1", "w2")).toBe(true);
+      expect(canWolfTarget("w1", "v1")).toBe(true);
     });
   });
 
@@ -211,6 +224,7 @@ describe("Feature: Night phase", () => {
         "s1",
         NightAction.Inspect,
         "w1",
+        null,
         null,
       );
 
@@ -239,6 +253,7 @@ describe("Feature: Night phase", () => {
         "d1",
         NightAction.Protect,
         "d1",
+        null,
         null,
       );
 
@@ -272,6 +287,7 @@ describe("Feature: Night phase", () => {
         NightAction.Potion,
         "v1",
         null,
+        PotionKind.Heal,
       );
 
       expect(healed.night.healTargetId).toBe("v1");
@@ -284,6 +300,7 @@ describe("Feature: Night phase", () => {
         NightAction.Potion,
         "v2",
         null,
+        PotionKind.Poison,
       );
 
       expect(alsoPoisoned.night.poisonTargetId).toBeNull();
@@ -295,6 +312,7 @@ describe("Feature: Night phase", () => {
         NightAction.Potion,
         "v2",
         null,
+        PotionKind.Poison,
       );
 
       expect(poisoned.night.poisonTargetId).toBe("v2");
@@ -306,10 +324,45 @@ describe("Feature: Night phase", () => {
         NightAction.Potion,
         null,
         null,
+        null,
       );
 
       expect(declined.night.healTargetId).toBeNull();
       expect(declined.night.poisonTargetId).toBeNull();
+    });
+  });
+
+  describe("Scenario: The witch declares which potion she is using", () => {
+    it("should poison the wolves' own victim when she says poison", () => {
+      const state = createState(
+        [
+          createPlayer("t1", RoleId.Witch),
+          createPlayer("w1", RoleId.Werewolf),
+          createPlayer("v1", RoleId.Villager),
+        ],
+        {
+          night: {
+            wolfVotes: { w1: "v1" },
+            protectedId: null,
+            inspectedId: null,
+            healTargetId: null,
+            poisonTargetId: null,
+            loverIds: null,
+          },
+        },
+      );
+
+      const poisoned = submitNightChoice(
+        state,
+        "t1",
+        NightAction.Potion,
+        "v1",
+        null,
+        PotionKind.Poison,
+      );
+
+      expect(poisoned.night.poisonTargetId).toBe("v1");
+      expect(poisoned.night.healTargetId).toBeNull();
     });
   });
 });

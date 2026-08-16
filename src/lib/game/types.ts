@@ -64,6 +64,17 @@ export enum NightAction {
   Potion = "potion",
 }
 
+/**
+ * Which bottle the witch reached for.
+ *
+ * Declared by the witch rather than inferred from the target, so she can poison
+ * the very player the wolves went for.
+ */
+export enum PotionKind {
+  Heal = "heal",
+  Poison = "poison",
+}
+
 /** One player at the table. */
 export interface Player {
   id: string;
@@ -208,6 +219,8 @@ export interface SubmitNightChoiceAction {
   targetId: string | null;
   /** Cupid's second target; unused by every other action. */
   secondTargetId: string | null;
+  /** Which potion the witch chose; unused by every other action. */
+  potionKind: PotionKind | null;
 }
 
 export interface AdvanceNightCursorAction {

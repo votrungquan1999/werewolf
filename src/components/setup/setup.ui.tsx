@@ -25,7 +25,6 @@ export function SetupScreen({ children }: { children: ReactNode }) {
 
   return (
     <main
-      data-phase="setup"
       className={cn(
         "gap-6 p-4 pb-10",
         "grid content-start",

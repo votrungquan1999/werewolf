@@ -89,13 +89,7 @@ export function DayVote({
   const isDayDone = resolvedOnNight === state.nightNumber && !isRevote;
 
   return (
-    <section
-      data-phase="day"
-      className={cn(
-        "min-h-full bg-phase-muted text-foreground",
-        "grid content-start gap-6 p-4",
-      )}
-    >
+    <section className={cn("min-h-full", "grid content-start gap-6 p-4")}>
       <h1 className="font-heading font-semibold text-2xl tracking-tight">
         {isRevote ? revoteTitle : voteTitle}
       </h1>

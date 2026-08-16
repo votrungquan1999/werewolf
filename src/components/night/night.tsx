@@ -29,9 +29,14 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     seerIsWerewolf: dict.nightResults.seerIsWerewolf,
     seerIsNotWerewolf: dict.nightResults.seerIsNotWerewolf,
     witchVictim: dict.nightResults.witchVictim,
+    witchHealChoice: dict.night.witchHealChoice,
+    witchPoisonChoice: dict.night.witchPoisonChoice,
+    witchNoPotionChoice: dict.night.witchNoPotionChoice,
+    witchPoisonConfirm: dict.night.witchPoisonConfirm,
     continueLabel: dict.common.continue,
     confirmLabel: dict.common.confirm,
     declineLabel: dict.common.cancel,
+    backLabel: dict.common.back,
   };
 }
 
