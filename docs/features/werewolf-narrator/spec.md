@@ -80,7 +80,7 @@ Dark-only (`<html class="dark">`) — it is played in dim rooms.
 
 1. Anyone can switch between Vietnamese and English, staying on the same screen
 2. A host builds tonight's player list
-3. The host is told when the chosen roles don't cover everyone playing
+3. The host is told when they have picked more special roles than there are seats (villagers backfill any shortfall, so a deck can only ever be over-full)
 4. Each player privately sees their own role, then passes the phone on
 5. The phone visits every living player each night, in a fixed order, with decoys
 6. The wolves recognise each other, see the running tally, and the majority pick dies
@@ -94,6 +94,7 @@ Dark-only (`<html class="dark">`) — it is played in dim rooms.
 14. Cupid links two lovers; a lover dying breaks the other's heart; the pair can win alone
 15. The fool wins alone if the village votes them out
 16. The host resumes an interrupted game after the phone locks or refreshes
+17. Anyone can take back a mis-tap, or start a fresh game after confirming
 
 ## Known gaps
 
