@@ -144,17 +144,19 @@ export function RevealHoldControl({ children }: RevealChildrenProps) {
         onPointerCancel={hideCard}
         className={cn(
           "touch-manipulation rounded-xl border border-phase-border bg-card p-4 text-base text-foreground",
-          "pile min-h-64 w-full place-items-center",
+          "pile isolate min-h-64 w-full place-items-center",
         )}
       >
         {/* The same filling affordance the night hand-off uses, so one hold
-            gesture is taught once and recognised everywhere. */}
+            gesture is taught once and recognised everywhere. The transform would
+            otherwise paint this over the prompt and the card, so it is pushed
+            behind them — `isolate` above keeps it above the button's own face. */}
         <span
           aria-hidden="true"
           data-holding={isHolding ? "" : undefined}
           className={cn(
             "rounded-lg bg-phase",
-            "size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
+            "-z-10 size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
           )}
         />
         {children}

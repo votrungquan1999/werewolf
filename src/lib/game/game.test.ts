@@ -1,4 +1,4 @@
-import { gameReducer } from "src/lib/game/game";
+import { dealRolesAction, gameReducer } from "src/lib/game/game";
 import { createInitialState } from "src/lib/game/setup";
 import {
   ActionType,
@@ -330,6 +330,42 @@ describe("Feature: running a game through one reducer", () => {
 
       expect(next.winner).toBe(Winner.Fool);
       expect(next.phase).toBe(Phase.GameOver);
+    });
+  });
+
+  describe("Scenario: the same table plays again", () => {
+    it("should deal a different arrangement rather than repeating the last one", () => {
+      const seated: GameState = {
+        ...createInitialState(),
+        players: ["An", "Bình", "Cúc", "Dũng", "Hà", "Kim", "Lan", "Minh"].map(
+          (name) => ({ id: name, name, role: null, isAlive: true }),
+        ),
+        roleCounts: {
+          [RoleId.Werewolf]: 2,
+          [RoleId.Villager]: 2,
+          [RoleId.Seer]: 1,
+          [RoleId.Doctor]: 1,
+          [RoleId.Witch]: 1,
+          [RoleId.Hunter]: 0,
+          [RoleId.Cupid]: 1,
+          [RoleId.Fool]: 0,
+        },
+      };
+
+      // The front seat is what a host actually watches, and the seat order is kept
+      // across games — so it is the seat a stuck deal would show up in first.
+      const frontSeatRoles = new Set<RoleId | null>();
+      let state = seated;
+
+      // Forty replays, driven exactly as the play-again button drives them.
+      for (let round = 0; round < 40; round++) {
+        state = gameReducer(state, dealRolesAction());
+        frontSeatRoles.add(state.players[0].role);
+        state = gameReducer(state, { type: ActionType.ResetGame });
+      }
+
+      // Six distinct roles are in the deck; one repeated role would mean a pinned seed.
+      expect(frontSeatRoles.size).toBeGreaterThan(1);
     });
   });
 });

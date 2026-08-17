@@ -779,16 +779,17 @@ function NightHandOff({
         onClick={handleClick}
         className={cn(
           "touch-manipulation rounded-full border-2 border-phase-border bg-phase-muted text-phase-foreground",
-          "pile size-52 place-items-center",
+          "pile isolate size-52 place-items-center",
         )}
       >
-        {/* Purely the progress read-out; the button's own label carries the meaning. */}
+        {/* Purely the progress read-out; the button's own label carries the meaning,
+            so the transform is pushed behind the label rather than painting over it. */}
         <span
           aria-hidden="true"
           data-holding={isHolding ? "" : undefined}
           className={cn(
             "rounded-full bg-phase",
-            "size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
+            "-z-10 size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
           )}
         />
         <span className={cn("px-8 font-semibold text-lg text-balance")}>
