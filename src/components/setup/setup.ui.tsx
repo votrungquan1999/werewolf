@@ -220,7 +220,7 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
  * @returns The composition list.
  */
 export function RoleCounterList({ children }: { children: ReactNode }) {
-  return <ul className="grid grid-cols-2 gap-3">{children}</ul>;
+  return <ul className={cn("gap-3", "grid grid-cols-2")}>{children}</ul>;
 }
 
 /**
@@ -252,48 +252,75 @@ export function RoleCounter({
   const count = roleCounts[role];
   const [isFlipped, setIsFlipped] = useState(false); /*Flip*/
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
+    <li
+      className={cn(
+        "gap-2 rounded-xl border border-border bg-card p-3 shadow-md",
+        "grid content-start",
+      )}
+    >
       {/* Size A4 and Flip */}
       <button
         type="button"
         aria-pressed={isFlipped}
-        className="relative block w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
+        className={cn(
+          "cursor-pointer [perspective:1000px]",
+          "grid aspect-[210/297] w-full",
+        )}
         onClick={() => setIsFlipped(!isFlipped)}
       >
         <span
           className={cn(
-            "relative block h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "pile size-full",
             isFlipped && "[transform:rotateY(180deg)]",
           )}
         >
           {/* Front side: Image */}
-          <span className="absolute inset-0 block h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
+          <span
+            className={cn(
+              "overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]",
+              "pile size-full",
+            )}
+          >
             <Image
               width={167}
               height={236}
               src={`/roles/${role}.jpg`}
               alt={label}
-              className="h-full w-full object-cover"
+              className="size-full object-cover"
             />
-            <span className="absolute bottom-2 right-2 block rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
+            <span
+              className={cn(
+                "m-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm",
+                "self-end justify-self-end",
+              )}
+            >
               <RefreshCw className="size-3.5" />
             </span>
-            <span className="absolute bottom-0 inset-x-0 block bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
-              <span id={labelId} className="font-bold text-white text-sm">
+            <span
+              className={cn(
+                "bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center",
+                "self-end",
+              )}
+            >
+              <span id={labelId} className="font-bold text-sm text-white">
                 {label}
               </span>
             </span>
           </span>
 
           {/* Back side: Role */}
-          <span className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <span className="block">
-              <span className="font-bold text-sm block border-b border-border/40 pb-1 mb-2 text-center">
-                {label}
-              </span>
-              <span className="block text-xs leading-relaxed text-muted-foreground">
-                {children}
-              </span>
+          <span
+            className={cn(
+              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]",
+              "grid size-full content-start gap-2",
+            )}
+          >
+            <span className="border-border/40 border-b pb-1 text-center font-bold text-sm">
+              {label}
+            </span>
+            <span className="text-muted-foreground text-xs leading-relaxed">
+              {children}
             </span>
           </span>
         </span>
@@ -302,7 +329,10 @@ export function RoleCounter({
       {/* Named by the role so a screen reader hears which card the two buttons move. */}
       <fieldset
         aria-labelledby={labelId}
-        className="flex items-center justify-between border-t border-border pt-2"
+        className={cn(
+          "border-border border-t pt-2",
+          "grid grid-cols-[auto_1fr_auto] items-center",
+        )}
       >
         <Button
           type="button"
@@ -315,7 +345,9 @@ export function RoleCounter({
         >
           <Minus className="size-4" />
         </Button>
-        <span className="text-base font-bold tabular-nums">{count}</span>
+        <span className="text-center font-bold text-base tabular-nums">
+          {count}
+        </span>
         <Button
           type="button"
           variant="outline"
@@ -356,47 +388,74 @@ export function DerivedRoleCounter({
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
+    <li
+      className={cn(
+        "gap-2 rounded-xl border border-border bg-card p-3 shadow-md",
+        "grid content-start",
+      )}
+    >
       <button
         type="button"
         aria-pressed={isFlipped}
-        className="relative block w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
+        className={cn(
+          "cursor-pointer [perspective:1000px]",
+          "grid aspect-[210/297] w-full",
+        )}
         onClick={() => setIsFlipped(!isFlipped)}
       >
         <span
           className={cn(
-            "relative block h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "pile size-full",
             isFlipped && "[transform:rotateY(180deg)]",
           )}
         >
           {/* Front */}
-          <span className="absolute inset-0 block h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
+          <span
+            className={cn(
+              "overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]",
+              "pile size-full",
+            )}
+          >
             <Image
               width={167}
               height={236}
               src={`/roles/${role}.jpg`}
               alt={label}
-              className="h-full w-full object-cover"
+              className="size-full object-cover"
             />
-            <span className="absolute bottom-2 right-2 block rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
+            <span
+              className={cn(
+                "m-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm",
+                "self-end justify-self-end",
+              )}
+            >
               <RefreshCw className="size-3.5" />
             </span>
-            <span className="absolute bottom-0 inset-x-0 block bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
-              <span id={labelId} className="font-bold text-white text-sm">
+            <span
+              className={cn(
+                "bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center",
+                "self-end",
+              )}
+            >
+              <span id={labelId} className="font-bold text-sm text-white">
                 {label}
               </span>
             </span>
           </span>
 
           {/* Back */}
-          <span className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <span className="block">
-              <span className="font-bold text-sm block border-b border-border/40 pb-1 mb-2 text-center">
-                {label}
-              </span>
-              <span className="block text-xs leading-relaxed text-muted-foreground">
-                {children}
-              </span>
+          <span
+            className={cn(
+              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]",
+              "grid size-full content-start gap-2",
+            )}
+          >
+            <span className="border-border/40 border-b pb-1 text-center font-bold text-sm">
+              {label}
+            </span>
+            <span className="text-muted-foreground text-xs leading-relaxed">
+              {children}
             </span>
           </span>
         </span>
