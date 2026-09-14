@@ -263,22 +263,22 @@ export function RoleCounter({
         type="button"
         aria-pressed={isFlipped}
         className={cn(
-          "cursor-pointer [perspective:1000px]",
-          "grid aspect-[210/297] w-full",
+          "cursor-pointer perspective-[1000px]",
+          "grid aspect-210/297 w-full",
         )}
         onClick={() => setIsFlipped(!isFlipped)}
       >
         <span
           className={cn(
-            "rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "rounded-lg transition-all duration-500 transform-3d",
             "pile size-full",
-            isFlipped && "[transform:rotateY(180deg)]",
+            isFlipped && "rotate-y-180",
           )}
         >
           {/* Front side: Image */}
           <span
             className={cn(
-              "overflow-hidden rounded-lg bg-muted [backface-visibility:hidden]",
+              "overflow-hidden rounded-lg bg-muted backface-hidden",
               "pile size-full",
             )}
           >
@@ -299,7 +299,7 @@ export function RoleCounter({
             </span>
             <span
               className={cn(
-                "bg-gradient-to-t from-background/80 to-transparent p-2 pt-6 text-center",
+                "bg-linear-to-t from-background/80 to-transparent p-2 pt-6 text-center",
                 "self-end",
               )}
             >
@@ -312,7 +312,7 @@ export function RoleCounter({
           {/* Back side: Role */}
           <span
             className={cn(
-              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]",
+              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
               "grid size-full content-start gap-2",
             )}
           >
@@ -398,22 +398,22 @@ export function DerivedRoleCounter({
         type="button"
         aria-pressed={isFlipped}
         className={cn(
-          "cursor-pointer [perspective:1000px]",
-          "grid aspect-[210/297] w-full",
+          "cursor-pointer perspective-[1000px]",
+          "grid aspect-210/297 w-full",
         )}
         onClick={() => setIsFlipped(!isFlipped)}
       >
         <span
           className={cn(
-            "rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "rounded-lg transition-all duration-500 transform-3d",
             "pile size-full",
-            isFlipped && "[transform:rotateY(180deg)]",
+            isFlipped && "rotate-y-180",
           )}
         >
           {/* Front */}
           <span
             className={cn(
-              "overflow-hidden rounded-lg bg-muted [backface-visibility:hidden]",
+              "overflow-hidden rounded-lg bg-muted backface-hidden",
               "pile size-full",
             )}
           >
@@ -434,7 +434,7 @@ export function DerivedRoleCounter({
             </span>
             <span
               className={cn(
-                "bg-gradient-to-t from-background/80 to-transparent p-2 pt-6 text-center",
+                "bg-linear-to-t from-background/80 to-transparent p-2 pt-6 text-center",
                 "self-end",
               )}
             >
@@ -447,7 +447,7 @@ export function DerivedRoleCounter({
           {/* Back */}
           <span
             className={cn(
-              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]",
+              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
               "grid size-full content-start gap-2",
             )}
           >
