@@ -144,6 +144,30 @@ describe("Day", () => {
     ).toBeInTheDocument();
   });
 
+  it("tells the table nobody is out, without promising a revote, when everyone abstains", async () => {
+    parkDayGame(["Ann", "Ben", "Cara"]);
+    const user = userEvent.setup();
+
+    render(
+      <GameProvider>
+        <Day dict={dict} />
+      </GameProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", null);
+    await takeTurn(user, "Ben", null);
+    await takeTurn(user, "Cara", null);
+
+    expect(screen.getByText("No votes were cast.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Nobody voted, so nobody is voted out today."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("It's a tie — revote between the tied players."),
+    ).not.toBeInTheDocument();
+  });
+
   it("opens a revote limited to the tied players", async () => {
     parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
     const user = userEvent.setup();

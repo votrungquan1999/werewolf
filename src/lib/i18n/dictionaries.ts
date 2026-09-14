@@ -98,6 +98,8 @@ const vietnamese: Dictionary = {
     votedOut: "Cả làng đã treo cổ {name}.",
     tieTitle: "Hòa phiếu — bỏ phiếu lại giữa những người bằng phiếu nhau.",
     revoteTitle: "Bỏ phiếu lại",
+    noVotesCast: "Chưa có phiếu nào.",
+    noVotesTitle: "Không ai bỏ phiếu, nên hôm nay không ai bị loại.",
   },
   gameOver: {
     headlines: {
@@ -259,6 +261,8 @@ const english: Dictionary = {
     votedOut: "The village has voted out {name}.",
     tieTitle: "It's a tie — revote between the tied players.",
     revoteTitle: "Revote",
+    noVotesCast: "No votes were cast.",
+    noVotesTitle: "Nobody voted, so nobody is voted out today.",
   },
   gameOver: {
     headlines: {

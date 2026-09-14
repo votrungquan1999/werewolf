@@ -138,6 +138,10 @@ export interface DayDictionary {
   votedOut: string;
   tieTitle: string;
   revoteTitle: string;
+  /** Stands in for the tally when every voter abstained. */
+  noVotesCast: string;
+  /** The verdict when every voter abstained — nobody dies and there is no revote. */
+  noVotesTitle: string;
 }
 
 /** One headline per possible winner. */

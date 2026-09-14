@@ -46,6 +46,10 @@ export interface DayVoteProps {
   /** Carries `{name}` for the player the village lynched. */
   votedOut: string;
   tieTitle: string;
+  /** Stands in for the tally when every voter abstained. */
+  noVotesCast: string;
+  /** The verdict when every voter abstained. */
+  noVotesTitle: string;
   confirmLabel: string;
   /** Label on the control that ends the day and sends the table into the next night. */
   nightfallLabel: string;
@@ -118,6 +122,8 @@ function DayScreen({
   tallyTitle,
   votedOut,
   tieTitle,
+  noVotesCast,
+  noVotesTitle,
   confirmLabel,
   nightfallLabel,
 }: DayVoteProps) {
@@ -316,33 +322,43 @@ function DayScreen({
           >
             {tallyTitle}
           </h2>
-          <ul aria-labelledby={tallyHeadingId} className={cn("gap-2", "grid")}>
-            {Object.entries(tally).map(([targetId, count]) => (
-              <li
-                key={targetId}
-                className={cn(
-                  "text-base",
-                  "grid grid-cols-[1fr_auto] items-center gap-2",
-                )}
-              >
-                <span>{getPlayerName(state.players, targetId)}</span>
-                <Badge>{count}</Badge>
-              </li>
-            ))}
-          </ul>
+          {Object.keys(tally).length === 0 ? (
+            <p className="text-base text-muted-foreground">{noVotesCast}</p>
+          ) : (
+            <ul
+              aria-labelledby={tallyHeadingId}
+              className={cn("gap-2", "grid")}
+            >
+              {Object.entries(tally).map(([targetId, count]) => (
+                <li
+                  key={targetId}
+                  className={cn(
+                    "text-base",
+                    "grid grid-cols-[1fr_auto] items-center gap-2",
+                  )}
+                >
+                  <span>{getPlayerName(state.players, targetId)}</span>
+                  <Badge>{count}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
       {outcome !== null && (
         <div className={cn("gap-3", "grid")}>
           <p className="text-lg">
-            {outcome.eliminatedId === null ? (
-              tieTitle
-            ) : (
+            {outcome.eliminatedId !== null ? (
               <NamedLine
                 template={votedOut}
                 name={getPlayerName(state.players, outcome.eliminatedId)}
               />
+            ) : outcome.tiedIds.length === 0 ? (
+              // No votes means no tied players, so there is nobody to revote between.
+              noVotesTitle
+            ) : (
+              tieTitle
             )}
           </p>
 
