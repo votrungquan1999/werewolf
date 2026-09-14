@@ -860,7 +860,7 @@ function NightTurnBody({
   const role = state.players.find(
     (player) => player.id === turn.playerId,
   )?.role;
-//
+
   return (
     <section className={cn("gap-6 pb-6", "grid content-start")}>
       {/* Their own card, restated every turn — nobody should have to remember it
