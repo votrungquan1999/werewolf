@@ -100,6 +100,7 @@ const vietnamese: Dictionary = {
     revoteTitle: "Bỏ phiếu lại",
     noVotesCast: "Chưa có phiếu nào.",
     noVotesTitle: "Không ai bỏ phiếu, nên hôm nay không ai bị loại.",
+    tiedAgainTitle: "Lại hòa phiếu, nên hôm nay không ai bị loại.",
   },
   gameOver: {
     headlines: {
@@ -263,6 +264,7 @@ const english: Dictionary = {
     revoteTitle: "Revote",
     noVotesCast: "No votes were cast.",
     noVotesTitle: "Nobody voted, so nobody is voted out today.",
+    tiedAgainTitle: "Tied again, so nobody is voted out today.",
   },
   gameOver: {
     headlines: {

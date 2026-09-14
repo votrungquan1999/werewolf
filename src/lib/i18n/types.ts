@@ -142,6 +142,8 @@ export interface DayDictionary {
   noVotesCast: string;
   /** The verdict when every voter abstained — nobody dies and there is no revote. */
   noVotesTitle: string;
+  /** The verdict when a revote ties as well — a tie only earns one revote. */
+  tiedAgainTitle: string;
 }
 
 /** One headline per possible winner. */

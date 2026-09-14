@@ -204,4 +204,35 @@ describe("Day", () => {
       screen.queryByRole("button", { name: "Ben" }),
     ).not.toBeInTheDocument();
   });
+
+  it("ends the day with nobody out, without promising another revote, when the revote ties too", async () => {
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
+    const user = userEvent.setup();
+
+    render(
+      <GameProvider>
+        <Day dict={dict} />
+      </GameProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Cara", "Dan");
+    await takeTurn(user, "Dan", "Dan");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    // The revote splits the same way, and a tie only earns one revote.
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Cara", "Dan");
+    await takeTurn(user, "Dan", "Dan");
+
+    expect(
+      screen.getByText("Tied again, so nobody is voted out today."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("It's a tie — revote between the tied players."),
+    ).not.toBeInTheDocument();
+  });
 });

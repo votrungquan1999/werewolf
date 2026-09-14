@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { NamedLine } from "src/components/game/game.ui";
 import { Badge } from "src/components/ui/badge";
@@ -50,6 +50,8 @@ export interface DayVoteProps {
   noVotesCast: string;
   /** The verdict when every voter abstained. */
   noVotesTitle: string;
+  /** The verdict when a revote ties as well. */
+  tiedAgainTitle: string;
   confirmLabel: string;
   /** Label on the control that ends the day and sends the table into the next night. */
   nightfallLabel: string;
@@ -124,6 +126,7 @@ function DayScreen({
   tieTitle,
   noVotesCast,
   noVotesTitle,
+  tiedAgainTitle,
   confirmLabel,
   nightfallLabel,
 }: DayVoteProps) {
@@ -219,6 +222,26 @@ function DayScreen({
     }
 
     setIsResolved(true);
+  }
+
+  let verdict: ReactNode = null;
+  if (outcome === null) {
+    verdict = null;
+  } else if (outcome.eliminatedId !== null) {
+    verdict = (
+      <NamedLine
+        template={votedOut}
+        name={getPlayerName(state.players, outcome.eliminatedId)}
+      />
+    );
+  } else if (outcome.tiedIds.length === 0) {
+    // No votes means no tied players, so there is nobody to revote between.
+    verdict = noVotesTitle;
+  } else if (isRevote) {
+    // A tie only earns one revote, so tying it again ends the day.
+    verdict = tiedAgainTitle;
+  } else {
+    verdict = tieTitle;
   }
 
   let heading = voteTitle;
@@ -348,19 +371,7 @@ function DayScreen({
 
       {outcome !== null && (
         <div className={cn("gap-3", "grid")}>
-          <p className="text-lg">
-            {outcome.eliminatedId !== null ? (
-              <NamedLine
-                template={votedOut}
-                name={getPlayerName(state.players, outcome.eliminatedId)}
-              />
-            ) : outcome.tiedIds.length === 0 ? (
-              // No votes means no tied players, so there is nobody to revote between.
-              noVotesTitle
-            ) : (
-              tieTitle
-            )}
-          </p>
+          <p className="text-lg">{verdict}</p>
 
           <Button
             size="lg"

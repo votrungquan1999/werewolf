@@ -30,6 +30,7 @@ export function Day({ dict }: DayProps) {
       tieTitle={dict.day.tieTitle}
       noVotesCast={dict.day.noVotesCast}
       noVotesTitle={dict.day.noVotesTitle}
+      tiedAgainTitle={dict.day.tiedAgainTitle}
       confirmLabel={dict.common.confirm}
       nightfallLabel={dict.common.continue}
     />
