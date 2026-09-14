@@ -68,12 +68,8 @@ export function DawnScreen({
 
   return (
     <section className={cn("grid w-full gap-6 p-4")}>
-      <h1
-        className={cn(
-          "bg-phase text-phase-foreground rounded-xl px-4 py-3 text-2xl font-semibold",
-          "grid",
-        )}
-      >
+      {/* Plain text: a filled block matched the button below and read as tappable. */}
+      <h1 className={cn("text-2xl font-semibold tracking-tight")}>
         {fillTemplate(titleTemplate, "number", String(state.nightNumber))}
       </h1>
 

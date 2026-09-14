@@ -6,7 +6,7 @@ import { Phase } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
 
 /** The colour a phase paints the page. */
-enum PhaseAccent {
+export enum PhaseAccent {
   Setup = "setup",
   Night = "night",
   Day = "day",
@@ -20,7 +20,7 @@ enum PhaseAccent {
  * @param phase - The phase the game is on.
  * @returns The accent to paint.
  */
-function getPhaseAccent(phase: Phase): PhaseAccent {
+export function getPhaseAccent(phase: Phase): PhaseAccent {
   switch (phase) {
     case Phase.Night:
       return PhaseAccent.Night;

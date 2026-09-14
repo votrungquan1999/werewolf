@@ -313,7 +313,14 @@ function DayScreen({
             <NamedLine template={playerVotesFor} name={currentVoterName} />
           </p>
 
-          <div className={cn("gap-3", "grid grid-cols-1 sm:grid-cols-2")}>
+          <div
+            className={cn(
+              "gap-3",
+              "grid grid-cols-1",
+              // An odd last candidate spans the row rather than sitting beside a gap.
+              "sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2",
+            )}
+          >
             {candidateIds.map((candidateId) => (
               <Button
                 key={candidateId}

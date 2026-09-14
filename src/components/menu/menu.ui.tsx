@@ -1,7 +1,12 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { useCanUndo, useGameActions } from "src/components/game/game.state";
+import {
+  useCanUndo,
+  useGame,
+  useGameActions,
+} from "src/components/game/game.state";
+import { getPhaseAccent } from "src/components/game/game.ui";
 import { Button } from "src/components/ui/button";
 import {
   Sheet,
@@ -59,6 +64,7 @@ export function GameMenuPanel({
   children: ReactNode;
 }) {
   const [view, setView] = useState<MenuView>(MenuView.Closed);
+  const { phase } = useGame();
   const { undo, resetGame } = useGameActions();
   const canUndo = useCanUndo();
 
@@ -102,8 +108,10 @@ export function GameMenuPanel({
         {openLabel}
       </SheetTrigger>
 
+      {/* The sheet renders in a portal outside the shell, so it needs the phase colours itself. */}
       <SheetContent
         side="bottom"
+        data-phase={getPhaseAccent(phase)}
         className={cn(
           "rounded-t-2xl px-4 pt-4",
           "pb-[max(1rem,env(safe-area-inset-bottom))]",

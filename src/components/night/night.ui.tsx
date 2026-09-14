@@ -460,6 +460,9 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
   }
 
   if (stage === WitchStage.ChoosePotion) {
+    const hasPotionLeft =
+      state.witchHealAvailable || state.witchPoisonAvailable;
+
     return (
       <>
         {/* The victim is never named. The phone travels in seat order, so whether she
@@ -490,11 +493,15 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
           </Button>
         )}
 
+        {/* With both bottles spent this is her only way on, so it must look like a button. */}
         <Button
-          variant="ghost"
+          variant={hasPotionLeft ? "ghost" : "default"}
           size="lg"
           onClick={declinePotion}
-          className={cn("h-auto min-h-16 w-full whitespace-normal text-base")}
+          className={cn(
+            "h-auto min-h-16 w-full whitespace-normal text-base",
+            !hasPotionLeft && "bg-phase text-phase-foreground",
+          )}
         >
           {copy.witchNoPotionChoice}
         </Button>
@@ -951,7 +958,8 @@ export function NightScreen({ copy }: { copy: NightCopy }) {
 
   return (
     <main className={cn("w-full p-6", "grid gap-6")}>
-      <h1 className="font-semibold text-xl tracking-tight">
+      {/* Centred to sit over the centred hand-off and hold circle below it. */}
+      <h1 className="text-center font-semibold text-xl tracking-tight">
         {fillTemplate(copy.title, { number: String(state.nightNumber) })}
       </h1>
 
