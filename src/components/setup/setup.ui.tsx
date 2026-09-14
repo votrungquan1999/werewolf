@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus, X, RefreshCw, HelpCircle} from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
@@ -9,6 +9,7 @@ import { getRoleDefinition } from "src/lib/game/roles";
 import { getRoleCountIssue, RoleCountIssueKind } from "src/lib/game/setup";
 import { Phase, type RoleId } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
+import Image from "next/image";
 
 /**
  * Root of the setup screen, carrying the neutral phase accent.
@@ -219,7 +220,7 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
  * @returns The composition list.
  */
 export function RoleCounterList({ children }: { children: ReactNode }) {
-  return <ul className={cn("gap-2", "grid")}>{children}</ul>;
+  return <ul className="grid grid-cols-2 gap-3">{children}</ul>;
 }
 
 /**
@@ -249,27 +250,57 @@ export function RoleCounter({
   const labelId = useId();
   const { maxPerGame } = getRoleDefinition(role);
   const count = roleCounts[role];
-
+  const [isFlipped, setIsFlipped] = useState(false) /*Flip*/
   return (
-    <li
-      className={cn(
-        "gap-x-3 rounded-lg border border-border bg-card p-3",
-        "grid grid-cols-[1fr_auto] items-center",
-      )}
-    >
-      <span id={labelId} className="font-medium text-base">
-        {label}
-      </span>
-      <p className={cn("text-muted-foreground text-sm", "col-start-1")}>
-        {children}
-      </p>
+    <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
+      {/* Size A4 and Flip */}
+      <div
+        className="relative w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <div
+          className={cn(
+            "relative h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            isFlipped && "[transform:rotateY(180deg)]",
+          )}
+        >
+          {/* Front side: Image */}
+          <div className="absolute inset-0 h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
+            <Image
+              width={167}
+              height={236}
+              src={`/roles/${role}.jpg`}
+              alt={label}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute bottom-2 right-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
+              <RefreshCw className="size-3.5" />
+            </div>
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
+              <span id={labelId} className="font-bold text-white text-sm">
+                {label}
+              </span>
+            </div>
+          </div>
+
+          {/* Back side: Role */}
+          <div className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <div>
+              <span className="font-bold text-sm block border-b border-border/40 pb-1 mb-2 text-center">
+                {label}
+              </span>
+              <div className="text-xs leading-relaxed text-muted-foreground">
+                {children}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Named by the role so a screen reader hears which card the two buttons move. */}
       <fieldset
         aria-labelledby={labelId}
-        className={cn(
-          "gap-1",
-          "col-start-2 row-span-2 row-start-1 grid grid-flow-col items-center",
-        )}
+        className="flex items-center justify-between border-t border-border pt-2"
       >
         <Button
           type="button"
@@ -278,24 +309,21 @@ export function RoleCounter({
           aria-label={decreaseLabel}
           disabled={count === 0}
           onClick={() => setRoleCount(role, count - 1)}
-          className="size-14 rounded-full"
+          className="size-8 rounded-full"
         >
-          <Minus className="size-6" />
+          <Minus className="size-4" />
         </Button>
-        <span className="min-w-8 text-center text-xl tabular-nums">
-          {count}
-        </span>
+        <span className="text-base font-bold tabular-nums">{count}</span>
         <Button
           type="button"
           variant="outline"
           size="icon"
           aria-label={increaseLabel}
-          // A null cap means the role has no limit, so the plus never locks.
           disabled={maxPerGame !== null && count >= maxPerGame}
           onClick={() => setRoleCount(role, count + 1)}
-          className="size-14 rounded-full"
+          className="size-8 rounded-full"
         >
-          <Plus className="size-6" />
+          <Plus className="size-4" />
         </Button>
       </fieldset>
     </li>
@@ -323,38 +351,67 @@ export function DerivedRoleCounter({
 }) {
   const { roleCounts } = useGame();
   const labelId = useId();
+  const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <li
-      className={cn(
-        "gap-x-3 rounded-lg border border-border bg-card p-3",
-        "grid grid-cols-[1fr_auto] items-center",
-      )}
-    >
-      <span id={labelId} className="font-medium text-base">
-        {label}
-      </span>
-      <p className={cn("text-muted-foreground text-sm", "col-start-1")}>
-        {children}
-      </p>
-      {/* `output` states it plainly: this number is a result, not a choice. */}
-      <output
-        aria-labelledby={labelId}
-        className={cn(
-          "min-w-8 text-center text-xl tabular-nums",
-          "col-start-2 row-span-2 row-start-1 block",
-        )}
-      >
-        {roleCounts[role]}
-      </output>
-      <p
-        className={cn(
-          "text-muted-foreground text-xs",
-          "col-span-full row-start-3",
-        )}
-      >
-        {note}
-      </p>
+    <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
+      <div
+        className="relative w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
+        onClick={() => setIsFlipped(!isFlipped)}>
+        <div
+          className={cn(
+            "relative h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            isFlipped && "[transform:rotateY(180deg)]",
+          )}
+        >
+          {/* Front */}
+          <div className="absolute inset-0 h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
+            <Image
+              width={167}
+              height={236}
+              src={`/roles/${role}.jpg`}
+              alt={label}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute bottom-2 right-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
+              <RefreshCw className="size-3.5" />
+            </div>
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
+              <span id={labelId} className="font-bold text-white text-sm">
+                {label}
+              </span>
+            </div>
+          </div>
+
+          {/* Back */}
+          <div className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <div>
+              <span className="font-bold text-sm block border-b border-border/40 pb-1 mb-2 text-center">
+                {label}
+              </span>
+              <div className="text-xs leading-relaxed text-muted-foreground">
+                {children}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer: (?) */}
+      <div className="relative flex items-center justify-center border-t border-border pt-2 h-10">
+        <output
+          aria-labelledby={labelId}
+          className="text-base font-bold tabular-nums">
+          {roleCounts[role]}
+        </output>
+
+        <div className="group absolute left-[calc(50%+1rem)] flex items-center">
+          <HelpCircle className="size-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" />
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 rounded-md bg-popover p-2 text-xs text-center text-popover-foreground shadow-md border border-border z-50 pointer-events-none">
+            {note}
+          </div>
+        </div>
+      </div>
     </li>
-  );
+  )
 }
