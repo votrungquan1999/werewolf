@@ -226,10 +226,10 @@ function NightRoster({
             key={entry.id}
             className={cn(
               "rounded-lg border border-phase-border px-4 py-3 text-base",
-              "grid grid-flow-col items-center justify-between",
+              "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2",
             )}
           >
-            <span>{entry.name}</span>
+            <span className="wrap-anywhere">{entry.name}</span>
             {entry.count === null ? null : (
               <Badge variant="secondary">{entry.count}</Badge>
             )}
@@ -265,8 +265,9 @@ function NightChoiceList({
             size="lg"
             disabled={disabledIds.includes(player.id)}
             onClick={() => onChoose(player.id)}
+            // The Button base is nowrap; a long name has to wrap to stay readable.
             className={cn(
-              "h-auto min-h-16 w-full border-phase-border py-4 text-base",
+              "h-auto min-h-16 w-full border-phase-border py-4 text-base whitespace-normal wrap-anywhere",
             )}
           >
             {player.name}
@@ -612,7 +613,7 @@ function NightLoversTurn({ actorId, copy, onDone }: ActTurnProps) {
                 disabled={isPairComplete && !isChosen}
                 onPressedChange={() => toggleLover(player.id)}
                 className={cn(
-                  "h-auto min-h-16 w-full border-phase-border py-4 text-base",
+                  "h-auto min-h-16 w-full border-phase-border py-4 text-base whitespace-normal wrap-anywhere",
                 )}
               >
                 {player.name}

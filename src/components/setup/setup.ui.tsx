@@ -204,10 +204,11 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
           key={player.id}
           className={cn(
             "gap-2 rounded-lg border border-border bg-card px-4 py-2 text-base",
-            "grid grid-cols-[1fr_auto] items-center",
+            "grid grid-cols-[minmax(0,1fr)_auto] items-center",
           )}
         >
-          <span>{player.name}</span>
+          {/* Wraps mid-word so a pasted handle cannot push the remove button off-screen. */}
+          <span className="wrap-anywhere">{player.name}</span>
           <Button
             type="button"
             variant="ghost"

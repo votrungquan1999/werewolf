@@ -75,7 +75,10 @@ export function GameOverRoster({
   return (
     <Card>
       <CardContent
-        className={cn("grid grid-cols-[1fr_auto] items-center gap-x-4")}
+        // minmax(0,1fr): a long name must not push the shared badge column past the card's clip.
+        className={cn(
+          "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4",
+        )}
       >
         {state.players.map((player) => (
           <div
@@ -86,7 +89,9 @@ export function GameOverRoster({
             )}
           >
             <span className={cn("grid gap-0.5", "col-start-1")}>
-              <span className={cn("text-base font-medium")}>{player.name}</span>
+              <span className={cn("text-base font-medium wrap-anywhere")}>
+                {player.name}
+              </span>
               {/* Null role only happens if a game ends before the deal — show nothing rather than a blank line. */}
               {player.role === null ? null : (
                 <span className={cn("text-sm text-muted-foreground")}>

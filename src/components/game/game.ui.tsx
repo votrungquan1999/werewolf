@@ -50,7 +50,7 @@ export function GameShell({ children }: { children: ReactNode }) {
       data-phase={getPhaseAccent(state.phase)}
       className={cn(
         "bg-phase-muted text-foreground",
-        "grid min-h-dvh grid-rows-[auto_1fr]",
+        "grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr]",
       )}
     >
       {children}
@@ -87,7 +87,13 @@ export function GameLoading({ children }: { children: ReactNode }) {
  */
 export function GameScreens({ children }: { children: ReactNode }) {
   return (
-    <div className={cn("grid min-h-0 content-center-safe")}>{children}</div>
+    <div
+      className={cn(
+        "grid min-h-0 grid-cols-[minmax(0,1fr)] content-center-safe",
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -102,7 +108,10 @@ export function GameScreens({ children }: { children: ReactNode }) {
  */
 export function PlayerName({ children }: { children: ReactNode }) {
   return (
-    <strong className={cn("font-semibold text-phase-name")}>{children}</strong>
+    // `anywhere` also shrinks min-content, so a pasted handle cannot widen its grid track.
+    <strong className={cn("font-semibold text-phase-name wrap-anywhere")}>
+      {children}
+    </strong>
   );
 }
 

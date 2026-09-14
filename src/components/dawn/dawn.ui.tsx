@@ -103,7 +103,11 @@ export function DawnScreen({
                   )}
                 >
                   <CardContent className={cn("grid gap-1")}>
-                    <p className={cn("text-destructive text-lg font-semibold")}>
+                    <p
+                      className={cn(
+                        "text-destructive text-lg font-semibold wrap-anywhere",
+                      )}
+                    >
                       {fillTemplate(
                         playerDiedTemplate,
                         "name",

@@ -322,8 +322,9 @@ function DayScreen({
                   castDayVote(currentVoterId, candidateId);
                   finishTurn();
                 }}
+                // Grows and wraps instead of clipping a long name at both edges.
                 className={cn(
-                  "h-16 bg-phase text-base text-phase-foreground hover:bg-phase/80",
+                  "h-auto min-h-16 bg-phase py-3 text-base text-phase-foreground whitespace-normal wrap-anywhere hover:bg-phase/80",
                   "w-full",
                 )}
               >
@@ -371,10 +372,12 @@ function DayScreen({
                   key={targetId}
                   className={cn(
                     "text-base",
-                    "grid grid-cols-[1fr_auto] items-center gap-2",
+                    "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2",
                   )}
                 >
-                  <span>{getPlayerName(state.players, targetId)}</span>
+                  <span className="wrap-anywhere">
+                    {getPlayerName(state.players, targetId)}
+                  </span>
                   <Badge>{count}</Badge>
                 </li>
               ))}
