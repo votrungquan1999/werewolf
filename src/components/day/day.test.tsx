@@ -17,15 +17,16 @@ const dict = getDictionary(Locale.En);
 /**
  * Parks a day-phase game in storage so `GameProvider` resumes it on mount.
  * @param names - The living players, in table order; the name doubles as the id
+ * @param werewolves - Players dealt a wolf instead of a villager, so a lynch need not end the game
  */
-function parkDayGame(names: string[]): void {
+function parkDayGame(names: string[], werewolves: string[] = []): void {
   const state: GameState = {
     ...createInitialState(),
     phase: Phase.Day,
     players: names.map((name) => ({
       id: name,
       name,
-      role: RoleId.Villager,
+      role: werewolves.includes(name) ? RoleId.Werewolf : RoleId.Villager,
       isAlive: true,
     })),
   };
@@ -166,6 +167,60 @@ describe("Day", () => {
     expect(
       screen.queryByText("It's a tie — revote between the tied players."),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the verdict on screen after the vote is confirmed", async () => {
+    // Ann's wolf keeps the game alive after the lynch, so the day screen stays up.
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"], ["Ann"]);
+    const user = userEvent.setup();
+
+    render(
+      <GameProvider>
+        <Day dict={dict} />
+      </GameProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", "Dan");
+    await takeTurn(user, "Ben", "Dan");
+    await takeTurn(user, "Cara", "Dan");
+    await takeTurn(user, "Dan", "Dan");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(
+      screen.getByRole("button", { name: "Continue" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(namedLine("The village has voted out Dan.")),
+    ).toBeInTheDocument();
+  });
+
+  it("still calls a confirmed revote tie a second tie, not a new revote", async () => {
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"], ["Ann"]);
+    const user = userEvent.setup();
+
+    render(
+      <GameProvider>
+        <Day dict={dict} />
+      </GameProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    for (let round = 0; round < 2; round += 1) {
+      await takeTurn(user, "Ann", "Cara");
+      await takeTurn(user, "Ben", "Cara");
+      await takeTurn(user, "Cara", "Dan");
+      await takeTurn(user, "Dan", "Dan");
+      await user.click(screen.getByRole("button", { name: "Confirm" }));
+    }
+
+    // Confirming clears the revote from the game, so the wording must survive it.
+    expect(
+      screen.getByRole("button", { name: "Continue" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Tied again, so nobody is voted out today."),
+    ).toBeInTheDocument();
   });
 
   it("opens a revote limited to the tied players", async () => {

@@ -6,6 +6,7 @@ import { NamedLine } from "src/components/game/game.ui";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import {
+  type DayVoteOutcome,
   getDayVoteOutcome,
   getDayVoteTally,
   getEligibleVoterIds,
@@ -19,6 +20,13 @@ export enum DayStage {
   Discuss = "discuss",
   Vote = "vote",
   Result = "result",
+}
+
+/** A vote round that has been confirmed and will not reopen. */
+interface ClosedVote {
+  outcome: DayVoteOutcome;
+  /** Whether the round was a revote — decides how a tie is worded. */
+  isRevote: boolean;
 }
 
 /** How long the village gets to argue before the countdown runs out. */
@@ -143,7 +151,9 @@ function DayScreen({
   // Who has held the phone is tracked here, not read back from the recorded votes:
   // an abstention records nothing, so the votes cannot say whose turn is spent.
   const [voterIndex, setVoterIndex] = useState(0);
-  const [isResolved, setIsResolved] = useState(false);
+  // Kept once the vote closes: resolving clears the votes and the revote flag the verdict reads.
+  const [closedVote, setClosedVote] = useState<ClosedVote | null>(null);
+  const isResolved = closedVote !== null;
 
   // The sanctioned effect: a wall clock is an external resource, not derived state.
   useEffect(() => {
@@ -187,9 +197,11 @@ function DayScreen({
     currentVoterId === null ? "" : getPlayerName(state.players, currentVoterId);
   const candidateIds = getVoteCandidateIds(state);
   const tally = getDayVoteTally(state.dayVotes);
-  // Read the verdict while the votes still exist — resolving clears them.
-  const outcome =
-    stage === DayStage.Result && !isResolved ? getDayVoteOutcome(state) : null;
+  // Live from the votes until confirmed, then frozen in `closedVote`.
+  let shownVote = closedVote;
+  if (shownVote === null && stage === DayStage.Result) {
+    shownVote = { outcome: getDayVoteOutcome(state), isRevote };
+  }
 
   /**
    * Hands the phone to the next voter, or closes the round when the table is spent.
@@ -210,8 +222,10 @@ function DayScreen({
    * Closes the round: a first tie sends the phone round again, anything else ends the day.
    */
   function confirmOutcome() {
-    // Mirrors `resolveDayVote`'s own condition, read before resolving clears the votes.
-    const willRevote = getDayVoteOutcome(state).tiedIds.length > 0 && !isRevote;
+    // Read before resolving clears the votes.
+    const outcome = getDayVoteOutcome(state);
+    // Mirrors `resolveDayVote`'s own condition.
+    const willRevote = outcome.tiedIds.length > 0 && !isRevote;
 
     resolveDayVote();
 
@@ -221,23 +235,23 @@ function DayScreen({
       return;
     }
 
-    setIsResolved(true);
+    setClosedVote({ outcome, isRevote });
   }
 
   let verdict: ReactNode = null;
-  if (outcome === null) {
+  if (shownVote === null) {
     verdict = null;
-  } else if (outcome.eliminatedId !== null) {
+  } else if (shownVote.outcome.eliminatedId !== null) {
     verdict = (
       <NamedLine
         template={votedOut}
-        name={getPlayerName(state.players, outcome.eliminatedId)}
+        name={getPlayerName(state.players, shownVote.outcome.eliminatedId)}
       />
     );
-  } else if (outcome.tiedIds.length === 0) {
+  } else if (shownVote.outcome.tiedIds.length === 0) {
     // No votes means no tied players, so there is nobody to revote between.
     verdict = noVotesTitle;
-  } else if (isRevote) {
+  } else if (shownVote.isRevote) {
     // A tie only earns one revote, so tying it again ends the day.
     verdict = tiedAgainTitle;
   } else {
@@ -369,20 +383,22 @@ function DayScreen({
         </div>
       )}
 
-      {outcome !== null && (
+      {shownVote !== null && (
         <div className={cn("gap-3", "grid")}>
           <p className="text-lg">{verdict}</p>
 
-          <Button
-            size="lg"
-            onClick={confirmOutcome}
-            className={cn(
-              "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
-              "w-full",
-            )}
-          >
-            {confirmLabel}
-          </Button>
+          {!isResolved && (
+            <Button
+              size="lg"
+              onClick={confirmOutcome}
+              className={cn(
+                "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
+                "w-full",
+              )}
+            >
+              {confirmLabel}
+            </Button>
+          )}
         </div>
       )}
 
