@@ -278,7 +278,7 @@ export function RoleCounter({
           {/* Front side: Image */}
           <span
             className={cn(
-              "overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]",
+              "overflow-hidden rounded-lg bg-muted [backface-visibility:hidden]",
               "pile size-full",
             )}
           >
@@ -291,7 +291,7 @@ export function RoleCounter({
             />
             <span
               className={cn(
-                "m-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm",
+                "m-2 rounded-full bg-background/60 p-1.5 text-foreground backdrop-blur-sm",
                 "self-end justify-self-end",
               )}
             >
@@ -299,11 +299,11 @@ export function RoleCounter({
             </span>
             <span
               className={cn(
-                "bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center",
+                "bg-gradient-to-t from-background/80 to-transparent p-2 pt-6 text-center",
                 "self-end",
               )}
             >
-              <span id={labelId} className="font-bold text-sm text-white">
+              <span id={labelId} className="font-bold text-foreground text-sm">
                 {label}
               </span>
             </span>
@@ -413,7 +413,7 @@ export function DerivedRoleCounter({
           {/* Front */}
           <span
             className={cn(
-              "overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]",
+              "overflow-hidden rounded-lg bg-muted [backface-visibility:hidden]",
               "pile size-full",
             )}
           >
@@ -426,7 +426,7 @@ export function DerivedRoleCounter({
             />
             <span
               className={cn(
-                "m-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm",
+                "m-2 rounded-full bg-background/60 p-1.5 text-foreground backdrop-blur-sm",
                 "self-end justify-self-end",
               )}
             >
@@ -434,11 +434,11 @@ export function DerivedRoleCounter({
             </span>
             <span
               className={cn(
-                "bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center",
+                "bg-gradient-to-t from-background/80 to-transparent p-2 pt-6 text-center",
                 "self-end",
               )}
             >
-              <span id={labelId} className="font-bold text-sm text-white">
+              <span id={labelId} className="font-bold text-foreground text-sm">
                 {label}
               </span>
             </span>
