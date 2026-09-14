@@ -254,18 +254,20 @@ export function RoleCounter({
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
       {/* Size A4 and Flip */}
-      <div
-        className="relative w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
+      <button
+        type="button"
+        aria-pressed={isFlipped}
+        className="relative block w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
         onClick={() => setIsFlipped(!isFlipped)}
       >
-        <div
+        <span
           className={cn(
-            "relative h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "relative block h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
             isFlipped && "[transform:rotateY(180deg)]",
           )}
         >
           {/* Front side: Image */}
-          <div className="absolute inset-0 h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
+          <span className="absolute inset-0 block h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
             <Image
               width={167}
               height={236}
@@ -273,29 +275,29 @@ export function RoleCounter({
               alt={label}
               className="h-full w-full object-cover"
             />
-            <div className="absolute bottom-2 right-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
+            <span className="absolute bottom-2 right-2 block rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
               <RefreshCw className="size-3.5" />
-            </div>
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
+            </span>
+            <span className="absolute bottom-0 inset-x-0 block bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
               <span id={labelId} className="font-bold text-white text-sm">
                 {label}
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
 
           {/* Back side: Role */}
-          <div className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <div>
+          <span className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <span className="block">
               <span className="font-bold text-sm block border-b border-border/40 pb-1 mb-2 text-center">
                 {label}
               </span>
-              <div className="text-xs leading-relaxed text-muted-foreground">
+              <span className="block text-xs leading-relaxed text-muted-foreground">
                 {children}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              </span>
+            </span>
+          </span>
+        </span>
+      </button>
 
       {/* Named by the role so a screen reader hears which card the two buttons move. */}
       <fieldset
@@ -355,18 +357,20 @@ export function DerivedRoleCounter({
 
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
-      <div
-        className="relative w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
+      <button
+        type="button"
+        aria-pressed={isFlipped}
+        className="relative block w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
         onClick={() => setIsFlipped(!isFlipped)}
       >
-        <div
+        <span
           className={cn(
-            "relative h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
+            "relative block h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
             isFlipped && "[transform:rotateY(180deg)]",
           )}
         >
           {/* Front */}
-          <div className="absolute inset-0 h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
+          <span className="absolute inset-0 block h-full w-full overflow-hidden rounded-lg bg-black/40 [backface-visibility:hidden]">
             <Image
               width={167}
               height={236}
@@ -374,29 +378,29 @@ export function DerivedRoleCounter({
               alt={label}
               className="h-full w-full object-cover"
             />
-            <div className="absolute bottom-2 right-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
+            <span className="absolute bottom-2 right-2 block rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm">
               <RefreshCw className="size-3.5" />
-            </div>
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
+            </span>
+            <span className="absolute bottom-0 inset-x-0 block bg-gradient-to-t from-black/80 to-transparent p-2 pt-6 text-center">
               <span id={labelId} className="font-bold text-white text-sm">
                 {label}
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
 
           {/* Back */}
-          <div className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <div>
+          <span className="absolute inset-0 flex h-full w-full flex-col justify-between overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <span className="block">
               <span className="font-bold text-sm block border-b border-border/40 pb-1 mb-2 text-center">
                 {label}
               </span>
-              <div className="text-xs leading-relaxed text-muted-foreground">
+              <span className="block text-xs leading-relaxed text-muted-foreground">
                 {children}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              </span>
+            </span>
+          </span>
+        </span>
+      </button>
 
       {/* Footer: (?) */}
       <div className="relative flex items-center justify-center border-t border-border pt-2 h-10">
