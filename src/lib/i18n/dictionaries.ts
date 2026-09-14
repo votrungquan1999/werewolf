@@ -121,6 +121,11 @@ const vietnamese: Dictionary = {
       "Bỏ ván đang chơi? Danh sách người chơi và số lượng vai vẫn được giữ lại.",
     close: "Đóng",
   },
+  error: {
+    title: "Ván chơi gặp lỗi",
+    body: "Ván này không thể tiếp tục. Bắt đầu ván mới để chơi tiếp.",
+    newGame: "Bắt đầu ván mới",
+  },
   roles: {
     [RoleId.Werewolf]: {
       name: "Ma Sói",
@@ -285,6 +290,11 @@ const english: Dictionary = {
     confirmReset:
       "Discard this game? The player list and role counts are kept.",
     close: "Close",
+  },
+  error: {
+    title: "The game hit a problem",
+    body: "This game can't continue. Start a new game to keep playing.",
+    newGame: "Start a new game",
   },
   roles: {
     [RoleId.Werewolf]: {

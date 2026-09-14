@@ -160,6 +160,13 @@ export interface GameOverDictionary {
   playAgain: string;
 }
 
+/** The fallback page shown when a screen crashes. */
+export interface ErrorDictionary {
+  title: string;
+  body: string;
+  newGame: string;
+}
+
 /** How one role card is named and explained on the reveal screen. */
 export interface RoleCopy {
   name: string;
@@ -192,5 +199,6 @@ export interface Dictionary {
   day: DayDictionary;
   gameOver: GameOverDictionary;
   menu: MenuDictionary;
+  error: ErrorDictionary;
   roles: RolesDictionary;
 }
