@@ -155,7 +155,7 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 
 `npm test` — 92 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
 
-**On Node 26, run `NODE_OPTIONS=--no-experimental-webstorage npm test`.** Node 26 ships its own global `localStorage`, which hides jsdom's and is undefined without `--localstorage-file`, so every test that touches storage fails before it asserts anything. The deploy target is Node 24, which is unaffected.
+**`vitest.config.mts` passes `--no-experimental-webstorage` to test workers on Node 25+.** Newer Node ships its own global `localStorage`, which hides jsdom's and is undefined without `--localstorage-file`, so without the flag every test that touches storage fails before it asserts anything. It is skipped on older Node, which may not know the flag; the deploy target is Node 24.
 
 Test style is `describe("Feature: …") → describe("Scenario: …") → it("should …")` with literal expected values. `game.test.ts` includes a full-game integration test that plays two complete night-day cycles through the reducer to a village win.
 
