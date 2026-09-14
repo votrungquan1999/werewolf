@@ -250,7 +250,8 @@ export function RoleCounter({
   const labelId = useId();
   const { maxPerGame } = getRoleDefinition(role);
   const count = roleCounts[role];
-  const [isFlipped, setIsFlipped] = useState(false); /*Flip*/
+  const [isFlipped, setIsFlipped] = useState(false);
+
   return (
     <li
       className={cn(
@@ -258,7 +259,7 @@ export function RoleCounter({
         "grid content-start",
       )}
     >
-      {/* Size A4 and Flip */}
+      {/* The art is portrait A4, and a tap turns the card over to its description. */}
       <button
         type="button"
         aria-pressed={isFlipped}
@@ -275,7 +276,6 @@ export function RoleCounter({
             isFlipped && "rotate-y-180",
           )}
         >
-          {/* Front side: Image */}
           <span
             className={cn(
               "overflow-hidden rounded-lg bg-muted backface-hidden",
@@ -309,7 +309,7 @@ export function RoleCounter({
             </span>
           </span>
 
-          {/* Back side: Role */}
+          {/* Pre-rotated, so the card's own flip brings it face up. */}
           <span
             className={cn(
               "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
@@ -353,6 +353,7 @@ export function RoleCounter({
           variant="outline"
           size="icon"
           aria-label={increaseLabel}
+          // A null cap means the role has no limit, so the plus never locks.
           disabled={maxPerGame !== null && count >= maxPerGame}
           onClick={() => setRoleCount(role, count + 1)}
           className="size-8 rounded-full"
@@ -394,6 +395,7 @@ export function DerivedRoleCounter({
         "grid content-start",
       )}
     >
+      {/* The art is portrait A4, and a tap turns the card over to its description. */}
       <button
         type="button"
         aria-pressed={isFlipped}
@@ -410,7 +412,6 @@ export function DerivedRoleCounter({
             isFlipped && "rotate-y-180",
           )}
         >
-          {/* Front */}
           <span
             className={cn(
               "overflow-hidden rounded-lg bg-muted backface-hidden",
@@ -444,7 +445,7 @@ export function DerivedRoleCounter({
             </span>
           </span>
 
-          {/* Back */}
+          {/* Pre-rotated, so the card's own flip brings it face up. */}
           <span
             className={cn(
               "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
@@ -461,8 +462,8 @@ export function DerivedRoleCounter({
         </span>
       </button>
 
-      {/* Footer: (?) */}
       <div className="relative flex items-center justify-center border-t border-border pt-2 h-10">
+        {/* `output` states it plainly: this number is a result, not a choice. */}
         <output
           aria-labelledby={labelId}
           className="text-base font-bold tabular-nums"
