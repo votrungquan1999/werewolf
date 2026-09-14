@@ -33,6 +33,7 @@ const vietnamese: Dictionary = {
     decreaseRole: "Bớt một lá",
     villagerAutoHelp: "Số này tính thế nào?",
     villagerAuto: "Tự động điền cho đủ số người",
+    minPlayers: "Cần ít nhất {count} người chơi để bắt đầu.",
   },
   reveal: {
     passTo: "Đưa máy cho {name}",
@@ -194,6 +195,7 @@ const english: Dictionary = {
     decreaseRole: "Remove one",
     villagerAutoHelp: "How is this counted?",
     villagerAuto: "Fills the remaining seats automatically",
+    minPlayers: "Add at least {count} players to start.",
   },
   reveal: {
     passTo: "Pass the phone to {name}",

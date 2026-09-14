@@ -12,7 +12,12 @@ import {
   PopoverTrigger,
 } from "src/components/ui/popover";
 import { getRoleDefinition } from "src/lib/game/roles";
-import { getRoleCountIssue, RoleCountIssueKind } from "src/lib/game/setup";
+import {
+  getRoleCountIssue,
+  hasEnoughPlayers,
+  MIN_PLAYERS,
+  RoleCountIssueKind,
+} from "src/lib/game/setup";
 import { Phase, type RoleId } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
 
@@ -174,7 +179,7 @@ export function StartGameButton({ children }: { children: ReactNode }) {
   return (
     <Button
       type="button"
-      disabled={getRoleCountIssue(state) !== null}
+      disabled={!hasEnoughPlayers(state) || getRoleCountIssue(state) !== null}
       onClick={dealRoles}
       className="h-14 text-base"
     >
@@ -216,6 +221,25 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Tells the host the table is still too small to start.
+ * @param props.template - Copy carrying a `{count}` placeholder for the minimum.
+ * @returns The hint, or nothing once enough players are seated.
+ */
+export function PlayerCountHint({ template }: { template: string }) {
+  const state = useGame();
+
+  if (hasEnoughPlayers(state)) {
+    return null;
+  }
+
+  return (
+    <p className="text-base text-muted-foreground">
+      {template.replace("{count}", String(MIN_PLAYERS))}
+    </p>
   );
 }
 

@@ -41,6 +41,8 @@ export interface SetupDictionary {
   villagerAutoHelp: string;
   /** Explains why the villager count has no control of its own. */
   villagerAuto: string;
+  /** `{count}` = the smallest table a game can start with. */
+  minPlayers: string;
 }
 
 /** The overflow menu: the escape hatches, kept out of the way of play. */
