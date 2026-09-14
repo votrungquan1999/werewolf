@@ -59,7 +59,7 @@ const vietnamese: Dictionary = {
     seerPrompt:
       "Tiên Tri, soi một người. Bạn chỉ biết người đó có phải Sói hay không, chứ không biết vai gì.",
     doctorPrompt:
-      "Bảo vệ, chọn một người để bảo vệ đêm nay. Được tự bảo vệ mình, nhưng không được chọn lại người đêm qua.",
+      "Bảo Vệ, chọn một người để bảo vệ đêm nay. Được tự bảo vệ mình, nhưng không được bảo vệ lại người đêm qua.",
     witchPrompt:
       "Phù Thủy, cứu nạn nhân đêm nay hoặc đầu độc một người — một đêm chỉ được một trong hai. Mỗi bình dùng một lần cả ván.",
     witchHealUnknownChoice: "Cứu nạn nhân của Sói đêm nay",
