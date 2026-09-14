@@ -31,6 +31,7 @@ const vietnamese: Dictionary = {
     tooManyRoles: "Thừa {count} lá bài — bớt đi cho vừa số người chơi.",
     increaseRole: "Thêm một lá",
     decreaseRole: "Bớt một lá",
+    villagerAutoHelp: "Số này tính thế nào?",
     villagerAuto: "Tự động điền cho đủ số người",
   },
   reveal: {
@@ -191,6 +192,7 @@ const english: Dictionary = {
       "You have {count} card(s) too many — drop some to match the table.",
     increaseRole: "Add one",
     decreaseRole: "Remove one",
+    villagerAutoHelp: "How is this counted?",
     villagerAuto: "Fills the remaining seats automatically",
   },
   reveal: {

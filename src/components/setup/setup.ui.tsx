@@ -6,6 +6,11 @@ import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "src/components/ui/popover";
 import { getRoleDefinition } from "src/lib/game/roles";
 import { getRoleCountIssue, RoleCountIssueKind } from "src/lib/game/setup";
 import { Phase, type RoleId } from "src/lib/game/types";
@@ -370,6 +375,7 @@ export function RoleCounter({
  * @param props.role - The role whose derived count is displayed.
  * @param props.label - The role's name, which also names the read-only count.
  * @param props.note - Why this row has no controls.
+ * @param props.noteLabel - Accessible name for the control that reveals the note.
  * @param props.children - The role's description.
  * @returns One row of the composition list.
  */
@@ -377,11 +383,13 @@ export function DerivedRoleCounter({
   role,
   label,
   note,
+  noteLabel,
   children,
 }: {
   role: RoleId;
   label: string;
   note: string;
+  noteLabel: string;
   children: ReactNode;
 }) {
   const { roleCounts } = useGame();
@@ -462,21 +470,42 @@ export function DerivedRoleCounter({
         </span>
       </button>
 
-      <div className="relative flex items-center justify-center border-t border-border pt-2 h-10">
+      <div
+        className={cn(
+          "border-border border-t pt-2",
+          "grid h-10 grid-cols-[1fr_auto_1fr] items-center gap-2",
+        )}
+      >
         {/* `output` states it plainly: this number is a result, not a choice. */}
         <output
           aria-labelledby={labelId}
-          className="text-base font-bold tabular-nums"
+          className={cn("font-bold text-base tabular-nums", "col-start-2")}
         >
           {roleCounts[role]}
         </output>
 
-        <div className="group absolute left-[calc(50%+1rem)] flex items-center">
-          <HelpCircle className="size-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" />
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 rounded-md bg-popover p-2 text-xs text-center text-popover-foreground shadow-md border border-border z-50 pointer-events-none">
+        {/* A tap-opened popover, not a hover tooltip: a phone cannot hover. */}
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={noteLabel}
+                className={cn(
+                  "size-8 rounded-full text-muted-foreground",
+                  "justify-self-start",
+                )}
+              />
+            }
+          >
+            <HelpCircle className="size-4" />
+          </PopoverTrigger>
+          <PopoverContent className={cn("w-48 text-center text-xs")}>
             {note}
-          </div>
-        </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </li>
   );
