@@ -1,6 +1,7 @@
 "use client";
 
-import { Minus, Plus, X, RefreshCw, HelpCircle} from "lucide-react";
+import { HelpCircle, Minus, Plus, RefreshCw, X } from "lucide-react";
+import Image from "next/image";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
@@ -9,7 +10,6 @@ import { getRoleDefinition } from "src/lib/game/roles";
 import { getRoleCountIssue, RoleCountIssueKind } from "src/lib/game/setup";
 import { Phase, type RoleId } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
-import Image from "next/image";
 
 /**
  * Root of the setup screen, carrying the neutral phase accent.
@@ -250,7 +250,7 @@ export function RoleCounter({
   const labelId = useId();
   const { maxPerGame } = getRoleDefinition(role);
   const count = roleCounts[role];
-  const [isFlipped, setIsFlipped] = useState(false) /*Flip*/
+  const [isFlipped, setIsFlipped] = useState(false); /*Flip*/
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
       {/* Size A4 and Flip */}
@@ -357,7 +357,8 @@ export function DerivedRoleCounter({
     <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-md">
       <div
         className="relative w-full aspect-[210/297] cursor-pointer [perspective:1000px]"
-        onClick={() => setIsFlipped(!isFlipped)}>
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
         <div
           className={cn(
             "relative h-full w-full rounded-lg transition-all duration-500 [transform-style:preserve-3d]",
@@ -401,7 +402,8 @@ export function DerivedRoleCounter({
       <div className="relative flex items-center justify-center border-t border-border pt-2 h-10">
         <output
           aria-labelledby={labelId}
-          className="text-base font-bold tabular-nums">
+          className="text-base font-bold tabular-nums"
+        >
           {roleCounts[role]}
         </output>
 
@@ -413,5 +415,5 @@ export function DerivedRoleCounter({
         </div>
       </div>
     </li>
-  )
+  );
 }
