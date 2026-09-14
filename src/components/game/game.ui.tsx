@@ -59,6 +59,24 @@ export function GameShell({ children }: { children: ReactNode }) {
 }
 
 /**
+ * What a slow phone shows until the saved game has been read, instead of a black page.
+ * @param props.children - The app name.
+ * @returns A full-height, centred title.
+ */
+export function GameLoading({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "font-semibold text-3xl text-muted-foreground tracking-tight",
+        "grid min-h-dvh place-items-center",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
  * Centres the active screen, but only while it is short enough to fit.
  *
  * `content-center-safe` rather than plain centring: on an overflowing screen plain
