@@ -37,6 +37,8 @@ export interface SetupDictionary {
   increaseRole: string;
   /** Accessible label on a role's decrement control. */
   decreaseRole: string;
+  /** Accessible name for the control that reveals `villagerAuto`. */
+  villagerAutoHelp: string;
   /** Explains why the villager count has no control of its own. */
   villagerAuto: string;
 }

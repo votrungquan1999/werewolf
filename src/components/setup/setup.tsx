@@ -49,6 +49,7 @@ export function Setup({ dict }: SetupProps) {
                 role={role}
                 label={dict.roles[role].name}
                 note={dict.setup.villagerAuto}
+                noteLabel={dict.setup.villagerAutoHelp}
               >
                 {dict.roles[role].description}
               </DerivedRoleCounter>

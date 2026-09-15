@@ -1,10 +1,16 @@
 "use client";
 
-import { Minus, Plus, X } from "lucide-react";
+import { HelpCircle, Minus, Plus, RefreshCw, X } from "lucide-react";
+import Image from "next/image";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "src/components/ui/popover";
 import { getRoleDefinition } from "src/lib/game/roles";
 import { getRoleCountIssue, RoleCountIssueKind } from "src/lib/game/setup";
 import { Phase, type RoleId } from "src/lib/game/types";
@@ -219,7 +225,7 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
  * @returns The composition list.
  */
 export function RoleCounterList({ children }: { children: ReactNode }) {
-  return <ul className={cn("gap-2", "grid")}>{children}</ul>;
+  return <ul className={cn("gap-3", "grid grid-cols-2")}>{children}</ul>;
 }
 
 /**
@@ -249,26 +255,88 @@ export function RoleCounter({
   const labelId = useId();
   const { maxPerGame } = getRoleDefinition(role);
   const count = roleCounts[role];
+  const [isFlipped, setIsFlipped] = useState(false);
 
   return (
     <li
       className={cn(
-        "gap-x-3 rounded-lg border border-border bg-card p-3",
-        "grid grid-cols-[1fr_auto] items-center",
+        "gap-2 rounded-xl border border-border bg-card p-3 shadow-md",
+        "grid content-start",
       )}
     >
-      <span id={labelId} className="font-medium text-base">
-        {label}
-      </span>
-      <p className={cn("text-muted-foreground text-sm", "col-start-1")}>
-        {children}
-      </p>
+      {/* The art is portrait A4, and a tap turns the card over to its description. */}
+      <button
+        type="button"
+        aria-pressed={isFlipped}
+        className={cn(
+          "cursor-pointer perspective-[1000px]",
+          "grid aspect-210/297 w-full",
+        )}
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <span
+          className={cn(
+            "rounded-lg transition-all duration-500 transform-3d",
+            "pile size-full",
+            isFlipped && "rotate-y-180",
+          )}
+        >
+          <span
+            className={cn(
+              "overflow-hidden rounded-lg bg-muted backface-hidden",
+              "pile size-full",
+            )}
+          >
+            <Image
+              width={167}
+              height={236}
+              src={`/roles/${role}.jpg`}
+              alt={label}
+              className="size-full object-cover"
+            />
+            <span
+              className={cn(
+                "m-2 rounded-full bg-background/60 p-1.5 text-foreground backdrop-blur-sm",
+                "self-end justify-self-end",
+              )}
+            >
+              <RefreshCw className="size-3.5" />
+            </span>
+            <span
+              className={cn(
+                "bg-linear-to-t from-background/80 to-transparent p-2 pt-6 text-center",
+                "self-end",
+              )}
+            >
+              <span id={labelId} className="font-bold text-foreground text-sm">
+                {label}
+              </span>
+            </span>
+          </span>
+
+          {/* Pre-rotated, so the card's own flip brings it face up. */}
+          <span
+            className={cn(
+              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
+              "grid size-full content-start gap-2",
+            )}
+          >
+            <span className="border-border/40 border-b pb-1 text-center font-bold text-sm">
+              {label}
+            </span>
+            <span className="text-muted-foreground text-xs leading-relaxed">
+              {children}
+            </span>
+          </span>
+        </span>
+      </button>
+
       {/* Named by the role so a screen reader hears which card the two buttons move. */}
       <fieldset
         aria-labelledby={labelId}
         className={cn(
-          "gap-1",
-          "col-start-2 row-span-2 row-start-1 grid grid-flow-col items-center",
+          "border-border border-t pt-2",
+          "grid grid-cols-[auto_1fr_auto] items-center",
         )}
       >
         <Button
@@ -278,11 +346,11 @@ export function RoleCounter({
           aria-label={decreaseLabel}
           disabled={count === 0}
           onClick={() => setRoleCount(role, count - 1)}
-          className="size-14 rounded-full"
+          className="size-8 rounded-full"
         >
-          <Minus className="size-6" />
+          <Minus className="size-4" />
         </Button>
-        <span className="min-w-8 text-center text-xl tabular-nums">
+        <span className="text-center font-bold text-base tabular-nums">
           {count}
         </span>
         <Button
@@ -293,9 +361,9 @@ export function RoleCounter({
           // A null cap means the role has no limit, so the plus never locks.
           disabled={maxPerGame !== null && count >= maxPerGame}
           onClick={() => setRoleCount(role, count + 1)}
-          className="size-14 rounded-full"
+          className="size-8 rounded-full"
         >
-          <Plus className="size-6" />
+          <Plus className="size-4" />
         </Button>
       </fieldset>
     </li>
@@ -307,6 +375,7 @@ export function RoleCounter({
  * @param props.role - The role whose derived count is displayed.
  * @param props.label - The role's name, which also names the read-only count.
  * @param props.note - Why this row has no controls.
+ * @param props.noteLabel - Accessible name for the control that reveals the note.
  * @param props.children - The role's description.
  * @returns One row of the composition list.
  */
@@ -314,47 +383,130 @@ export function DerivedRoleCounter({
   role,
   label,
   note,
+  noteLabel,
   children,
 }: {
   role: RoleId;
   label: string;
   note: string;
+  noteLabel: string;
   children: ReactNode;
 }) {
   const { roleCounts } = useGame();
   const labelId = useId();
+  const [isFlipped, setIsFlipped] = useState(false);
 
   return (
     <li
       className={cn(
-        "gap-x-3 rounded-lg border border-border bg-card p-3",
-        "grid grid-cols-[1fr_auto] items-center",
+        "gap-2 rounded-xl border border-border bg-card p-3 shadow-md",
+        "grid content-start",
       )}
     >
-      <span id={labelId} className="font-medium text-base">
-        {label}
-      </span>
-      <p className={cn("text-muted-foreground text-sm", "col-start-1")}>
-        {children}
-      </p>
-      {/* `output` states it plainly: this number is a result, not a choice. */}
-      <output
-        aria-labelledby={labelId}
+      {/* The art is portrait A4, and a tap turns the card over to its description. */}
+      <button
+        type="button"
+        aria-pressed={isFlipped}
         className={cn(
-          "min-w-8 text-center text-xl tabular-nums",
-          "col-start-2 row-span-2 row-start-1 block",
+          "cursor-pointer perspective-[1000px]",
+          "grid aspect-210/297 w-full",
+        )}
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        <span
+          className={cn(
+            "rounded-lg transition-all duration-500 transform-3d",
+            "pile size-full",
+            isFlipped && "rotate-y-180",
+          )}
+        >
+          <span
+            className={cn(
+              "overflow-hidden rounded-lg bg-muted backface-hidden",
+              "pile size-full",
+            )}
+          >
+            <Image
+              width={167}
+              height={236}
+              src={`/roles/${role}.jpg`}
+              alt={label}
+              className="size-full object-cover"
+            />
+            <span
+              className={cn(
+                "m-2 rounded-full bg-background/60 p-1.5 text-foreground backdrop-blur-sm",
+                "self-end justify-self-end",
+              )}
+            >
+              <RefreshCw className="size-3.5" />
+            </span>
+            <span
+              className={cn(
+                "bg-linear-to-t from-background/80 to-transparent p-2 pt-6 text-center",
+                "self-end",
+              )}
+            >
+              <span id={labelId} className="font-bold text-foreground text-sm">
+                {label}
+              </span>
+            </span>
+          </span>
+
+          {/* Pre-rotated, so the card's own flip brings it face up. */}
+          <span
+            className={cn(
+              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
+              "grid size-full content-start gap-2",
+            )}
+          >
+            <span className="border-border/40 border-b pb-1 text-center font-bold text-sm">
+              {label}
+            </span>
+            <span className="text-muted-foreground text-xs leading-relaxed">
+              {children}
+            </span>
+          </span>
+        </span>
+      </button>
+
+      <div
+        className={cn(
+          "border-border border-t pt-2",
+          "grid h-10 grid-cols-[1fr_auto_1fr] items-center gap-2",
         )}
       >
-        {roleCounts[role]}
-      </output>
-      <p
-        className={cn(
-          "text-muted-foreground text-xs",
-          "col-span-full row-start-3",
-        )}
-      >
-        {note}
-      </p>
+        {/* `output` states it plainly: this number is a result, not a choice. */}
+        <output
+          aria-labelledby={labelId}
+          className={cn("font-bold text-base tabular-nums", "col-start-2")}
+        >
+          {roleCounts[role]}
+        </output>
+
+        {/* A tap-opened popover, not a hover tooltip: a phone cannot hover. */}
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={noteLabel}
+                className={cn(
+                  "size-8 rounded-full text-muted-foreground",
+                  "justify-self-start",
+                )}
+              />
+            }
+          >
+            <HelpCircle className="size-4" />
+          </PopoverTrigger>
+          <PopoverContent className={cn("w-48 text-center text-xs")}>
+            {note}
+          </PopoverContent>
+        </Popover>
+      </div>
     </li>
   );
 }

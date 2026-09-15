@@ -31,6 +31,7 @@ const vietnamese: Dictionary = {
     tooManyRoles: "Thừa {count} lá bài — bớt đi cho vừa số người chơi.",
     increaseRole: "Thêm một lá",
     decreaseRole: "Bớt một lá",
+    villagerAutoHelp: "Số này tính thế nào?",
     villagerAuto: "Tự động điền cho đủ số người",
   },
   reveal: {
@@ -59,7 +60,7 @@ const vietnamese: Dictionary = {
     seerPrompt:
       "Tiên Tri, soi một người. Bạn chỉ biết người đó có phải Sói hay không, chứ không biết vai gì.",
     doctorPrompt:
-      "Bác Sĩ, chọn một người để cứu đêm nay. Được tự cứu mình, nhưng không được cứu lại người đêm qua.",
+      "Bảo Vệ, chọn một người để bảo vệ đêm nay. Được tự bảo vệ mình, nhưng không được bảo vệ lại người đêm qua.",
     witchPrompt:
       "Phù Thủy, cứu nạn nhân đêm nay hoặc đầu độc một người — một đêm chỉ được một trong hai. Mỗi bình dùng một lần cả ván.",
     witchHealUnknownChoice: "Cứu nạn nhân của Sói đêm nay",
@@ -191,6 +192,7 @@ const english: Dictionary = {
       "You have {count} card(s) too many — drop some to match the table.",
     increaseRole: "Add one",
     decreaseRole: "Remove one",
+    villagerAutoHelp: "How is this counted?",
     villagerAuto: "Fills the remaining seats automatically",
   },
   reveal: {

@@ -98,4 +98,20 @@ describe("Setup screen", () => {
     // The whole point of the stepper: no number field is left to type into.
     expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
   });
+
+  it("explains the villager count on tap, since a phone cannot hover", async () => {
+    const user = renderSetup();
+
+    expect(
+      screen.queryByText("Fills the remaining seats automatically"),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "How is this counted?" }),
+    );
+
+    expect(
+      await screen.findByText("Fills the remaining seats automatically"),
+    ).toBeVisible();
+  });
 });
