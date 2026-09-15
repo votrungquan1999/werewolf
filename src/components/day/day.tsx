@@ -28,6 +28,9 @@ export function Day({ dict }: DayProps) {
       tallyTitle={dict.day.tallyTitle}
       votedOut={dict.day.votedOut}
       tieTitle={dict.day.tieTitle}
+      noVotesCast={dict.day.noVotesCast}
+      noVotesTitle={dict.day.noVotesTitle}
+      tiedAgainTitle={dict.day.tiedAgainTitle}
       confirmLabel={dict.common.confirm}
       nightfallLabel={dict.common.continue}
     />

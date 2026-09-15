@@ -12,7 +12,12 @@ import {
   PopoverTrigger,
 } from "src/components/ui/popover";
 import { getRoleDefinition } from "src/lib/game/roles";
-import { getRoleCountIssue, RoleCountIssueKind } from "src/lib/game/setup";
+import {
+  getRoleCountIssue,
+  hasEnoughPlayers,
+  MIN_PLAYERS,
+  RoleCountIssueKind,
+} from "src/lib/game/setup";
 import { Phase, type RoleId } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
 
@@ -174,7 +179,7 @@ export function StartGameButton({ children }: { children: ReactNode }) {
   return (
     <Button
       type="button"
-      disabled={getRoleCountIssue(state) !== null}
+      disabled={!hasEnoughPlayers(state) || getRoleCountIssue(state) !== null}
       onClick={dealRoles}
       className="h-14 text-base"
     >
@@ -199,10 +204,11 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
           key={player.id}
           className={cn(
             "gap-2 rounded-lg border border-border bg-card px-4 py-2 text-base",
-            "grid grid-cols-[1fr_auto] items-center",
+            "grid grid-cols-[minmax(0,1fr)_auto] items-center",
           )}
         >
-          <span>{player.name}</span>
+          {/* Wraps mid-word so a pasted handle cannot push the remove button off-screen. */}
+          <span className="wrap-anywhere">{player.name}</span>
           <Button
             type="button"
             variant="ghost"
@@ -216,6 +222,25 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Tells the host the table is still too small to start.
+ * @param props.template - Copy carrying a `{count}` placeholder for the minimum.
+ * @returns The hint, or nothing once enough players are seated.
+ */
+export function PlayerCountHint({ template }: { template: string }) {
+  const state = useGame();
+
+  if (hasEnoughPlayers(state)) {
+    return null;
+  }
+
+  return (
+    <p className="text-base text-muted-foreground">
+      {template.replace("{count}", String(MIN_PLAYERS))}
+    </p>
   );
 }
 

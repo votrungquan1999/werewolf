@@ -45,8 +45,9 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className="dark">
-      {/* overscroll-none stops Android pull-to-refresh reloading away a live game. */}
-      <body className="grid min-h-dvh overscroll-none bg-background text-foreground antialiased">
+      {/* overscroll-none stops Android pull-to-refresh reloading away a live game.
+          minmax(0,1fr): an unbreakable name must not widen the page past the phone. */}
+      <body className="grid min-h-dvh grid-cols-[minmax(0,1fr)] overscroll-none bg-background text-foreground antialiased">
         {children}
       </body>
     </html>

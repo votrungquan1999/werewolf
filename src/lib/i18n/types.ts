@@ -41,6 +41,8 @@ export interface SetupDictionary {
   villagerAutoHelp: string;
   /** Explains why the villager count has no control of its own. */
   villagerAuto: string;
+  /** `{count}` = the smallest table a game can start with. */
+  minPlayers: string;
 }
 
 /** The overflow menu: the escape hatches, kept out of the way of play. */
@@ -136,6 +138,12 @@ export interface DayDictionary {
   votedOut: string;
   tieTitle: string;
   revoteTitle: string;
+  /** Stands in for the tally when every voter abstained. */
+  noVotesCast: string;
+  /** The verdict when every voter abstained — nobody dies and there is no revote. */
+  noVotesTitle: string;
+  /** The verdict when a revote ties as well — a tie only earns one revote. */
+  tiedAgainTitle: string;
 }
 
 /** One headline per possible winner. */
@@ -150,6 +158,13 @@ export interface WinnerDictionary {
 export interface GameOverDictionary {
   headlines: WinnerDictionary;
   playAgain: string;
+}
+
+/** The fallback page shown when a screen crashes. */
+export interface ErrorDictionary {
+  title: string;
+  body: string;
+  newGame: string;
 }
 
 /** How one role card is named and explained on the reveal screen. */
@@ -184,5 +199,6 @@ export interface Dictionary {
   day: DayDictionary;
   gameOver: GameOverDictionary;
   menu: MenuDictionary;
+  error: ErrorDictionary;
   roles: RolesDictionary;
 }

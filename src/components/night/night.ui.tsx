@@ -226,10 +226,10 @@ function NightRoster({
             key={entry.id}
             className={cn(
               "rounded-lg border border-phase-border px-4 py-3 text-base",
-              "grid grid-flow-col items-center justify-between",
+              "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2",
             )}
           >
-            <span>{entry.name}</span>
+            <span className="wrap-anywhere">{entry.name}</span>
             {entry.count === null ? null : (
               <Badge variant="secondary">{entry.count}</Badge>
             )}
@@ -265,8 +265,9 @@ function NightChoiceList({
             size="lg"
             disabled={disabledIds.includes(player.id)}
             onClick={() => onChoose(player.id)}
+            // The Button base is nowrap; a long name has to wrap to stay readable.
             className={cn(
-              "h-auto min-h-16 w-full border-phase-border py-4 text-base",
+              "h-auto min-h-16 w-full border-phase-border py-4 text-base whitespace-normal wrap-anywhere",
             )}
           >
             {player.name}
@@ -459,6 +460,9 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
   }
 
   if (stage === WitchStage.ChoosePotion) {
+    const hasPotionLeft =
+      state.witchHealAvailable || state.witchPoisonAvailable;
+
     return (
       <>
         {/* The victim is never named. The phone travels in seat order, so whether she
@@ -489,11 +493,15 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
           </Button>
         )}
 
+        {/* With both bottles spent this is her only way on, so it must look like a button. */}
         <Button
-          variant="ghost"
+          variant={hasPotionLeft ? "ghost" : "default"}
           size="lg"
           onClick={declinePotion}
-          className={cn("h-auto min-h-16 w-full whitespace-normal text-base")}
+          className={cn(
+            "h-auto min-h-16 w-full whitespace-normal text-base",
+            !hasPotionLeft && "bg-phase text-phase-foreground",
+          )}
         >
           {copy.witchNoPotionChoice}
         </Button>
@@ -612,7 +620,7 @@ function NightLoversTurn({ actorId, copy, onDone }: ActTurnProps) {
                 disabled={isPairComplete && !isChosen}
                 onPressedChange={() => toggleLover(player.id)}
                 className={cn(
-                  "h-auto min-h-16 w-full border-phase-border py-4 text-base",
+                  "h-auto min-h-16 w-full border-phase-border py-4 text-base whitespace-normal wrap-anywhere",
                 )}
               >
                 {player.name}
@@ -950,7 +958,8 @@ export function NightScreen({ copy }: { copy: NightCopy }) {
 
   return (
     <main className={cn("w-full p-6", "grid gap-6")}>
-      <h1 className="font-semibold text-xl tracking-tight">
+      {/* Centred to sit over the centred hand-off and hold circle below it. */}
+      <h1 className="text-center font-semibold text-xl tracking-tight">
         {fillTemplate(copy.title, { number: String(state.nightNumber) })}
       </h1>
 

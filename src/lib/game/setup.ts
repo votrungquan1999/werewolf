@@ -23,6 +23,9 @@ export interface RoleCountIssue {
   roleCount: number;
 }
 
+/** The smallest table a game can start with. */
+export const MIN_PLAYERS = 3;
+
 /**
  * Builds an empty game sitting on the setup screen.
  * @returns A fresh game state with no players, no cards chosen and nothing resolved.
@@ -182,6 +185,15 @@ export function getRoleCountIssue(state: GameState): RoleCountIssue | null {
     playerCount,
     roleCount,
   };
+}
+
+/**
+ * Checks whether enough players are seated to start a game.
+ * @param state - The current game state.
+ * @returns True once the table has at least `MIN_PLAYERS` players.
+ */
+export function hasEnoughPlayers(state: GameState): boolean {
+  return state.players.length >= MIN_PLAYERS;
 }
 
 /**
