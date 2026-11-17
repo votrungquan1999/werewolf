@@ -170,9 +170,16 @@ export interface RolesDictionary {
   [RoleId.Fool]: RoleCopy;
 }
 
+/** Search-result copy for the page. */
+export interface MetadataDictionary {
+  title: string;
+  description: string;
+}
+
 /** Every string the UI renders. Both languages implement it, so a gap is a compile error. */
 export interface Dictionary {
   appName: string;
+  metadata: MetadataDictionary;
   language: LanguageDictionary;
   common: CommonDictionary;
   setup: SetupDictionary;

@@ -4,6 +4,11 @@ import type { Dictionary } from "src/lib/i18n/types";
 
 const vietnamese: Dictionary = {
   appName: "Ma Sói",
+  metadata: {
+    title: "Ma Sói - Chơi cả làng trên một chiếc điện thoại",
+    description:
+      "Chơi Ma Sói ngay trên một chiếc điện thoại: chia vai bí mật, quản trò tự động, đêm và ngày luân phiên. Không cần tải ứng dụng, không cần người dẫn.",
+  },
   language: {
     [Locale.Vi]: "Tiếng Việt",
     [Locale.En]: "English",
@@ -163,6 +168,11 @@ const vietnamese: Dictionary = {
 
 const english: Dictionary = {
   appName: "Werewolf",
+  metadata: {
+    title: "Werewolf - The party game for the whole village on one phone",
+    description:
+      "Play Werewolf on a single phone: secret role handouts, an automatic narrator and alternating night and day phases. No app to install and no game master needed.",
+  },
   language: {
     [Locale.Vi]: "Tiếng Việt",
     [Locale.En]: "English",
