@@ -38,23 +38,27 @@ export default async function GamePage({ params }: GamePageProps) {
   const dictionary = getDictionary(locale);
 
   return (
-    <GameProvider>
-      {/* A real row rather than an overlay — floating the menu covered the screen headings. */}
-      <GameShell>
-        <header className={cn("px-3 pt-3", "grid justify-items-end")}>
-          <GameMenu dict={dictionary} locale={locale} />
-        </header>
+    <>
+      {/* The game renders client-only, so this puts the app name in the server HTML for crawlers and screen readers. */}
+      <h1 className="sr-only">{dictionary.appName}</h1>
+      <GameProvider>
+        {/* A real row rather than an overlay — floating the menu covered the screen headings. */}
+        <GameShell>
+          <header className={cn("px-3 pt-3", "grid justify-items-end")}>
+            <GameMenu dict={dictionary} locale={locale} />
+          </header>
 
-        <GameScreens>
-          <Setup dict={dictionary} />
-          <Reveal dict={dictionary} />
-          <Nightfall dict={dictionary} />
-          <Night dict={dictionary} />
-          <Dawn dict={dictionary} />
-          <Day dict={dictionary} />
-          <GameOver dict={dictionary} />
-        </GameScreens>
-      </GameShell>
-    </GameProvider>
+          <GameScreens>
+            <Setup dict={dictionary} />
+            <Reveal dict={dictionary} />
+            <Nightfall dict={dictionary} />
+            <Night dict={dictionary} />
+            <Dawn dict={dictionary} />
+            <Day dict={dictionary} />
+            <GameOver dict={dictionary} />
+          </GameScreens>
+        </GameShell>
+      </GameProvider>
+    </>
   );
 }
