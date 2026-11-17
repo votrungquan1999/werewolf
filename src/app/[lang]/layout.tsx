@@ -10,8 +10,13 @@ interface RootLayoutProps {
   params: Promise<{ lang: string }>;
 }
 
+const OG_LOCALE: Record<Locale, string> = {
+  [Locale.Vi]: "vi_VN",
+  [Locale.En]: "en_US",
+};
+
 /**
- * Builds the per-language title, description, canonical and hreflang links.
+ * Builds the per-language title, description, canonical, hreflang links and social preview cards.
  * @param props.params Route params carrying the `lang` segment.
  * @returns Metadata whose canonical is the language's own address; unknown languages canonicalise to the default.
  */
@@ -23,7 +28,8 @@ export async function generateMetadata({
   const { lang } = await params;
   // Normalise first so an unknown segment never indexes the dictionary.
   const locale = toLocale(lang);
-  const { metadata } = getDictionary(locale);
+  const { metadata, appName } = getDictionary(locale);
+  const canonical = `${SITE_URL}/${locale}`;
 
   // Same locale list as the sitemap so the two hreflang sets always agree.
   const languages: Record<string, string> = {
@@ -37,8 +43,23 @@ export async function generateMetadata({
     metadataBase: new URL(SITE_URL),
     title: metadata.title,
     description: metadata.description,
+    openGraph: {
+      title: metadata.title,
+      description: metadata.description,
+      // Same address as the canonical so shares consolidate on one URL.
+      url: canonical,
+      siteName: appName,
+      locale: OG_LOCALE[locale],
+      type: "website",
+    },
+    // No dedicated share art exists, so the text-only summary card is used.
+    twitter: {
+      card: "summary",
+      title: metadata.title,
+      description: metadata.description,
+    },
     alternates: {
-      canonical: `${SITE_URL}/${locale}`,
+      canonical,
       languages,
     },
   };
