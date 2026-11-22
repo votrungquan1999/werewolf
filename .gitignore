@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# agent task workspaces (plans, progress notes)
+/tmp/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

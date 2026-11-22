@@ -6,7 +6,7 @@ import { Phase } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
 
 /** The colour a phase paints the page. */
-enum PhaseAccent {
+export enum PhaseAccent {
   Setup = "setup",
   Night = "night",
   Day = "day",
@@ -20,7 +20,7 @@ enum PhaseAccent {
  * @param phase - The phase the game is on.
  * @returns The accent to paint.
  */
-function getPhaseAccent(phase: Phase): PhaseAccent {
+export function getPhaseAccent(phase: Phase): PhaseAccent {
   switch (phase) {
     case Phase.Night:
       return PhaseAccent.Night;
@@ -50,7 +50,25 @@ export function GameShell({ children }: { children: ReactNode }) {
       data-phase={getPhaseAccent(state.phase)}
       className={cn(
         "bg-phase-muted text-foreground",
-        "grid min-h-dvh grid-rows-[auto_1fr]",
+        "grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr]",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * What a slow phone shows until the saved game has been read, instead of a black page.
+ * @param props.children - The app name.
+ * @returns A full-height, centred title.
+ */
+export function GameLoading({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "font-semibold text-3xl text-muted-foreground tracking-tight",
+        "grid min-h-dvh place-items-center",
       )}
     >
       {children}
@@ -69,7 +87,13 @@ export function GameShell({ children }: { children: ReactNode }) {
  */
 export function GameScreens({ children }: { children: ReactNode }) {
   return (
-    <div className={cn("grid min-h-0 content-center-safe")}>{children}</div>
+    <div
+      className={cn(
+        "grid min-h-0 grid-cols-[minmax(0,1fr)] content-center-safe",
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -84,7 +108,10 @@ export function GameScreens({ children }: { children: ReactNode }) {
  */
 export function PlayerName({ children }: { children: ReactNode }) {
   return (
-    <strong className={cn("font-semibold text-phase-name")}>{children}</strong>
+    // `anywhere` also shrinks min-content, so a pasted handle cannot widen its grid track.
+    <strong className={cn("font-semibold text-phase-name wrap-anywhere")}>
+      {children}
+    </strong>
   );
 }
 

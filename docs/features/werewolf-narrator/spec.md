@@ -45,7 +45,8 @@ These vary between tables; these are the ones implemented.
 - The **hunter names their quarry on their own night turn**, before knowing whether they die, and may change it any night. If they die — that night, a later night, or lynched by day — the committed shot fires automatically, whatever killed them, the witch's poison included. It is never chosen on the shared day screen: doing so told the whole table who the hunter was and let them pick under pressure with full knowledge.
 - **A lynched lover's partner dies at the next dawn, not on the spot**, and the dawn report never names a cause. Killing them in the open announced both the pairing and the reason; folded into the dawn list they are indistinguishable from a wolf kill or a poisoning.
 - **Wolves are informed, not blind** — a wolf's turn names the pack and shows the running vote tally from wolves who already voted. Majority dies; a tie inside the pack kills nobody.
-- **Day votes are passed around, but take no identity gate.** The phone goes to each living player in turn — the screen simply names whose vote it is — and anyone may abstain. Night turns confirm who is holding the phone because their content is secret; a day vote's is not, so the confirmation step bought nothing and was removed. The running tally stays hidden until everyone has had the phone — showing it live would tell each voter exactly how everyone before them voted. A tie forces a revote between the tied players; a second tie kills nobody.
+- **A game needs at least three players.** Start stays disabled below `MIN_PLAYERS`, and setup says so under the player list. Start used to be enabled on an empty table, which dealt nobody and dropped the host onto a blank night.
+- **Day votes are passed around, but take no identity gate.** The phone goes to each living player in turn — the screen simply names whose vote it is — and anyone may abstain. Night turns confirm who is holding the phone because their content is secret; a day vote's is not, so the confirmation step bought nothing and was removed. The running tally stays hidden until everyone has had the phone — showing it live would tell each voter exactly how everyone before them voted. A tie forces a revote between the tied players; a second tie kills nobody. **The verdict has four wordings**: voted out, nobody voted (no votes means no tied players, so no revote), a first tie (revote), and a tie again (nobody out). It stays on screen after Confirm; the day screen keeps a `closedVote` snapshot because resolving clears both the votes and the revote flag the wording reads.
 - **The day opens with a timed argument.** The rooster crows at the moment the night resolves — on the last player's own tap, which is what keeps it a real gesture, since phones refuse audio nobody asked for. The dead are still revealed only on a tap, and then a 2-minute countdown runs before voting, extendable by the minute. It never auto-advances — the table is usually mid-argument, so a human decides when to move on.
 - **Lovers are their own third side.** If the last two alive are Cupid's pair they win together, beating both the village and the wolves.
 - The **fool** wins alone by being lynched.
@@ -65,7 +66,7 @@ These vary between tables; these are the ones implemented.
 - `day.ts` — open vote, tally, revote
 - `win.ts` — win conditions
 - `game.ts` — action creators and the thin `gameReducer` that delegates to the slices
-- `persistence.ts` — localStorage park/resume
+- `persistence.ts` — localStorage park/resume. **An unusable save is ignored, not trusted**: `loadGame` returns null when the JSON fails to parse, when any field of `createInitialState()` is missing (checked recursively into `night` and `roleCounts`), or when the phase is unknown. A bare `JSON.parse … as GameState` used to crash every load, and Reload read the same save again. **Any new `GameState` field therefore discards saves from before it** — that is the intended upgrade path, not a bug.
 
 **Two invariants that must not be broken:**
 
@@ -88,7 +89,7 @@ Each screen is a directory under `src/components/` with a server component holdi
 
 Phase-driven colour comes from `data-phase`, resolving `--color-phase*` tokens: night is deep indigo, setup neutral, and **day is a genuinely light palette** — it is played with the lights on, so `[data-phase="day"]` redefines the shared tokens (`--background`, `--card`, `--border`, `--muted-foreground` and the rest) rather than tinting the dark ones. Because custom properties inherit, putting them on the shell flips every descendant with it. `--phase-name` is the colour reserved for player names. The neutral `:root` block is declared **ahead** of the `[data-phase]` blocks — they match at equal specificity, so source order decides. `text-phase-foreground` is only ever used on a `bg-phase` surface; page text uses `text-foreground`.
 
-**`GameShell` is the only thing that sets `data-phase` or paints a background.** Each screen used to set its own, which left the header row outside every one of them and therefore black against an indigo night — it read as a rendering bug on a phone. The mapping is not one-to-one with `Phase`: the reveal borrows the setup accent (it is still the deal) and dawn borrows the day's (the village is already awake). A control that needs to sit *above* the page — the reveal's hold cover — uses `bg-card`, not `bg-phase-muted`, which is now the page itself.
+**`GameShell` is the only thing in the page tree that sets `data-phase` or paints a background.** Each screen used to set its own, which left the header row outside every one of them and therefore black against an indigo night — it read as a rendering bug on a phone. **The one exception is the options sheet**: it renders in a portal outside the shell, so it inherits nothing and sets `data-phase` itself from the exported `getPhaseAccent`, or it stays dark over the light day. The mapping is not one-to-one with `Phase`: the reveal borrows the setup accent (it is still the deal) and dawn borrows the day's (the village is already awake). A control that needs to sit *above* the page — the reveal's hold cover — uses `bg-card`, not `bg-phase-muted`, which is now the page itself.
 
 **A stacked control is a plain `<button>`, never a shadcn `Button`.** `pile` is a custom `@utility`, so `tailwind-merge` cannot see it as a display class and leaves `buttonVariants`' `inline-flex` in place: the stack silently becomes a flex row, `place-items-center` goes inert, and a `size-full` child — the hold fill — takes the whole row and squeezes its siblings into a column at one edge. That is what pushed the reveal's prompt off-centre. Both hold controls are plain buttons for this reason.
 
@@ -97,6 +98,14 @@ Phase-driven colour comes from `data-phase`, resolving `--color-phase*` tokens: 
 **Setup shows each role as a flip card.** The front is the role's art from `public/roles/<role>.jpg` in a portrait A4 frame; a tap turns it over to the description. The flip is a plain `<button>` with `aria-pressed`, and both faces stack with `pile` — the back starts at `rotate-y-180` with `backface-hidden`, so the card's own `rotate-y-180` brings it face up. **Only the werewolf has art so far**; every other role shows a broken image until its file is added. The villager's "fills the remaining seats" note opens in a `Popover` from a help button, never a hover tooltip, because a phone cannot hover.
 
 **Screens are sized by their content and centred by `GameScreens`, not stretched.** They used to claim the full height, which left a short screen's text stranded in the top third of a tall phone with two-thirds of dead space under it. The content row centres with `content-center-safe` rather than plain centring: on a screen that overflows — a twelve-player vote list — plain centring pushes the top of the content out of the scrollport where it can never be scrolled back to, while safe centring falls back to top-aligned automatically.
+
+**An unbreakable player name must never widen the page.** A name with no spaces (a pasted email or handle) cannot wrap, and a grid sizes an `auto`/`1fr` track to its widest unwrappable content — so one name made every column wider than the phone and pushed buttons, badges and copy off-screen. Two rules keep it contained: page-level grids (body, `GameShell`, `GameScreens`) use `grid-cols-[minmax(0,1fr)]`, and every rendered name carries `wrap-anywhere` (built into `PlayerName`; added by hand where a name is a plain span or a button label, which also needs `whitespace-normal` to undo the Button's `nowrap`). Name-plus-badge rows use `grid-cols-[minmax(0,1fr)_auto]`. `anywhere` rather than `break-word` because only `anywhere` shrinks min-content. **None of this is covered by a test** — jsdom does no layout.
+
+**The server renders the app name, not nothing.** `GameProvider` cannot read `localStorage` on the server, so it renders its `fallback` (`GameLoading`) until the client takes over; a slow phone used to show a black page. The first client render uses the same server snapshot, so hydration matches.
+
+**A crash lands on `src/app/[lang]/error.tsx`**, in the route's language via `useParams`, not Next's English default. Its button clears the save before calling `retry` — retrying on the save that crashed would crash again.
+
+**Fonts are system stacks** in `globals.css`. `--font-sans` once pointed at itself, which is invalid, and the whole app fell back to Times New Roman.
 
 **Pinch-zoom is not blocked.** `maximumScale: 1` was set early to keep the pass-around steady and has been removed: it fails WCAG 1.4.4, and nothing was zooming by accident. `overscroll-none` on the body is the setting that actually matters here — without it, an Android pull-to-refresh reloads the page and takes a live game with it.
 
@@ -113,7 +122,7 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 ## Behaviours
 
 1. Anyone can switch between Vietnamese and English, staying on the same screen
-2. A host builds tonight's player list
+2. A host builds tonight's player list, and cannot start until at least three players are seated
 3. The host is told when they have picked more special roles than there are seats (villagers backfill any shortfall, so a deck can only ever be over-full)
 4. Each player privately sees their own role, then passes the phone on
 5. The phone visits every living player each night, in a fixed order, with decoys
@@ -121,27 +130,32 @@ The Vietnamese is written as a Vietnamese table actually speaks — `soi` for th
 7. The seer learns whether a player is a wolf
 8. The doctor protects a player and cannot repeat last night's target
 9. The village wakes, taps to learn who died — never how — and a doctor-protected player survives
-10. The village passes the phone round to vote, anyone may abstain, and a tie forces a revote
+10. The village passes the phone round to vote, anyone may abstain, and a tie forces a revote; the verdict — including "nobody voted" and "tied again" — stays on screen after it is confirmed
 11. The witch saves the night's victim or poisons someone
 12. The hunter names their quarry in advance, at night, and takes them along whenever they die
 13. The game announces the winner the moment one side has won
 14. Cupid links two lovers; a lover dying breaks the other's heart at the next dawn; the pair can win alone
 15. The fool wins alone if the village votes them out
-16. The host resumes an interrupted game after the phone locks or refreshes
+16. The host resumes an interrupted game after the phone locks or refreshes; a corrupt or outdated save opens a fresh table instead of locking the app
 17. Anyone can take back a mis-tap, or start a fresh game after confirming
+18. If a screen crashes, players get an error page in their language with a button that starts a new game
+19. A long player name wraps instead of pushing controls off a phone screen
 
 ## Known gaps
 
 - **No offline support.** There is no service worker and no PWA manifest. The app keeps working if the network drops mid-game, but a cold load needs a connection. Deliberately deferred.
-- **The page is blank until hydration.** `GameProvider` cannot read `localStorage` on the server, so it renders nothing until the client takes over — a brief flash on cold load. Fixable by rendering the setup screen server-side and gating only the *resume* on the client.
+- **Only the app name shows until hydration.** The server renders `GameLoading` instead of a black page, but no game screen appears until the client has read the save.
+- **Layout has no automated check.** Wrapping, overflow, fonts and colours were fixed from a visual QA pass (`qa-visual-defects/README.md`) and are unverified by tests, since jsdom does no layout.
+- **The error page's recovery is unproven in a real Next runtime.** The test checks that the save is cleared and `retry` is called; that `retry` re-mounts `GameProvider` so it re-reads the now-empty storage is assumed. If it doesn't, switch to `window.location.reload()`.
 - **Not a static export.** `next.config.ts` uses `redirects()` for `/` → `/vi`, which `output: "export"` does not support, so this deploys as a Next server app.
 - **The engine does not validate actors.** It never checks that a doctor's target passes `canDoctorProtect` or that the actor's role matches the action — gating is the UI's job.
-- **A day where everybody abstains shows the wrong words.** With no votes recorded, `getDayVoteOutcome` returns no eliminated player and no tied players, so the result screen falls back to the tie copy ("It's a tie — revote between the tied players") before correctly moving on to nightfall. It neither crashes nor loops; the sentence is simply wrong for that case, and fixing it needs its own line of copy.
 - **Edge cases are untested by design.** The brief was happy-path-only to reach a playable release.
 
 ## Testing
 
-`npm test` — 77 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
+`npm test` — 92 tests, node environment by default; component tests opt in per file with `// @vitest-environment jsdom`.
+
+**`vitest.config.mts` passes `--no-experimental-webstorage` to test workers on Node 25+.** Newer Node ships its own global `localStorage`, which hides jsdom's and is undefined without `--localstorage-file`, so without the flag every test that touches storage fails before it asserts anything. It is skipped on older Node, which may not know the flag; the deploy target is Node 24.
 
 Test style is `describe("Feature: …") → describe("Scenario: …") → it("should …")` with literal expected values. `game.test.ts` includes a full-game integration test that plays two complete night-day cycles through the reducer to a village win.
 

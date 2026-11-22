@@ -57,6 +57,34 @@ describe("Setup screen", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
+  it("tells the host how many players a game needs and blocks the start on an empty table", () => {
+    renderSetup();
+
+    expect(
+      screen.getByText("Add at least 3 players to start."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start game" })).toBeDisabled();
+  });
+
+  it("unlocks the start the moment the third player sits down", async () => {
+    const user = renderSetup();
+    const startButton = screen.getByRole("button", { name: "Start game" });
+
+    await seatPlayers(user, ["Alice", "Bob"]);
+
+    expect(
+      screen.getByText("Add at least 3 players to start."),
+    ).toBeInTheDocument();
+    expect(startButton).toBeDisabled();
+
+    await seatPlayers(user, ["Cara"]);
+
+    expect(
+      screen.queryByText("Add at least 3 players to start."),
+    ).not.toBeInTheDocument();
+    expect(startButton).toBeEnabled();
+  });
+
   it("warns about the surplus cards and blocks the start when the deck overflows", async () => {
     const user = renderSetup();
 

@@ -2,6 +2,7 @@ import {
   AddPlayerForm,
   CompositionWarning,
   DerivedRoleCounter,
+  PlayerCountHint,
   PlayerList,
   RoleCounter,
   RoleCounterList,
@@ -36,6 +37,7 @@ export function Setup({ dict }: SetupProps) {
       <SetupSection>
         <SetupSectionTitle>{dict.common.players}</SetupSectionTitle>
         <PlayerList removeLabel={dict.setup.removePlayer} />
+        <PlayerCountHint template={dict.setup.minPlayers} />
       </SetupSection>
 
       <SetupSection>

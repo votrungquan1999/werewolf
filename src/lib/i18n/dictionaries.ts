@@ -38,6 +38,7 @@ const vietnamese: Dictionary = {
     decreaseRole: "Bớt một lá",
     villagerAutoHelp: "Số này tính thế nào?",
     villagerAuto: "Tự động điền cho đủ số người",
+    minPlayers: "Cần ít nhất {count} người chơi để bắt đầu.",
   },
   reveal: {
     passTo: "Đưa máy cho {name}",
@@ -102,6 +103,9 @@ const vietnamese: Dictionary = {
     votedOut: "Cả làng đã treo cổ {name}.",
     tieTitle: "Hòa phiếu — bỏ phiếu lại giữa những người bằng phiếu nhau.",
     revoteTitle: "Bỏ phiếu lại",
+    noVotesCast: "Chưa có phiếu nào.",
+    noVotesTitle: "Không ai bỏ phiếu, nên hôm nay không ai bị loại.",
+    tiedAgainTitle: "Lại hòa phiếu, nên hôm nay không ai bị loại.",
   },
   gameOver: {
     headlines: {
@@ -121,6 +125,11 @@ const vietnamese: Dictionary = {
     confirmReset:
       "Bỏ ván đang chơi? Danh sách người chơi và số lượng vai vẫn được giữ lại.",
     close: "Đóng",
+  },
+  error: {
+    title: "Ván chơi gặp lỗi",
+    body: "Ván này không thể tiếp tục. Bắt đầu ván mới để chơi tiếp.",
+    newGame: "Bắt đầu ván mới",
   },
   roles: {
     [RoleId.Werewolf]: {
@@ -204,6 +213,7 @@ const english: Dictionary = {
     decreaseRole: "Remove one",
     villagerAutoHelp: "How is this counted?",
     villagerAuto: "Fills the remaining seats automatically",
+    minPlayers: "Add at least {count} players to start.",
   },
   reveal: {
     passTo: "Pass the phone to {name}",
@@ -267,6 +277,9 @@ const english: Dictionary = {
     votedOut: "The village has voted out {name}.",
     tieTitle: "It's a tie — revote between the tied players.",
     revoteTitle: "Revote",
+    noVotesCast: "No votes were cast.",
+    noVotesTitle: "Nobody voted, so nobody is voted out today.",
+    tiedAgainTitle: "Tied again, so nobody is voted out today.",
   },
   gameOver: {
     headlines: {
@@ -287,6 +300,11 @@ const english: Dictionary = {
     confirmReset:
       "Discard this game? The player list and role counts are kept.",
     close: "Close",
+  },
+  error: {
+    title: "The game hit a problem",
+    body: "This game can't continue. Start a new game to keep playing.",
+    newGame: "Start a new game",
   },
   roles: {
     [RoleId.Werewolf]: {

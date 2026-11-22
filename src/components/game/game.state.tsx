@@ -53,10 +53,17 @@ function GamePersistence(): null {
 /**
  * Provides the game to the whole tree, resuming a parked game when one exists.
  * @param props.children - The game screens
- * @returns The provider, or nothing until the client has taken over
+ * @param props.fallback - What the server renders, since only the client can read the saved game
+ * @returns The provider, or the fallback until the client has taken over
  */
-export function GameProvider({ children }: { children: ReactNode }) {
-  // localStorage is client-only, so the server must render nothing rather than a different tree.
+export function GameProvider({
+  children,
+  fallback = null,
+}: {
+  children: ReactNode;
+  fallback?: ReactNode;
+}) {
+  // localStorage is client-only, so the server renders the fallback rather than a guessed game.
   const isClient = useSyncExternalStore(
     subscribeToNothing,
     () => true,
@@ -67,7 +74,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   if (!isClient) {
-    return null;
+    return fallback;
   }
 
   return (
