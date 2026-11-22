@@ -1,17 +1,69 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "src/app/globals.css";
-import { Locale, toLocale } from "src/lib/i18n/config";
+import { DEFAULT_LOCALE, Locale, toLocale } from "src/lib/i18n/config";
+import { getDictionary } from "src/lib/i18n/dictionaries";
+import { SITE_URL } from "src/lib/site";
 
 interface RootLayoutProps {
   children: ReactNode;
   params: Promise<{ lang: string }>;
 }
 
-export const metadata: Metadata = {
-  title: "Ma Sói",
-  description: "Một chiếc điện thoại, cả làng cùng chơi.",
+const OG_LOCALE: Record<Locale, string> = {
+  [Locale.Vi]: "vi_VN",
+  [Locale.En]: "en_US",
 };
+
+/**
+ * Builds the per-language title, description, canonical, hreflang links and social preview cards.
+ * @param props.params Route params carrying the `lang` segment.
+ * @returns Metadata whose canonical is the language's own address; unknown languages canonicalise to the default.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  // Normalise first so an unknown segment never indexes the dictionary.
+  const locale = toLocale(lang);
+  const { metadata, appName } = getDictionary(locale);
+  const canonical = `${SITE_URL}/${locale}`;
+
+  // Same locale list as the sitemap so the two hreflang sets always agree.
+  const languages: Record<string, string> = {
+    "x-default": `${SITE_URL}/${DEFAULT_LOCALE}`,
+  };
+  for (const supported of Object.values(Locale)) {
+    languages[supported] = `${SITE_URL}/${supported}`;
+  }
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: metadata.title,
+    description: metadata.description,
+    openGraph: {
+      title: metadata.title,
+      description: metadata.description,
+      // Same address as the canonical so shares consolidate on one URL.
+      url: canonical,
+      siteName: appName,
+      locale: OG_LOCALE[locale],
+      type: "website",
+    },
+    // No dedicated share art exists, so the text-only summary card is used.
+    twitter: {
+      card: "summary",
+      title: metadata.title,
+      description: metadata.description,
+    },
+    alternates: {
+      canonical,
+      languages,
+    },
+  };
+}
 
 // Dark-only game played in dim rooms. `maximumScale` was dropped deliberately:
 // blocking pinch-zoom fails WCAG 1.4.4, and nobody was zooming by accident anyway.
