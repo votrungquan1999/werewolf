@@ -94,7 +94,19 @@ export interface NightCopy {
   witchPoisonConfirmLabel: string;
   /** Carries `{role}`; filled with a name from `roleNames`. */
   yourRole: string;
+  hunterTitle: string;
+  hunterTagAimed: string;
+  hunterAim: string;
+  /** Carries `{name}`. */
+  hunterAimNamed: string;
+  /** Carries `{name}`. */
+  hunterAiming: string;
+  /** Carries `{name}`. */
+  hunterGoesWith: string;
+  hunterChange: string;
+  /** Carries `{name}`. */
   hunterSkip: string;
+  hunterSkipLast: string;
   roleNames: Record<RoleId, string>;
   roleDescriptions: Record<RoleId, string>;
   confirmLabel: string;
@@ -868,37 +880,107 @@ function NightLoversTurn({ actorId, copy, onDone }: ActTurnProps) {
  * The hunter's turn: name the shot now, before knowing whether it will ever fire.
  *
  * Committed here rather than on the day screen, where a dying hunter picked with the
- * whole table watching them do it — and with the game already spread out in front of them.
+ * whole table watching them do it. Aiming only moves to a local summary; the mark is
+ * saved by Done, in the same step that passes the phone on. Skip sends no choice, so
+ * an earlier night's mark stays.
  * @param props.actorId - The hunter holding the phone.
  * @param props.copy - Night copy supplied by the server component.
- * @param props.onDone - Hands the phone on.
+ * @param props.passLabel - Label of the pass button.
+ * @param props.onDone - Hands the phone on, carrying the mark when one was set.
  * @returns The hunter turn.
  */
-function NightMarkTurn({ actorId, copy, onDone }: ActTurnProps) {
+function NightMarkTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
   const state = useGame();
-  const { submitNightChoice } = useGameActions();
+  const targets = getTargetablePlayers(state, NightAction.MarkTarget, actorId);
 
-  /** Records the mark; whether it ever fires is settled by whoever kills them. */
-  function markTarget(targetId: string) {
-    submitNightChoice(actorId, NightAction.MarkTarget, targetId);
-    onDone();
+  // A mark on a dead player is no mark: only a living target can be preselected.
+  const earlierId =
+    targets.find((player) => player.id === state.hunterTargetId)?.id ?? null;
+  const [selectedId, setSelectedId] = useState<string | null>(earlierId);
+  const [isAiming, setIsAiming] = useState(false);
+  const nextName = getNextPlayerName(state);
+
+  if (isAiming && selectedId !== null) {
+    const aimedName = getPlayerName(state, selectedId);
+
+    return (
+      <>
+        <div className={cn("gap-3", "grid justify-items-center text-center")}>
+          <RoleAvatar
+            role={RoleId.Hunter}
+            size={48}
+            label={copy.roleNames[RoleId.Hunter]}
+          />
+          <p className="font-bold font-heading text-2xl">
+            <NamedLine template={copy.hunterAiming} name={aimedName} />
+          </p>
+          <p className="text-base text-muted-foreground">
+            <NamedLine template={copy.hunterGoesWith} name={aimedName} />
+          </p>
+        </div>
+
+        <NightPassButton
+          label={passLabel}
+          onPass={() =>
+            onDone({
+              actorId,
+              action: NightAction.MarkTarget,
+              targetId: selectedId,
+              secondTargetId: null,
+              potionKind: null,
+            })
+          }
+        />
+
+        <Button
+          variant="ghost"
+          size="lg"
+          onClick={() => setIsAiming(false)}
+          className={cn("h-auto min-h-16 w-full text-base")}
+        >
+          {copy.hunterChange}
+        </Button>
+      </>
+    );
   }
 
   return (
     <>
-      <NightChoiceList
-        players={getTargetablePlayers(state, NightAction.MarkTarget, actorId)}
-        onChoose={markTarget}
+      <NightTurnHeading
+        role={RoleId.Hunter}
+        title={copy.hunterTitle}
+        body={copy.prompts[NightAction.MarkTarget]}
+        copy={copy}
       />
 
-      {/* Submitting nothing on purpose: an undecided hunter keeps an earlier night's mark. */}
+      <NightChoiceList
+        players={targets}
+        selectedId={selectedId}
+        tags={earlierId === null ? {} : { [earlierId]: copy.hunterTagAimed }}
+        onChoose={setSelectedId}
+      />
+
+      <NightPassButton
+        label={
+          selectedId === null
+            ? copy.hunterAim
+            : fillTemplate(copy.hunterAimNamed, {
+                name: getPlayerName(state, selectedId),
+              })
+        }
+        disabled={selectedId === null}
+        onPass={() => setIsAiming(true)}
+      />
+
       <Button
         variant="ghost"
         size="lg"
         onClick={() => onDone()}
         className={cn("h-auto min-h-16 w-full whitespace-normal text-base")}
       >
-        {copy.hunterSkip}
+        {nextName === null
+          ? copy.hunterSkipLast
+          : fillTemplate(copy.hunterSkip, { name: nextName })}
       </Button>
     </>
   );
@@ -1163,7 +1245,8 @@ function NightTurnBody({
           {turn.action === NightAction.WolfVote ||
           turn.action === NightAction.Inspect ||
           turn.action === NightAction.Protect ||
-          turn.action === NightAction.Potion ? null : (
+          turn.action === NightAction.Potion ||
+          turn.action === NightAction.MarkTarget ? null : (
             <p className="text-lg leading-relaxed">
               {copy.prompts[turn.action]}
             </p>

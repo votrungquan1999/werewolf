@@ -191,8 +191,24 @@ export interface NightDictionary {
   /** The confirm sheet's danger button. */
   witchPoisonConfirmLabel: string;
   cupidPrompt: string;
+  hunterTitle: string;
   hunterPrompt: string;
+  /** Tag on the row the hunter already aimed at on an earlier night. */
+  hunterTagAimed: string;
+  /** The aim button before any row is picked. */
+  hunterAim: string;
+  /** `{name}` = the picked player. */
+  hunterAimNamed: string;
+  /** `{name}` = who the hunter is aiming at. */
+  hunterAiming: string;
+  /** `{name}` = who dies with the hunter. */
+  hunterGoesWith: string;
+  /** Returns from the aiming summary to the list. */
+  hunterChange: string;
+  /** `{name}` = who gets the phone next; keeps any earlier mark. */
   hunterSkip: string;
+  /** Replaces `hunterSkip` on the last seat, where nobody is next. */
+  hunterSkipLast: string;
 }
 
 /** What a role is told back after it acts, still inside the night. */
