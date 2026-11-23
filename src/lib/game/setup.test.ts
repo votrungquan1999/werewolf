@@ -54,6 +54,40 @@ describe("Feature: Setting up a game", () => {
     });
   });
 
+  describe("Scenario: A name is added that is already seated", () => {
+    it("should return the same state, ignoring case and surrounding spaces", () => {
+      const withOne = addPlayer(createInitialState(), "p1", "An");
+
+      const again = addPlayer(withOne, "p2", "  aN ");
+
+      expect(again).toBe(withOne);
+    });
+
+    it("should treat a name typed with composed and decomposed accents as the same", () => {
+      const composed = "B\u00ecnh";
+      const decomposed = "Bi\u0300nh";
+      const withOne = addPlayer(createInitialState(), "p1", composed);
+
+      const again = addPlayer(withOne, "p2", decomposed);
+
+      expect(again).toBe(withOne);
+    });
+
+    it("should treat a name with a run of spaces inside as the same as with one space", () => {
+      const withOne = addPlayer(createInitialState(), "p1", "A B");
+
+      const again = addPlayer(withOne, "p2", "A  B");
+
+      expect(again).toBe(withOne);
+    });
+
+    it("should store the name as typed when it is not a duplicate", () => {
+      const seated = addPlayer(createInitialState(), "p1", "Bi\u0300nh  An");
+
+      expect(seated.players[0].name).toBe("Bi\u0300nh  An");
+    });
+  });
+
   describe("Scenario: The chosen roles do not cover everyone playing", () => {
     it("should report which way the composition is off, and nothing when it fits", () => {
       const table = addPlayer(

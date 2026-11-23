@@ -39,10 +39,90 @@ async function seatPlayers(
   }
 }
 
+/**
+ * Seats a table and moves on to the roles step.
+ * @param user - The user-event driver bound to the rendered screen.
+ * @param names - The players to seat, in order.
+ */
+async function seatAndChooseRoles(
+  user: ReturnType<typeof userEvent.setup>,
+  names: string[],
+): Promise<void> {
+  await seatPlayers(user, names);
+  await user.click(
+    screen.getByRole("button", { name: "Next: choose roles →" }),
+  );
+}
+
 describe("Setup screen", () => {
   // A parked game in localStorage would be restored and leak into the next test.
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  it("gates the roles step on three seated players and only opens it on tap", async () => {
+    const user = renderSetup();
+
+    expect(screen.getByText("Step 1 / 2")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Who's playing tonight?" }),
+    ).toBeInTheDocument();
+
+    await seatPlayers(user, ["An", "Bob"]);
+    const next = screen.getByRole("button", { name: "Next: choose roles →" });
+    expect(next).toBeDisabled();
+    expect(
+      screen.getByText("Add at least 3 players to start."),
+    ).toBeInTheDocument();
+
+    await seatPlayers(user, ["Cara"]);
+    expect(next).toBeEnabled();
+    expect(screen.getByText("3 player(s)")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Add at least 3 players to start."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Start game" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(next);
+
+    expect(
+      screen.getByRole("button", { name: "Start game" }),
+    ).toBeInTheDocument();
+  });
+
+  it("refuses a name that is already seated and says so until the host edits the field", async () => {
+    const user = renderSetup();
+    await seatPlayers(user, ["An"]);
+    const field = screen.getByRole("textbox", { name: "Player name" });
+
+    await user.type(field, " an ");
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "an is already at the table. Use another name.",
+    );
+    expect(screen.getByText("1 player(s)")).toBeInTheDocument();
+    expect(field).toHaveValue(" an ");
+
+    await user.type(field, "x");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("refuses a look-alike of a seated name typed with decomposed accents", async () => {
+    const user = renderSetup();
+    await seatPlayers(user, ["B\u00ecnh"]);
+
+    await user.type(
+      screen.getByRole("textbox", { name: "Player name" }),
+      "Bi\u0300nh",
+    );
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByText("1 player(s)")).toBeInTheDocument();
   });
 
   it("shows a newly added player in the table's player list", async () => {
@@ -57,38 +137,22 @@ describe("Setup screen", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
-  it("tells the host how many players a game needs and blocks the start on an empty table", () => {
+  it("tells the host how many players a game needs and blocks the next step on an empty table", () => {
     renderSetup();
 
     expect(
       screen.getByText("Add at least 3 players to start."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start game" })).toBeDisabled();
-  });
-
-  it("unlocks the start the moment the third player sits down", async () => {
-    const user = renderSetup();
-    const startButton = screen.getByRole("button", { name: "Start game" });
-
-    await seatPlayers(user, ["Alice", "Bob"]);
-
+    expect(screen.getByText("0 player(s)")).toBeInTheDocument();
     expect(
-      screen.getByText("Add at least 3 players to start."),
-    ).toBeInTheDocument();
-    expect(startButton).toBeDisabled();
-
-    await seatPlayers(user, ["Cara"]);
-
-    expect(
-      screen.queryByText("Add at least 3 players to start."),
-    ).not.toBeInTheDocument();
-    expect(startButton).toBeEnabled();
+      screen.getByRole("button", { name: "Next: choose roles →" }),
+    ).toBeDisabled();
   });
 
   it("warns about the surplus cards and blocks the start when the deck overflows", async () => {
     const user = renderSetup();
 
-    await seatPlayers(user, ["Alice", "Bob", "Cara"]);
+    await seatAndChooseRoles(user, ["Alice", "Bob", "Cara"]);
 
     // Four wolves for three seats — villagers cannot backfill a deck that is already full.
     const addWolf = within(
@@ -109,7 +173,7 @@ describe("Setup screen", () => {
   it("adds a card to the tapped role and takes it off the villagers", async () => {
     const user = renderSetup();
 
-    await seatPlayers(user, ["Alice", "Bob", "Cara"]);
+    await seatAndChooseRoles(user, ["Alice", "Bob", "Cara"]);
     await user.click(
       within(screen.getByRole("group", { name: "Werewolf" })).getByRole(
         "button",
@@ -129,6 +193,8 @@ describe("Setup screen", () => {
 
   it("explains the villager count on tap, since a phone cannot hover", async () => {
     const user = renderSetup();
+
+    await seatAndChooseRoles(user, ["Alice", "Bob", "Cara"]);
 
     expect(
       screen.queryByText("Fills the remaining seats automatically"),

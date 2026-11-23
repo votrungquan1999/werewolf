@@ -102,10 +102,37 @@ export function addPlayer(
   id: string,
   name: string,
 ): GameState {
+  // Same state back, so the history layer records no undo step.
+  if (isNameTaken(state.players, name)) {
+    return state;
+  }
+
   return withAutoVillagers({
     ...state,
     players: [...state.players, { id, name, role: null, isAlive: true }],
   });
+}
+
+/**
+ * Reduces a name to the form used to compare two names.
+ * Look-alike spellings (composed vs decomposed accents, runs of spaces) fold to one form.
+ * @param name - A name as typed.
+ * @returns The name in comparison form.
+ */
+function toComparableName(name: string): string {
+  return name.normalize("NFC").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/**
+ * Whether a name is already seated, ignoring case, extra spaces and accent encoding.
+ * @param players - Who is at the table.
+ * @param name - The name about to be added.
+ * @returns True when another player already has that name.
+ */
+export function isNameTaken(players: Player[], name: string): boolean {
+  const wanted = toComparableName(name);
+
+  return players.some((player) => toComparableName(player.name) === wanted);
 }
 
 /**

@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  createContext,
   type ReactNode,
+  useContext,
   useEffect,
   useState,
   useSyncExternalStore,
@@ -19,7 +21,7 @@ import {
   historyReducer,
 } from "src/lib/game/history";
 import { loadGame, saveGame } from "src/lib/game/persistence";
-import { createInitialState } from "src/lib/game/setup";
+import { createInitialState, hasEnoughPlayers } from "src/lib/game/setup";
 import {
   ActionType,
   type GameState,
@@ -30,6 +32,37 @@ import {
 
 const [GameProviderBase, useRawGameState, useRawGameDispatch] =
   createReducerContext(historyReducer, createHistory(createInitialState()));
+
+/** Which of the two setup screens the host is on. */
+export type SetupStep = 1 | 2;
+
+interface SetupStepContextValue {
+  step: SetupStep;
+  setStep: (step: SetupStep) => void;
+}
+
+const SetupStepContext = createContext<SetupStepContextValue | null>(null);
+
+/**
+ * Holds the setup step in UI state: not saved and not an undo step, but it outlives the setup phase.
+ * @param props.children - The game screens
+ * @returns The provider
+ */
+function SetupStepProvider({ children }: { children: ReactNode }) {
+  const [step, setStep] = useState<SetupStep>(1);
+  const state = useGame();
+
+  // Undo can drop the table below the minimum on step 2; store step 1 so a re-seated third player still waits for Next.
+  if (step === 2 && !hasEnoughPlayers(state)) {
+    setStep(1);
+  }
+
+  return (
+    <SetupStepContext.Provider value={{ step, setStep }}>
+      {children}
+    </SetupStepContext.Provider>
+  );
+}
 
 /** Never fires — the store is constant per environment, we only need server vs client. */
 function subscribeToNothing(): () => void {
@@ -80,7 +113,7 @@ export function GameProvider({
   return (
     <GameProviderBase {...(restored === null ? {} : { present: restored })}>
       <GamePersistence />
-      {children}
+      <SetupStepProvider>{children}</SetupStepProvider>
     </GameProviderBase>
   );
 }
@@ -142,4 +175,18 @@ export function useGameActions() {
  */
 export function useCanUndo(): boolean {
   return canUndo(useRawGameState());
+}
+
+/**
+ * Reads and moves the setup step.
+ * @returns The step to show, and a setter for the host's navigation
+ */
+export function useSetupStep(): SetupStepContextValue {
+  const context = useContext(SetupStepContext);
+
+  if (context === null) {
+    throw new Error("useSetupStep must be used inside GameProvider");
+  }
+
+  return context;
 }

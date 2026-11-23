@@ -21,12 +21,27 @@ export interface CommonDictionary {
   dead: string;
 }
 
+/** The strip above every screen. */
+export interface HeaderDictionary {
+  /** `{current}` / `{total}` = the setup step the host is on. */
+  stepOf: string;
+}
+
 /** Table set-up: who is playing and which cards are in the deck. */
 export interface SetupDictionary {
   title: string;
   addPlayerPlaceholder: string;
   addPlayer: string;
+  /** Placeholder showing the kind of name to type. */
+  addPlayerExample: string;
+  /** Accessible name of a row's remove button; `{name}` = that row's player. */
   removePlayer: string;
+  /** `{name}` = the name that is already seated. */
+  nameTaken: string;
+  /** `{count}` = how many players are seated. */
+  playerCount: string;
+  /** Moves from the players step to the roles step. */
+  nextRoles: string;
   roleCompositionTitle: string;
   startGame: string;
   /** `{count}` = how many cards are still missing. */
@@ -197,6 +212,7 @@ export interface Dictionary {
   metadata: MetadataDictionary;
   language: LanguageDictionary;
   common: CommonDictionary;
+  header: HeaderDictionary;
   setup: SetupDictionary;
   reveal: RevealDictionary;
   nightfall: NightfallDictionary;

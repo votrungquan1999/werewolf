@@ -3,7 +3,13 @@
 import { HelpCircle, Minus, Plus, RefreshCw, X } from "lucide-react";
 import Image from "next/image";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
-import { useGame, useGameActions } from "src/components/game/game.state";
+import type { SetupStep } from "src/components/game/game.state";
+import {
+  useGame,
+  useGameActions,
+  useSetupStep,
+} from "src/components/game/game.state";
+import { ScreenHeader } from "src/components/game/screen-header";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import {
@@ -15,6 +21,7 @@ import { getRoleDefinition } from "src/lib/game/roles";
 import {
   getRoleCountIssue,
   hasEnoughPlayers,
+  isNameTaken,
   MIN_PLAYERS,
   RoleCountIssueKind,
 } from "src/lib/game/setup";
@@ -36,11 +43,64 @@ export function SetupScreen({ children }: { children: ReactNode }) {
 
   return (
     <main
-      className={cn("gap-6 p-4 pb-10", "grid w-full", "sm:mx-auto sm:max-w-md")}
+      className={cn(
+        "gap-4 px-5 pt-3 pb-7",
+        "flex w-full flex-col",
+        "sm:mx-auto sm:max-w-md",
+      )}
     >
       {children}
     </main>
   );
+}
+
+/**
+ * The setup screen's header: app name, which of the two steps this is, and the menu.
+ * @param props.label - The phase label.
+ * @param props.stepTemplate - Copy carrying `{current}` and `{total}` placeholders.
+ * @param props.menu - Optional options menu.
+ * @returns The header row.
+ */
+export function SetupHeader({
+  label,
+  stepTemplate,
+  menu,
+}: {
+  label: string;
+  stepTemplate: string;
+  menu?: ReactNode;
+}) {
+  const { step } = useSetupStep();
+
+  return (
+    <ScreenHeader
+      label={label}
+      progress={stepTemplate
+        .replace("{current}", String(step))
+        .replace("{total}", "2")}
+      menu={menu}
+    />
+  );
+}
+
+/**
+ * One of the two setup steps; renders nothing while the host is on the other.
+ * @param props.step - Which step this panel belongs to.
+ * @param props.children - The step's content.
+ * @returns The panel, filling the height so its last control sits at the bottom.
+ */
+export function SetupStepPanel({
+  step,
+  children,
+}: {
+  step: SetupStep;
+  children: ReactNode;
+}) {
+  if (useSetupStep().step !== step) {
+    return null;
+  }
+
+  return <div className={cn("gap-4", "flex flex-1 flex-col")}>{children}</div>;
 }
 
 /**
@@ -53,8 +113,8 @@ export function SetupTitle({ children }: { children: ReactNode }) {
 }
 
 /**
- * One block of the screen — the player list or the role composition.
- * @param props.children - The block's heading and body.
+ * The role composition block on the roles step.
+ * @param props.children - The block's heading and tiles.
  * @returns The section.
  */
 export function SetupSection({ children }: { children: ReactNode }) {
@@ -78,19 +138,28 @@ export function SetupSectionTitle({ children }: { children: ReactNode }) {
 
 /**
  * Name field plus its submit button.
- * @param props.inputLabel - Accessible name and placeholder for the name field.
+ * @param props.label - Visible label of the name field.
+ * @param props.placeholder - Example name shown while the field is empty.
+ * @param props.nameTakenTemplate - Refusal copy carrying `{name}`.
  * @param props.children - The submit button's copy.
  * @returns The add-player form.
  */
 export function AddPlayerForm({
-  inputLabel,
+  label,
+  placeholder,
+  nameTakenTemplate,
   children,
 }: {
-  inputLabel: string;
+  label: string;
+  placeholder: string;
+  nameTakenTemplate: string;
   children: ReactNode;
 }) {
   const [draftName, setDraftName] = useState("");
+  const [refusedName, setRefusedName] = useState<string | null>(null);
+  const { players } = useGame();
   const { addPlayer } = useGameActions();
+  const inputId = useId();
 
   /**
    * Adds the typed name to the table and clears the field for the next player.
@@ -105,25 +174,41 @@ export function AddPlayerForm({
       return;
     }
 
+    // Two identical names would make the envelopes ambiguous; keep the typed text so it can be fixed.
+    if (isNameTaken(players, name)) {
+      setRefusedName(name);
+      return;
+    }
+
     addPlayer(name);
     setDraftName("");
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={cn("gap-2", "grid grid-cols-[1fr_auto]")}
-    >
-      <Input
-        aria-label={inputLabel}
-        placeholder={inputLabel}
-        value={draftName}
-        onChange={(event) => setDraftName(event.target.value)}
-        className="h-12 text-base"
-      />
-      <Button type="submit" className="h-12 px-5 text-base">
-        {children}
-      </Button>
+    <form onSubmit={handleSubmit} className={cn("gap-1.5", "grid")}>
+      <label htmlFor={inputId} className="text-muted-foreground text-sm">
+        {label}
+      </label>
+      <div className={cn("gap-2", "grid grid-cols-[minmax(0,1fr)_auto]")}>
+        <Input
+          id={inputId}
+          placeholder={placeholder}
+          value={draftName}
+          onChange={(event) => {
+            setDraftName(event.target.value);
+            setRefusedName(null);
+          }}
+          className="h-13 text-base"
+        />
+        <Button type="submit" className="h-13 w-21 text-base font-bold">
+          {children}
+        </Button>
+      </div>
+      {refusedName === null ? null : (
+        <p role="alert" className="text-destructive text-sm">
+          {nameTakenTemplate.replace("{name}", refusedName)}
+        </p>
+      )}
     </form>
   );
 }
@@ -181,7 +266,7 @@ export function StartGameButton({ children }: { children: ReactNode }) {
       type="button"
       disabled={!hasEnoughPlayers(state) || getRoleCountIssue(state) !== null}
       onClick={dealRoles}
-      className="h-14 text-base"
+      className="mt-auto h-14 text-base"
     >
       {children}
     </Button>
@@ -189,35 +274,43 @@ export function StartGameButton({ children }: { children: ReactNode }) {
 }
 
 /**
- * Everyone currently at the table, each with a way off it.
- * @param props.removeLabel - Accessible name for a row's remove button.
+ * Everyone currently at the table, numbered, each with a way off it.
+ * @param props.removeTemplate - Accessible name for a row's remove button, carrying `{name}`.
  * @returns The player list.
  */
-export function PlayerList({ removeLabel }: { removeLabel: string }) {
+export function PlayerList({ removeTemplate }: { removeTemplate: string }) {
   const { players } = useGame();
   const { removePlayer } = useGameActions();
 
   return (
-    <ul className={cn("gap-2", "grid")}>
-      {players.map((player) => (
+    <ul className={cn("border-border border-t pt-2", "grid")}>
+      {players.map((player, index) => (
         <li
           key={player.id}
           className={cn(
-            "gap-2 rounded-lg border border-border bg-card px-4 py-2 text-base",
-            "grid grid-cols-[minmax(0,1fr)_auto] items-center",
+            "gap-2 border-border border-b text-base",
+            "grid min-h-11 grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center",
           )}
         >
+          <span
+            aria-hidden="true"
+            className="text-muted-foreground text-sm tabular-nums"
+          >
+            {String(index + 1).padStart(2, "0")}
+          </span>
           {/* Wraps mid-word so a pasted handle cannot push the remove button off-screen. */}
-          <span className="wrap-anywhere">{player.name}</span>
+          <span className="font-heading font-semibold text-lg text-phase-name wrap-anywhere">
+            {player.name}
+          </span>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={removeLabel}
+            aria-label={removeTemplate.replace("{name}", player.name)}
             onClick={() => removePlayer(player.id)}
             className="size-11"
           >
-            <X />
+            <X aria-hidden="true" />
           </Button>
         </li>
       ))}
@@ -226,21 +319,54 @@ export function PlayerList({ removeLabel }: { removeLabel: string }) {
 }
 
 /**
- * Tells the host the table is still too small to start.
- * @param props.template - Copy carrying a `{count}` placeholder for the minimum.
- * @returns The hint, or nothing once enough players are seated.
+ * Says how many players are seated, and why the table cannot move on yet.
+ * @param props.countTemplate - Copy carrying a `{count}` placeholder for the seated players.
+ * @param props.minTemplate - Copy carrying a `{count}` placeholder for the minimum.
+ * @returns The count line, plus the minimum hint until enough players are seated.
  */
-export function PlayerCountHint({ template }: { template: string }) {
+export function PlayerCountHint({
+  countTemplate,
+  minTemplate,
+}: {
+  countTemplate: string;
+  minTemplate: string;
+}) {
   const state = useGame();
 
-  if (hasEnoughPlayers(state)) {
-    return null;
-  }
+  return (
+    <div
+      className={cn("mt-auto gap-1", "grid justify-items-center text-center")}
+    >
+      <p className="text-muted-foreground text-sm">
+        {countTemplate.replace("{count}", String(state.players.length))}
+      </p>
+      {hasEnoughPlayers(state) ? null : (
+        <p className="text-muted-foreground text-sm">
+          {minTemplate.replace("{count}", String(MIN_PLAYERS))}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Moves the host from the players step to the roles step.
+ * @param props.children - The button's copy.
+ * @returns The button.
+ */
+export function NextRolesButton({ children }: { children: ReactNode }) {
+  const state = useGame();
+  const { setStep } = useSetupStep();
 
   return (
-    <p className="text-base text-muted-foreground">
-      {template.replace("{count}", String(MIN_PLAYERS))}
-    </p>
+    <Button
+      type="button"
+      disabled={!hasEnoughPlayers(state)}
+      onClick={() => setStep(2)}
+      className="h-14 text-base font-bold"
+    >
+      {children}
+    </Button>
   );
 }
 

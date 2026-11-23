@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { fontVariables } from "src/app/fonts";
 import "src/app/globals.css";
 import { DEFAULT_LOCALE, Locale, toLocale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
 import { SITE_URL } from "src/lib/site";
+import { cn } from "src/lib/utils";
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -70,7 +72,7 @@ export async function generateMetadata({
 export const viewport: Viewport = {
   viewportFit: "cover",
   colorScheme: "dark",
-  themeColor: "#141218",
+  themeColor: "#0C0C0F",
 };
 
 /**
@@ -96,7 +98,7 @@ export default async function RootLayout({
   const locale = toLocale(lang);
 
   return (
-    <html lang={locale} className="dark">
+    <html lang={locale} className={cn("dark", fontVariables)}>
       {/* overscroll-none stops Android pull-to-refresh reloading away a live game.
           minmax(0,1fr): an unbreakable name must not widen the page past the phone. */}
       <body className="grid min-h-dvh grid-cols-[minmax(0,1fr)] overscroll-none bg-background text-foreground antialiased">

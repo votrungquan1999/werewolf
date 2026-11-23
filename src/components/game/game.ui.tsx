@@ -37,9 +37,9 @@ export function getPhaseAccent(phase: Phase): PhaseAccent {
 /**
  * Paints the whole page in the current phase's colour.
  *
- * The accent lives here rather than on each screen so the header shares it —
- * a menu bar in a different colour from the screen under it reads as a bug.
- * @param props.children - The header row and the screens.
+ * The accent lives here rather than on each screen so every screen's own header
+ * shares it.
+ * @param props.children - The screens.
  * @returns The page shell.
  */
 export function GameShell({ children }: { children: ReactNode }) {
@@ -50,7 +50,9 @@ export function GameShell({ children }: { children: ReactNode }) {
       data-phase={getPhaseAccent(state.phase)}
       className={cn(
         "bg-phase-muted text-foreground",
-        "grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr]",
+        // The starfield is for the dark phases; the day palette stays plain ivory.
+        getPhaseAccent(state.phase) !== PhaseAccent.Day && "stars",
+        "grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)]",
       )}
     >
       {children}
@@ -77,21 +79,13 @@ export function GameLoading({ children }: { children: ReactNode }) {
 }
 
 /**
- * Centres the active screen, but only while it is short enough to fit.
- *
- * `content-center-safe` rather than plain centring: on an overflowing screen plain
- * centring pushes the top of the content out of the scrollport where it cannot be
- * scrolled back to. Safe centring falls back to top-aligned the moment it overflows.
+ * The row the active screen fills, so its header sits on top and its primary button at the bottom.
  * @param props.children - Every phase screen; all but one render nothing.
  * @returns The content row.
  */
 export function GameScreens({ children }: { children: ReactNode }) {
   return (
-    <div
-      className={cn(
-        "grid min-h-0 grid-cols-[minmax(0,1fr)] content-center-safe",
-      )}
-    >
+    <div className={cn("grid min-h-0 grid-cols-[minmax(0,1fr)]")}>
       {children}
     </div>
   );

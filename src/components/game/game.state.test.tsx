@@ -27,7 +27,7 @@ describe("Resuming a saved game", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Set up the table" }),
+      screen.getByRole("heading", { name: "Who's playing tonight?" }),
     ).toBeInTheDocument();
   });
 
@@ -47,7 +47,7 @@ describe("Resuming a saved game", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Set up the table" }),
+      screen.getByRole("heading", { name: "Who's playing tonight?" }),
     ).toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe("Resuming a saved game", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Set up the table" }),
+      screen.getByRole("heading", { name: "Who's playing tonight?" }),
     ).toBeInTheDocument();
   });
 
@@ -84,7 +84,7 @@ describe("Resuming a saved game", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Set up the table" }),
+      screen.getByRole("heading", { name: "Who's playing tonight?" }),
     ).toBeInTheDocument();
   });
 });

@@ -14,7 +14,6 @@ import { Reveal } from "src/components/reveal/reveal";
 import { Setup } from "src/components/setup/setup";
 import { Locale, toLocale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
-import { cn } from "src/lib/utils";
 
 interface GamePageProps {
   params: Promise<{ lang: string }>;
@@ -46,14 +45,12 @@ export default async function GamePage({ params }: GamePageProps) {
       {/* The game renders client-only, so this puts the app name in the server HTML for crawlers and screen readers. */}
       <h1 className="sr-only">{dictionary.appName}</h1>
       <GameProvider fallback={<GameLoading>{dictionary.appName}</GameLoading>}>
-        {/* A real row rather than an overlay — floating the menu covered the screen headings. */}
         <GameShell>
-          <header className={cn("px-3 pt-3", "grid justify-items-end")}>
-            <GameMenu dict={dictionary} locale={locale} />
-          </header>
-
           <GameScreens>
-            <Setup dict={dictionary} />
+            <Setup
+              dict={dictionary}
+              menu={<GameMenu dict={dictionary} locale={locale} />}
+            />
             <Reveal dict={dictionary} />
             <Nightfall dict={dictionary} />
             <Night dict={dictionary} />

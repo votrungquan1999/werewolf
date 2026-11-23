@@ -1,14 +1,18 @@
+import type { ReactNode } from "react";
 import {
   AddPlayerForm,
   CompositionWarning,
   DerivedRoleCounter,
+  NextRolesButton,
   PlayerCountHint,
   PlayerList,
   RoleCounter,
   RoleCounterList,
+  SetupHeader,
   SetupScreen,
   SetupSection,
   SetupSectionTitle,
+  SetupStepPanel,
   SetupTitle,
   StartGameButton,
 } from "src/components/setup/setup.ui";
@@ -18,64 +22,83 @@ import type { Dictionary } from "src/lib/i18n/types";
 interface SetupProps {
   /** Every string this screen renders, in the active language. */
   dict: Dictionary;
+  /** The options menu, rendered by the header. */
+  menu?: ReactNode;
 }
 
 /**
  * The setup screen: who is at the table and which cards they will be dealt.
  * @param props.dict - Copy for the active language.
+ * @param props.menu - Options menu for the header.
  * @returns The composed setup screen.
  */
-export function Setup({ dict }: SetupProps) {
+export function Setup({ dict, menu }: SetupProps) {
   return (
     <SetupScreen>
-      <SetupTitle>{dict.setup.title}</SetupTitle>
-
-      <AddPlayerForm inputLabel={dict.setup.addPlayerPlaceholder}>
-        {dict.setup.addPlayer}
-      </AddPlayerForm>
-
-      <SetupSection>
-        <SetupSectionTitle>{dict.common.players}</SetupSectionTitle>
-        <PlayerList removeLabel={dict.setup.removePlayer} />
-        <PlayerCountHint template={dict.setup.minPlayers} />
-      </SetupSection>
-
-      <SetupSection>
-        <SetupSectionTitle>{dict.setup.roleCompositionTitle}</SetupSectionTitle>
-        <RoleCounterList>
-          {Object.values(RoleId).map((role) =>
-            // The engine backfills villagers, so that row is a readout, not a control.
-            role === RoleId.Villager ? (
-              <DerivedRoleCounter
-                key={role}
-                role={role}
-                label={dict.roles[role].name}
-                note={dict.setup.villagerAuto}
-                noteLabel={dict.setup.villagerAutoHelp}
-              >
-                {dict.roles[role].description}
-              </DerivedRoleCounter>
-            ) : (
-              <RoleCounter
-                key={role}
-                role={role}
-                label={dict.roles[role].name}
-                decreaseLabel={dict.setup.decreaseRole}
-                increaseLabel={dict.setup.increaseRole}
-              >
-                {dict.roles[role].description}
-              </RoleCounter>
-            ),
-          )}
-        </RoleCounterList>
-      </SetupSection>
-
-      <CompositionWarning
-        tooFewTemplate={dict.setup.tooFewRoles}
-        tooManyTemplate={dict.setup.tooManyRoles}
+      <SetupHeader
+        label={dict.appName}
+        stepTemplate={dict.header.stepOf}
+        menu={menu}
       />
+      <SetupStepPanel step={1}>
+        <SetupTitle>{dict.setup.title}</SetupTitle>
 
-      <StartGameButton>{dict.setup.startGame}</StartGameButton>
+        <AddPlayerForm
+          label={dict.setup.addPlayerPlaceholder}
+          placeholder={dict.setup.addPlayerExample}
+          nameTakenTemplate={dict.setup.nameTaken}
+        >
+          {dict.setup.addPlayer}
+        </AddPlayerForm>
+
+        <PlayerList removeTemplate={dict.setup.removePlayer} />
+        <PlayerCountHint
+          countTemplate={dict.setup.playerCount}
+          minTemplate={dict.setup.minPlayers}
+        />
+        <NextRolesButton>{dict.setup.nextRoles}</NextRolesButton>
+      </SetupStepPanel>
+
+      <SetupStepPanel step={2}>
+        <SetupSection>
+          <SetupSectionTitle>
+            {dict.setup.roleCompositionTitle}
+          </SetupSectionTitle>
+          <RoleCounterList>
+            {Object.values(RoleId).map((role) =>
+              // The engine backfills villagers, so that row is a readout, not a control.
+              role === RoleId.Villager ? (
+                <DerivedRoleCounter
+                  key={role}
+                  role={role}
+                  label={dict.roles[role].name}
+                  note={dict.setup.villagerAuto}
+                  noteLabel={dict.setup.villagerAutoHelp}
+                >
+                  {dict.roles[role].description}
+                </DerivedRoleCounter>
+              ) : (
+                <RoleCounter
+                  key={role}
+                  role={role}
+                  label={dict.roles[role].name}
+                  decreaseLabel={dict.setup.decreaseRole}
+                  increaseLabel={dict.setup.increaseRole}
+                >
+                  {dict.roles[role].description}
+                </RoleCounter>
+              ),
+            )}
+          </RoleCounterList>
+        </SetupSection>
+
+        <CompositionWarning
+          tooFewTemplate={dict.setup.tooFewRoles}
+          tooManyTemplate={dict.setup.tooManyRoles}
+        />
+
+        <StartGameButton>{dict.setup.startGame}</StartGameButton>
+      </SetupStepPanel>
     </SetupScreen>
   );
 }

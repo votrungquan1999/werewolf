@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { generateMetadata } from "src/app/[lang]/layout";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// next/font/google is an empty module outside Next, so the font setup is replaced wholesale.
+vi.mock("src/app/fonts", () => ({ fontVariables: "" }));
 
 const origin = "https://werewolf.quanvo.dev";
 const titleOf = (metadata: Metadata) => String(metadata.title);

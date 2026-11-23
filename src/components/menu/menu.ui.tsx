@@ -1,5 +1,6 @@
 "use client";
 
+import { Ellipsis } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import {
   useCanUndo,
@@ -100,12 +101,13 @@ export function GameMenuPanel({
         render={
           <Button
             variant="outline"
-            size="lg"
-            className={cn("h-12 text-base")}
+            size="icon"
+            aria-label={openLabel}
+            className={cn("size-11 rounded-full")}
           />
         }
       >
-        {openLabel}
+        <Ellipsis aria-hidden="true" className="size-5" />
       </SheetTrigger>
 
       {/* The sheet renders in a portal outside the shell, so it needs the phase colours itself. */}

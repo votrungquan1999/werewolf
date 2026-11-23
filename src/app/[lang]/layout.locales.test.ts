@@ -1,6 +1,9 @@
 import { generateMetadata } from "src/app/[lang]/layout";
 import { describe, expect, it, vi } from "vitest";
 
+// next/font/google is an empty module outside Next, so the font setup is replaced wholesale.
+vi.mock("src/app/fonts", () => ({ fontVariables: "" }));
+
 // A third locale added to the shared list must reach the page's hreflang links.
 vi.mock("src/lib/i18n/config", async (importOriginal) => {
   const actual = await importOriginal<typeof import("src/lib/i18n/config")>();
