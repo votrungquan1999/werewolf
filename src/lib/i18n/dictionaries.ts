@@ -97,8 +97,12 @@ const vietnamese: Dictionary = {
     wolfAlone: "Bạn là con sói cuối cùng.",
     wolvesPrompt:
       "Chọn một người để cắn. Bầy theo số đông, hòa thì không ai chết.",
+    seerTitle: "Tiên Tri: soi một người",
+    seerCheck: "Soi",
+    seerCheckNamed: "Soi {name}",
+    seerResultTitle: "Kết quả của Tiên Tri",
     seerPrompt:
-      "Tiên Tri, soi một người. Bạn chỉ biết người đó có phải Sói hay không, chứ không biết vai gì.",
+      "Bạn chỉ biết người đó có phải sói hay không, không biết vai cụ thể.",
     doctorPrompt:
       "Bảo Vệ, chọn một người để bảo vệ đêm nay. Được tự bảo vệ mình, nhưng không được bảo vệ lại người đêm qua.",
     witchPrompt:
@@ -114,8 +118,8 @@ const vietnamese: Dictionary = {
       "Thần Tình Yêu, chọn hai người để se duyên. Một người chết thì người kia cũng chết theo.",
   },
   nightResults: {
-    seerIsWerewolf: "{name} LÀ Ma Sói.",
-    seerIsNotWerewolf: "{name} KHÔNG phải Ma Sói.",
+    seerIsWerewolf: "là sói",
+    seerIsNotWerewolf: "không phải sói",
     wolfPackTitle: "Đồng bọn",
   },
   dawn: {
@@ -309,8 +313,12 @@ const english: Dictionary = {
     wolfAlone: "You are the last wolf.",
     wolvesPrompt:
       "Choose someone to bite. The pack goes with the majority; a tie kills nobody.",
+    seerTitle: "Seer: check one player",
+    seerCheck: "Check",
+    seerCheckNamed: "Check {name}",
+    seerResultTitle: "Seer's result",
     seerPrompt:
-      "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
+      "You only learn whether they are a werewolf, not their exact role.",
     doctorPrompt:
       "Doctor, choose who to protect tonight. You may protect yourself, but not whoever you protected last night.",
     witchPrompt:
@@ -326,8 +334,8 @@ const english: Dictionary = {
       "Cupid, choose two players to fall in love. If one dies, the other dies too.",
   },
   nightResults: {
-    seerIsWerewolf: "{name} IS a werewolf.",
-    seerIsNotWerewolf: "{name} is NOT a werewolf.",
+    seerIsWerewolf: "is a werewolf",
+    seerIsNotWerewolf: "is not a werewolf",
     wolfPackTitle: "Packmates",
   },
   dawn: {

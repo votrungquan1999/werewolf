@@ -36,7 +36,7 @@ The menu opens as a **modal bottom sheet**, not an inline panel. Two reasons: a 
 
 These vary between tables; these are the ones implemented.
 
-- The **seer** learns only **wolf or not a wolf**, never the exact role.
+- The **seer** learns only **wolf or not a wolf**, never the exact role. The seer picks a row (never themself), "Check {name}" records the check, and the result (the name, then "is a werewolf" / "is not a werewolf") is read off the saved game's `night.inspectedId`, so a refresh or an Undo from the next player's envelope shows the result again, never a second pick. Check and Done are two undo steps on purpose. **Accepted limit:** menu Undo from the result screen gives the seer the pick list again; Undo needs the options menu opened in front of the table, so there is no per-night lock.
 - The **doctor** may protect themselves, but may **not** repeat last night's target.
 - The **witch** may heal the night's victim **or** poison someone, never both in one night, each potion once per game. She picks the **bottle first and the person second**, so she can poison the very player the wolves went for, and poisoning takes a confirmation — a list of bare names could not say which potion a tap meant, and killing should never be one mis-tap.
 - **Her heal is late-bound and the victim is never named to her.** It always means "save tonight's victim", never a named player, because the phone travels in seat order — whether she acts before or after the pack is luck of the draw, and naming them would hand a strictly better game to whoever happens to sit later. Dawn binds it to the pack's final choice. It is only spent if it actually pulled somebody back — a pack that tied killed nobody, so the bottle stays corked.

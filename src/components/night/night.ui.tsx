@@ -62,6 +62,11 @@ export interface NightCopy {
   /** Carries `{count}`. */
   wolfTargetTag: string;
   wolfAlone: string;
+  seerTitle: string;
+  seerCheck: string;
+  /** Carries `{name}`. */
+  seerCheckNamed: string;
+  seerResultTitle: string;
   seerIsWerewolf: string;
   seerIsNotWerewolf: string;
   witchHealUnknownChoice: string;
@@ -73,7 +78,6 @@ export interface NightCopy {
   hunterSkip: string;
   roleNames: Record<RoleId, string>;
   roleDescriptions: Record<RoleId, string>;
-  continueLabel: string;
   confirmLabel: string;
   declineLabel: string;
   backLabel: string;
@@ -297,6 +301,40 @@ function NightChoiceList({
 }
 
 /**
+ * The act turn's heading: the role's avatar beside its title, with an optional body line.
+ * @param props.role - Whose avatar to draw.
+ * @param props.title - The turn's title.
+ * @param props.body - A line of instruction under the title.
+ * @param props.copy - Night copy supplied by the server component.
+ * @returns The heading block.
+ */
+function NightTurnHeading({
+  role,
+  title,
+  body,
+  copy,
+}: {
+  role: RoleId;
+  title: string;
+  body?: string;
+  copy: NightCopy;
+}) {
+  return (
+    <div className={cn("gap-3", "grid")}>
+      <div className={cn("gap-3", "flex items-center")}>
+        <RoleAvatar role={role} size={64} label={copy.roleNames[role]} />
+        <h2 className="font-bold font-heading text-3xl leading-tight">
+          {title}
+        </h2>
+      </div>
+      {body === undefined ? null : (
+        <p className="text-base leading-relaxed">{body}</p>
+      )}
+    </div>
+  );
+}
+
+/**
  * The pack's turn: who else is a wolf, how many have chosen each target, and tonight's prey.
  * @param props.actorId - The wolf holding the phone.
  * @param props.copy - Night copy supplied by the server component.
@@ -342,16 +380,12 @@ function NightWolfTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
 
   return (
     <>
-      <div className={cn("gap-3", "flex items-center")}>
-        <RoleAvatar
-          role={RoleId.Werewolf}
-          size={64}
-          label={copy.roleNames[RoleId.Werewolf]}
-        />
-        <h2 className="font-bold font-heading text-3xl leading-tight">
-          {copy.wolvesTitle}
-        </h2>
-      </div>
+      <NightTurnHeading
+        role={RoleId.Werewolf}
+        title={copy.wolvesTitle}
+        body={copy.prompts[NightAction.WolfVote]}
+        copy={copy}
+      />
 
       {packmateEntries.length === 0 ? (
         <p className="text-muted-foreground text-sm">{copy.wolfAlone}</p>
@@ -376,52 +410,78 @@ function NightWolfTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
 }
 
 /**
- * The seer's turn: pick someone, then read the one bit they are allowed to learn.
+ * The seer's turn: pick someone, check them, then read the one bit they may learn.
+ *
+ * The answer is read off the saved game, never off local state, so a refresh or an
+ * Undo from the next player's envelope brings the result back instead of a second pick.
  * @param props.actorId - The seer holding the phone.
  * @param props.copy - Night copy supplied by the server component.
+ * @param props.passLabel - Label of the pass button.
  * @param props.onDone - Hands the phone on.
  * @returns The seer turn.
  */
-function NightInspectTurn({ actorId, copy, onDone }: ActTurnProps) {
+function NightInspectTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
   const state = useGame();
   const { submitNightChoice } = useGameActions();
-  const [inspectedId, setInspectedId] = useState<string | null>(null);
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const inspectedId = state.night.inspectedId;
 
-  /** Records the check and switches this turn over to its answer. */
-  function inspect(targetId: string) {
-    submitNightChoice(actorId, NightAction.Inspect, targetId);
-    setInspectedId(targetId);
-  }
+  if (inspectedId !== null) {
+    // Wolf or not — never the exact role.
+    const answer = isPlayerAWolf(state, inspectedId)
+      ? copy.seerIsWerewolf
+      : copy.seerIsNotWerewolf;
 
-  if (inspectedId === null) {
     return (
-      <NightChoiceList
-        players={getTargetablePlayers(state, NightAction.Inspect, actorId)}
-        onChoose={inspect}
-      />
+      <>
+        <NightTurnHeading
+          role={RoleId.Seer}
+          title={copy.seerResultTitle}
+          copy={copy}
+        />
+
+        <div className={cn("gap-1", "grid justify-items-center text-center")}>
+          <strong className="font-bold font-heading text-4xl wrap-anywhere">
+            {getPlayerName(state, inspectedId)}
+          </strong>
+          <span className="text-lg">{answer}</span>
+        </div>
+
+        <NightPassButton label={passLabel} onPass={() => onDone()} />
+      </>
     );
   }
 
-  // Wolf or not — never the exact role.
-  const answer = isPlayerAWolf(state, inspectedId)
-    ? copy.seerIsWerewolf
-    : copy.seerIsNotWerewolf;
-
   return (
     <>
-      <p className="font-medium text-xl">
-        <NamedLine template={answer} name={getPlayerName(state, inspectedId)} />
-      </p>
+      <NightTurnHeading
+        role={RoleId.Seer}
+        title={copy.seerTitle}
+        body={copy.prompts[NightAction.Inspect]}
+        copy={copy}
+      />
 
-      <Button
-        size="lg"
-        onClick={() => onDone()}
-        className={cn(
-          "h-auto min-h-16 w-full bg-phase text-base text-phase-foreground",
-        )}
-      >
-        {copy.continueLabel}
-      </Button>
+      <NightChoiceList
+        players={getTargetablePlayers(state, NightAction.Inspect, actorId)}
+        selectedId={pickedId}
+        onChoose={setPickedId}
+      />
+
+      <NightPassButton
+        label={
+          pickedId === null
+            ? copy.seerCheck
+            : fillTemplate(copy.seerCheckNamed, {
+                name: getPlayerName(state, pickedId),
+              })
+        }
+        disabled={pickedId === null}
+        onPass={() => {
+          if (pickedId !== null) {
+            submitNightChoice(actorId, NightAction.Inspect, pickedId);
+          }
+        }}
+      />
     </>
   );
 }
@@ -811,11 +871,11 @@ function getSecondsUntil(deadline: number): number {
 }
 
 /**
- * The button that hands the phone on, shared by every night turn.
+ * A night turn's main button: the pass button on every turn, and the seer's Check.
  * @param props.label - The finished label, e.g. "Done · pass to Bob →".
- * @param props.disabled - True while the turn may not be passed yet.
- * @param props.onPass - Ends the turn.
- * @returns The pass button.
+ * @param props.disabled - True while the button may not be used yet.
+ * @param props.onPass - Called on tap; ends the turn unless it is the seer's Check.
+ * @returns The button.
  */
 function NightPassButton({
   label,
@@ -976,7 +1036,13 @@ function NightTurnBody({
         />
       ) : (
         <>
-          <p className="text-lg leading-relaxed">{copy.prompts[turn.action]}</p>
+          {/* Wolf and seer turns show their prompt under their own titled heading. */}
+          {turn.action === NightAction.WolfVote ||
+          turn.action === NightAction.Inspect ? null : (
+            <p className="text-lg leading-relaxed">
+              {copy.prompts[turn.action]}
+            </p>
+          )}
           <NightActTurn
             action={turn.action}
             actorId={turn.playerId}

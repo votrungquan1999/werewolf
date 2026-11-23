@@ -157,7 +157,12 @@ export interface NightDictionary {
   /** Shown in place of the packmates when every other wolf is dead. */
   wolfAlone: string;
   wolvesPrompt: string;
+  seerTitle: string;
   seerPrompt: string;
+  seerCheck: string;
+  /** `{name}` = the picked player. */
+  seerCheckNamed: string;
+  seerResultTitle: string;
   doctorPrompt: string;
   witchPrompt: string;
   /** Used when the pack has not voted yet, so the victim has no name to show. */
@@ -173,9 +178,9 @@ export interface NightDictionary {
 
 /** What a role is told back after it acts, still inside the night. */
 export interface NightResultsDictionary {
-  /** `{name}` = the inspected player. */
+  /** Said under the inspected player's name. */
   seerIsWerewolf: string;
-  /** `{name}` = the inspected player. */
+  /** Said under the inspected player's name. */
   seerIsNotWerewolf: string;
   wolfPackTitle: string;
 }

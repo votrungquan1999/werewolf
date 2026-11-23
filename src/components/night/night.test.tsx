@@ -155,7 +155,7 @@ describe("Night", () => {
     expect(screen.getByText(namedLine("Next: Bob"))).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(
-      screen.queryByText(/Seer, choose someone to check/),
+      screen.queryByText("Seer: check one player"),
     ).not.toBeInTheDocument();
 
     await swipeOpen(user, "Alice");
@@ -163,9 +163,7 @@ describe("Night", () => {
     expect(
       screen.getByText(namedLine("A letter for Alice")),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Seer, choose someone to check/),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Seer: check one player")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Your card" }),
     ).toBeInTheDocument();
@@ -330,8 +328,6 @@ describe("Night", () => {
     expect(
       screen.getByText(/get back one word: wolf, or not a wolf/),
     ).toBeInTheDocument();
-    // A sleep turn shares this chip, so no avatar may leak the role.
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
 
     await user.click(chip);
 
@@ -364,6 +360,8 @@ describe("Night", () => {
     await swipeOpen(user, "Bob");
 
     expect(screen.getByText("The pack wakes")).toBeInTheDocument();
+    // getByText throws on a second copy, so this also pins the prompt to one line.
+    expect(screen.getByText(/Choose someone to bite/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Werewolf" })).toBeInTheDocument();
 
     const packmates = screen.getByRole("list", { name: "Packmates" });
@@ -491,6 +489,118 @@ describe("Night", () => {
     expect(parked.dawnDeaths).toEqual([
       { playerId: "alice", cause: DeathCause.WolfAttack },
     ]);
+  });
+
+  it("lets the seer pick anyone but themself, check them and read the answer", async () => {
+    parkNightGame([
+      ["Alice", RoleId.Seer],
+      ["Bob", RoleId.Werewolf],
+      ["Cara", RoleId.Villager],
+    ]);
+    const user = userEvent.setup();
+    renderNight();
+    await swipeOpen(user, "Alice");
+
+    expect(screen.getByText("Seer: check one player")).toBeInTheDocument();
+    expect(
+      screen.getByText(/You only learn whether they are a werewolf/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Seer" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Alice" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Bob" }));
+    await user.click(screen.getByRole("button", { name: "Check Bob" }));
+
+    expect(screen.getByText("Seer's result")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText("is a werewolf")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Seer" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cara" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Done · pass to Bob →" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Swipe to open Bob's letter" }),
+    ).toBeInTheDocument();
+  });
+
+  it("brings the seer's result back after a refresh instead of a second pick", async () => {
+    parkNightGame([
+      ["Alice", RoleId.Seer],
+      ["Bob", RoleId.Villager],
+      ["Cara", RoleId.Villager],
+    ]);
+    const user = userEvent.setup();
+    const mounted = renderNight();
+    await swipeOpen(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "Bob" }));
+    await user.click(screen.getByRole("button", { name: "Check Bob" }));
+
+    remount(mounted);
+
+    expect(screen.getByText("Seer's result")).toBeInTheDocument();
+    expect(screen.getByText("is not a werewolf")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cara" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the seer's result, not the pick list, when Undo from the next envelope brings their turn back", async () => {
+    parkNightGame([
+      ["Alice", RoleId.Seer],
+      ["Bob", RoleId.Villager],
+      ["Cara", RoleId.Villager],
+    ]);
+    const user = userEvent.setup();
+    renderNight();
+    await swipeOpen(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "Bob" }));
+    await user.click(screen.getByRole("button", { name: "Check Bob" }));
+    await user.click(
+      screen.getByRole("button", { name: "Done · pass to Bob →" }),
+    );
+
+    await undoViaMenu(user);
+    await swipeOpen(user, "Alice");
+
+    expect(screen.getByText("Seer's result")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cara" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lets a seer on the last seat wake the village after reading the result", async () => {
+    parkNightGame(
+      [
+        ["Alice", RoleId.Werewolf],
+        ["Bob", RoleId.Villager],
+        ["Cara", RoleId.Villager],
+        ["Dan", RoleId.Seer],
+      ],
+      3,
+    );
+    const user = userEvent.setup();
+    renderNight();
+    await swipeOpen(user, "Dan");
+    await user.click(screen.getByRole("button", { name: "Alice" }));
+    await user.click(screen.getByRole("button", { name: "Check Alice" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Done · wake the village" }),
+    );
+
+    expect(playDaybreak).toHaveBeenCalledTimes(1);
+    const parked = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY) ?? "{}",
+    ) as GameState;
+    expect(parked.phase).toBe(Phase.Dawn);
   });
 
   it("lets the hunter commit their dying shot before they know they will die", async () => {
