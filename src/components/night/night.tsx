@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { type NightCopy, NightScreen } from "src/components/night/night.ui";
+import { NightScreen } from "src/components/night/night.ui";
+import type { NightCopy } from "src/components/night/night-shared";
 import { NightAction, type RoleId } from "src/lib/game/types";
 import type { Dictionary } from "src/lib/i18n/types";
 
@@ -63,6 +64,10 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     witchPoisonConfirmBody: dict.night.witchPoisonConfirmBody,
     witchPoisonConfirmLabel: dict.night.witchPoisonConfirmLabel,
     yourRole: dict.night.yourRole,
+    cupidTitle: dict.night.cupidTitle,
+    cupidCounter: dict.night.cupidCounter,
+    cupidPair: dict.night.cupidPair,
+    cupidPairNamed: dict.night.cupidPairNamed,
     hunterTitle: dict.night.hunterTitle,
     hunterTagAimed: dict.night.hunterTagAimed,
     hunterAim: dict.night.hunterAim,

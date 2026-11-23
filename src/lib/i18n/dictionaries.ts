@@ -132,8 +132,12 @@ const vietnamese: Dictionary = {
     hunterChange: "Đổi",
     hunterSkip: "Bỏ qua · chuyền cho {name} →",
     hunterSkipLast: "Bỏ qua · gọi cả làng dậy",
+    cupidTitle: "Thần Tình Yêu: ghép đôi",
     cupidPrompt:
-      "Thần Tình Yêu, chọn hai người để se duyên. Một người chết thì người kia cũng chết theo.",
+      "Chọn hai người yêu nhau, có thể chọn cả mình. Một người chết, người kia chết theo.",
+    cupidCounter: "{count} / 2",
+    cupidPair: "Ghép đôi",
+    cupidPairNamed: "Ghép đôi {first} & {second}",
   },
   nightResults: {
     seerIsWerewolf: "là sói",
@@ -368,8 +372,12 @@ const english: Dictionary = {
     hunterChange: "Change",
     hunterSkip: "Skip · pass to {name} →",
     hunterSkipLast: "Skip · wake the village",
+    cupidTitle: "Cupid: make a pair",
     cupidPrompt:
-      "Cupid, choose two players to fall in love. If one dies, the other dies too.",
+      "Choose two lovers — you may choose yourself. If one dies, the other dies too.",
+    cupidCounter: "{count} / 2",
+    cupidPair: "Pair them",
+    cupidPairNamed: "Pair {first} & {second}",
   },
   nightResults: {
     seerIsWerewolf: "is a werewolf",

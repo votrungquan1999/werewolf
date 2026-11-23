@@ -153,6 +153,27 @@ describe("Feature: Night phase", () => {
     });
   });
 
+  describe("Scenario: Cupid names only one lover", () => {
+    it("should record no pair when the second target is missing", () => {
+      const state = createState([
+        createPlayer("c1", RoleId.Cupid),
+        createPlayer("w1", RoleId.Werewolf),
+        createPlayer("v1", RoleId.Villager),
+      ]);
+
+      const linked = submitNightChoice(
+        state,
+        "c1",
+        NightAction.LinkLovers,
+        "w1",
+        null,
+        null,
+      );
+
+      expect(linked.night.loverIds).toBeNull();
+    });
+  });
+
   describe("Scenario: The wolves recognise each other and vote on a victim", () => {
     it("should name the living pack, tally its votes and kill nobody on a tie", () => {
       const state = createState([

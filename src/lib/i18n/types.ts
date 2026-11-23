@@ -190,7 +190,14 @@ export interface NightDictionary {
   witchPoisonConfirmBody: string;
   /** The confirm sheet's danger button. */
   witchPoisonConfirmLabel: string;
+  cupidTitle: string;
   cupidPrompt: string;
+  /** `{count}` = how many lovers are picked so far, out of two. */
+  cupidCounter: string;
+  /** The pair button before two players are picked. */
+  cupidPair: string;
+  /** `{first}` / `{second}` = the two picked players, in the order tapped. */
+  cupidPairNamed: string;
   hunterTitle: string;
   hunterPrompt: string;
   /** Tag on the row the hunter already aimed at on an earlier night. */
