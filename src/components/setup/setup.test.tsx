@@ -3,7 +3,10 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameProvider } from "src/components/game/game.state";
+import { GameMenu } from "src/components/menu/menu";
+import { Reveal } from "src/components/reveal/reveal";
 import { Setup } from "src/components/setup/setup";
+import { RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -82,13 +85,13 @@ describe("Setup screen", () => {
       screen.queryByText("Add at least 3 players to start."),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Start game" }),
+      screen.queryByRole("button", { name: "Deal the cards" }),
     ).not.toBeInTheDocument();
 
     await user.click(next);
 
     expect(
-      screen.getByRole("button", { name: "Start game" }),
+      screen.getByRole("button", { name: "Deal the cards" }),
     ).toBeInTheDocument();
   });
 
@@ -149,6 +152,93 @@ describe("Setup screen", () => {
     ).toBeDisabled();
   });
 
+  it("shows each role's avatar and reads its rules when the host taps the role's name", async () => {
+    const user = renderSetup();
+    await seatAndChooseRoles(user, ["An", "Bob", "Cara"]);
+
+    for (const role of [
+      "Werewolf",
+      "Seer",
+      "Doctor",
+      "Witch",
+      "Hunter",
+      "Villager",
+    ]) {
+      expect(screen.getByRole("img", { name: role })).toBeInTheDocument();
+    }
+    expect(
+      screen.queryByText(dictionary.roles[RoleId.Seer].description),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Seer" }));
+
+    expect(
+      await screen.findByText(dictionary.roles[RoleId.Seer].description),
+    ).toBeVisible();
+  });
+
+  it("summarises the table on the roles step and goes back to the players with their names kept", async () => {
+    const user = renderSetup();
+    await seatAndChooseRoles(user, ["An", "Bob", "Cara"]);
+
+    expect(screen.getByText("Step 2 / 2")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "3 seats · 0 special roles · tap a role's name to read its rules",
+      ),
+    ).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("group", { name: "Seer" })).getByRole("button", {
+        name: "One more Seer",
+      }),
+    );
+    expect(
+      screen.getByText(
+        "3 seats · 1 special roles · tap a role's name to read its rules",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+
+    expect(screen.getByText("Step 1 / 2")).toBeInTheDocument();
+    expect(screen.getByText("An")).toBeInTheDocument();
+    expect(screen.getByText("Cara")).toBeInTheDocument();
+    expect(screen.getByText("3 player(s)")).toBeInTheDocument();
+  });
+
+  it("deals the cards, and undoing the deal lands back on the roles step", async () => {
+    render(
+      <GameProvider>
+        <GameMenu dict={dictionary} locale={Locale.En} />
+        <Setup dict={dictionary} />
+        <Reveal dict={dictionary} />
+      </GameProvider>,
+    );
+    const user = userEvent.setup();
+    await seatAndChooseRoles(user, ["An", "Bob", "Cara"]);
+
+    await user.click(screen.getByRole("button", { name: "Deal the cards" }));
+
+    expect(
+      screen.getByText("Press and hold to see your card"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Who's playing tonight?" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Options" }));
+    await user.click(screen.getByRole("button", { name: "Undo last step" }));
+
+    expect(
+      screen.getByText(
+        "3 seats · 0 special roles · tap a role's name to read its rules",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Who's playing tonight?" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("warns about the surplus cards and blocks the start when the deck overflows", async () => {
     const user = renderSetup();
 
@@ -157,7 +247,7 @@ describe("Setup screen", () => {
     // Four wolves for three seats — villagers cannot backfill a deck that is already full.
     const addWolf = within(
       screen.getByRole("group", { name: "Werewolf" }),
-    ).getByRole("button", { name: "Add one" });
+    ).getByRole("button", { name: "One more Werewolf" });
     for (let tap = 0; tap < 4; tap += 1) {
       await user.click(addWolf);
     }
@@ -167,7 +257,9 @@ describe("Setup screen", () => {
         "You have 1 card(s) too many — drop some to match the table.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start game" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Deal the cards" }),
+    ).toBeDisabled();
   });
 
   it("adds a card to the tapped role and takes it off the villagers", async () => {
@@ -177,7 +269,7 @@ describe("Setup screen", () => {
     await user.click(
       within(screen.getByRole("group", { name: "Werewolf" })).getByRole(
         "button",
-        { name: "Add one" },
+        { name: "One more Werewolf" },
       ),
     );
 
@@ -191,21 +283,22 @@ describe("Setup screen", () => {
     expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
   });
 
-  it("explains the villager count on tap, since a phone cannot hover", async () => {
+  it("always says what fills the empty seats and explains a villager on tap, since a phone cannot hover", async () => {
     const user = renderSetup();
 
     await seatAndChooseRoles(user, ["Alice", "Bob", "Cara"]);
 
+    expect(screen.getByText("fills the empty seats")).toBeVisible();
     expect(
-      screen.queryByText("Fills the remaining seats automatically"),
+      screen.queryByText(dictionary.roles[RoleId.Villager].description),
     ).not.toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "How is this counted?" }),
+      screen.getByRole("button", { name: "What is a villager?" }),
     );
 
     expect(
-      await screen.findByText("Fills the remaining seats automatically"),
+      await screen.findByText(dictionary.roles[RoleId.Villager].description),
     ).toBeVisible();
   });
 });

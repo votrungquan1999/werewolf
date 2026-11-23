@@ -43,14 +43,16 @@ export interface SetupDictionary {
   /** Moves from the players step to the roles step. */
   nextRoles: string;
   roleCompositionTitle: string;
+  /** `{seats}` = players seated, `{special}` = cards other than villagers. */
+  rolesSummary: string;
   startGame: string;
   /** `{count}` = how many cards are still missing. */
   tooFewRoles: string;
   /** `{count}` = how many cards are surplus. */
   tooManyRoles: string;
-  /** Accessible label on a role's increment control. */
+  /** Accessible label on a role's increment control; `{role}` = that role's name. */
   increaseRole: string;
-  /** Accessible label on a role's decrement control. */
+  /** Accessible label on a role's decrement control; `{role}` = that role's name. */
   decreaseRole: string;
   /** Accessible name for the control that reveals `villagerAuto`. */
   villagerAutoHelp: string;

@@ -8,6 +8,7 @@ import {
   PlayerList,
   RoleCounter,
   RoleCounterList,
+  RolesSummary,
   SetupHeader,
   SetupScreen,
   SetupSection,
@@ -37,6 +38,7 @@ export function Setup({ dict, menu }: SetupProps) {
     <SetupScreen>
       <SetupHeader
         label={dict.appName}
+        backLabel={dict.common.back}
         stepTemplate={dict.header.stepOf}
         menu={menu}
       />
@@ -64,6 +66,7 @@ export function Setup({ dict, menu }: SetupProps) {
           <SetupSectionTitle>
             {dict.setup.roleCompositionTitle}
           </SetupSectionTitle>
+          <RolesSummary template={dict.setup.rolesSummary} />
           <RoleCounterList>
             {Object.values(RoleId).map((role) =>
               // The engine backfills villagers, so that row is a readout, not a control.
@@ -82,8 +85,8 @@ export function Setup({ dict, menu }: SetupProps) {
                   key={role}
                   role={role}
                   label={dict.roles[role].name}
-                  decreaseLabel={dict.setup.decreaseRole}
-                  increaseLabel={dict.setup.increaseRole}
+                  decreaseTemplate={dict.setup.decreaseRole}
+                  increaseTemplate={dict.setup.increaseRole}
                 >
                   {dict.roles[role].description}
                 </RoleCounter>

@@ -1,7 +1,6 @@
 "use client";
 
-import { HelpCircle, Minus, Plus, RefreshCw, X } from "lucide-react";
-import Image from "next/image";
+import { ChevronLeft, Minus, Plus, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import type { SetupStep } from "src/components/game/game.state";
 import {
@@ -10,6 +9,7 @@ import {
   useSetupStep,
 } from "src/components/game/game.state";
 import { ScreenHeader } from "src/components/game/screen-header";
+import { RoleAvatar } from "src/components/role-avatar/role-avatar";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import {
@@ -25,7 +25,8 @@ import {
   MIN_PLAYERS,
   RoleCountIssueKind,
 } from "src/lib/game/setup";
-import { Phase, type RoleId } from "src/lib/game/types";
+import { Phase, RoleId } from "src/lib/game/types";
+import { fillTemplate } from "src/lib/i18n/fill-template";
 import { cn } from "src/lib/utils";
 
 /**
@@ -57,27 +58,45 @@ export function SetupScreen({ children }: { children: ReactNode }) {
 /**
  * The setup screen's header: app name, which of the two steps this is, and the menu.
  * @param props.label - The phase label.
+ * @param props.backLabel - Accessible name of the Back button on the roles step.
  * @param props.stepTemplate - Copy carrying `{current}` and `{total}` placeholders.
  * @param props.menu - Optional options menu.
  * @returns The header row.
  */
 export function SetupHeader({
   label,
+  backLabel,
   stepTemplate,
   menu,
 }: {
   label: string;
+  backLabel: string;
   stepTemplate: string;
   menu?: ReactNode;
 }) {
-  const { step } = useSetupStep();
+  const { step, setStep } = useSetupStep();
 
   return (
     <ScreenHeader
       label={label}
-      progress={stepTemplate
-        .replace("{current}", String(step))
-        .replace("{total}", "2")}
+      leading={
+        step === 2 ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={backLabel}
+            onClick={() => setStep(1)}
+            className="size-11 rounded-full"
+          >
+            <ChevronLeft aria-hidden="true" />
+          </Button>
+        ) : undefined
+      }
+      progress={fillTemplate(stepTemplate, {
+        current: String(step),
+        total: "2",
+      })}
       menu={menu}
     />
   );
@@ -206,7 +225,7 @@ export function AddPlayerForm({
       </div>
       {refusedName === null ? null : (
         <p role="alert" className="text-destructive text-sm">
-          {nameTakenTemplate.replace("{name}", refusedName)}
+          {fillTemplate(nameTakenTemplate, { name: refusedName })}
         </p>
       )}
     </form>
@@ -247,7 +266,7 @@ export function CompositionWarning({
         "block",
       )}
     >
-      {template.replace("{count}", String(gap))}
+      {fillTemplate(template, { count: String(gap) })}
     </output>
   );
 }
@@ -306,7 +325,7 @@ export function PlayerList({ removeTemplate }: { removeTemplate: string }) {
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={removeTemplate.replace("{name}", player.name)}
+            aria-label={fillTemplate(removeTemplate, { name: player.name })}
             onClick={() => removePlayer(player.id)}
             className="size-11"
           >
@@ -338,11 +357,11 @@ export function PlayerCountHint({
       className={cn("mt-auto gap-1", "grid justify-items-center text-center")}
     >
       <p className="text-muted-foreground text-sm">
-        {countTemplate.replace("{count}", String(state.players.length))}
+        {fillTemplate(countTemplate, { count: String(state.players.length) })}
       </p>
       {hasEnoughPlayers(state) ? null : (
         <p className="text-muted-foreground text-sm">
-          {minTemplate.replace("{count}", String(MIN_PLAYERS))}
+          {fillTemplate(minTemplate, { count: String(MIN_PLAYERS) })}
         </p>
       )}
     </div>
@@ -371,34 +390,60 @@ export function NextRolesButton({ children }: { children: ReactNode }) {
 }
 
 /**
- * Holds one counter per role card.
- * @param props.children - The composed role counters.
- * @returns The composition list.
+ * One line telling the host what the table and the chosen cards add up to.
+ * @param props.template - Copy carrying `{seats}` and `{special}` placeholders.
+ * @returns The summary line.
  */
-export function RoleCounterList({ children }: { children: ReactNode }) {
-  return <ul className={cn("gap-3", "grid grid-cols-2")}>{children}</ul>;
+export function RolesSummary({ template }: { template: string }) {
+  const { players, roleCounts } = useGame();
+  // Villagers are the backfill, so only the other cards count as special.
+  const special = Object.entries(roleCounts)
+    .filter(([role]) => role !== RoleId.Villager)
+    .reduce((sum, [, count]) => sum + count, 0);
+
+  return (
+    <p className="text-muted-foreground text-sm">
+      {fillTemplate(template, {
+        seats: String(players.length),
+        special: String(special),
+      })}
+    </p>
+  );
 }
 
 /**
- * How many copies of one role are dealt into tonight's deck.
+ * Holds one tile per role.
+ * @param props.children - The composed role tiles.
+ * @returns The composition grid.
+ */
+export function RoleCounterList({ children }: { children: ReactNode }) {
+  return (
+    <ul className={cn("gap-2", "grid grid-cols-[repeat(2,minmax(0,1fr))]")}>
+      {children}
+    </ul>
+  );
+}
+
+/**
+ * One role's tile: its avatar, its name (tap for the rules) and a stepper for how many are dealt.
  * @param props.role - The role this stepper sets.
  * @param props.label - The role's name, which also names the stepper group.
- * @param props.decreaseLabel - Accessible name for the take-one-away control.
- * @param props.increaseLabel - Accessible name for the add-one control.
- * @param props.children - The role's description.
- * @returns One row of the composition list.
+ * @param props.decreaseTemplate - Accessible name for the take-one-away control, carrying `{role}`.
+ * @param props.increaseTemplate - Accessible name for the add-one control, carrying `{role}`.
+ * @param props.children - The role's rules, shown in the popover on the name.
+ * @returns One tile of the composition grid.
  */
 export function RoleCounter({
   role,
   label,
-  decreaseLabel,
-  increaseLabel,
+  decreaseTemplate,
+  increaseTemplate,
   children,
 }: {
   role: RoleId;
   label: string;
-  decreaseLabel: string;
-  increaseLabel: string;
+  decreaseTemplate: string;
+  increaseTemplate: string;
   children: ReactNode;
 }) {
   const { roleCounts } = useGame();
@@ -406,115 +451,68 @@ export function RoleCounter({
   const labelId = useId();
   const { maxPerGame } = getRoleDefinition(role);
   const count = roleCounts[role];
-  const [isFlipped, setIsFlipped] = useState(false);
 
   return (
     <li
       className={cn(
-        "gap-2 rounded-xl border border-border bg-card p-3 shadow-md",
+        "gap-1.5 rounded-xl bg-muted p-2.5 ring-1 ring-border",
         "grid content-start",
       )}
     >
-      {/* The art is portrait A4, and a tap turns the card over to its description. */}
-      <button
-        type="button"
-        aria-pressed={isFlipped}
+      <div
         className={cn(
-          "cursor-pointer perspective-[1000px]",
-          "grid aspect-210/297 w-full",
+          "gap-2.5",
+          "grid grid-cols-[auto_minmax(0,1fr)] items-center",
         )}
-        onClick={() => setIsFlipped(!isFlipped)}
       >
-        <span
-          className={cn(
-            "rounded-lg transition-all duration-500 transform-3d",
-            "pile size-full",
-            isFlipped && "rotate-y-180",
-          )}
-        >
-          <span
+        <RoleAvatar role={role} size={56} label={label} />
+        {/* A tap-opened popover, not a hover tooltip: a phone cannot hover. */}
+        <Popover>
+          <PopoverTrigger
+            id={labelId}
             className={cn(
-              "overflow-hidden rounded-lg bg-muted backface-hidden",
-              "pile size-full",
+              "min-h-11 text-left font-bold font-heading text-[17px] leading-tight",
+              "wrap-anywhere whitespace-normal",
             )}
           >
-            <Image
-              width={167}
-              height={236}
-              src={`/roles/${role}.jpg`}
-              alt={label}
-              className="size-full object-cover"
-            />
-            <span
-              className={cn(
-                "m-2 rounded-full bg-background/60 p-1.5 text-foreground backdrop-blur-sm",
-                "self-end justify-self-end",
-              )}
-            >
-              <RefreshCw className="size-3.5" />
-            </span>
-            <span
-              className={cn(
-                "bg-linear-to-t from-background/80 to-transparent p-2 pt-6 text-center",
-                "self-end",
-              )}
-            >
-              <span id={labelId} className="font-bold text-foreground text-sm">
-                {label}
-              </span>
-            </span>
-          </span>
+            {label}
+          </PopoverTrigger>
+          <PopoverContent className={cn("text-left text-sm leading-relaxed")}>
+            {children}
+          </PopoverContent>
+        </Popover>
+      </div>
 
-          {/* Pre-rotated, so the card's own flip brings it face up. */}
-          <span
-            className={cn(
-              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
-              "grid size-full content-start gap-2",
-            )}
-          >
-            <span className="border-border/40 border-b pb-1 text-center font-bold text-sm">
-              {label}
-            </span>
-            <span className="text-muted-foreground text-xs leading-relaxed">
-              {children}
-            </span>
-          </span>
-        </span>
-      </button>
-
-      {/* Named by the role so a screen reader hears which card the two buttons move. */}
+      {/* Named by the role so a screen reader hears which tile the two buttons move. */}
       <fieldset
         aria-labelledby={labelId}
-        className={cn(
-          "border-border border-t pt-2",
-          "grid grid-cols-[auto_1fr_auto] items-center",
-        )}
+        className={cn("grid grid-cols-[auto_1fr_auto] items-center")}
       >
         <Button
           type="button"
           variant="outline"
           size="icon"
-          aria-label={decreaseLabel}
+          aria-label={fillTemplate(decreaseTemplate, { role: label })}
           disabled={count === 0}
           onClick={() => setRoleCount(role, count - 1)}
-          className="size-8 rounded-full"
+          className="size-11 rounded-full"
         >
-          <Minus className="size-4" />
+          <Minus aria-hidden="true" className="size-4" />
         </Button>
-        <span className="text-center font-bold text-base tabular-nums">
+        <span className="text-center font-bold font-heading text-phase-name text-xl tabular-nums">
           {count}
         </span>
         <Button
           type="button"
           variant="outline"
           size="icon"
-          aria-label={increaseLabel}
+          aria-label={fillTemplate(increaseTemplate, { role: label })}
           // A null cap means the role has no limit, so the plus never locks.
           disabled={maxPerGame !== null && count >= maxPerGame}
           onClick={() => setRoleCount(role, count + 1)}
-          className="size-8 rounded-full"
+          className="size-11 rounded-full"
         >
-          <Plus className="size-4" />
+          <Plus aria-hidden="true" className="size-4" />
         </Button>
       </fieldset>
     </li>
@@ -522,13 +520,13 @@ export function RoleCounter({
 }
 
 /**
- * A role whose count the engine works out, shown but never tapped.
+ * The villager tile: a count the engine works out, shown but never stepped.
  * @param props.role - The role whose derived count is displayed.
  * @param props.label - The role's name, which also names the read-only count.
- * @param props.note - Why this row has no controls.
- * @param props.noteLabel - Accessible name for the control that reveals the note.
- * @param props.children - The role's description.
- * @returns One row of the composition list.
+ * @param props.note - Why this tile has no stepper, always visible.
+ * @param props.noteLabel - Accessible name for the control that reveals the villager's rules.
+ * @param props.children - The villager's rules, shown in the popover.
+ * @returns The villager tile.
  */
 export function DerivedRoleCounter({
   role,
@@ -545,116 +543,60 @@ export function DerivedRoleCounter({
 }) {
   const { roleCounts } = useGame();
   const labelId = useId();
-  const [isFlipped, setIsFlipped] = useState(false);
 
   return (
     <li
       className={cn(
-        "gap-2 rounded-xl border border-border bg-card p-3 shadow-md",
-        "grid content-start",
+        "gap-1.5 rounded-xl p-2.5 ring-1 ring-primary/50",
+        "grid content-center",
       )}
     >
-      {/* The art is portrait A4, and a tap turns the card over to its description. */}
-      <button
-        type="button"
-        aria-pressed={isFlipped}
-        className={cn(
-          "cursor-pointer perspective-[1000px]",
-          "grid aspect-210/297 w-full",
-        )}
-        onClick={() => setIsFlipped(!isFlipped)}
-      >
-        <span
-          className={cn(
-            "rounded-lg transition-all duration-500 transform-3d",
-            "pile size-full",
-            isFlipped && "rotate-y-180",
-          )}
-        >
-          <span
-            className={cn(
-              "overflow-hidden rounded-lg bg-muted backface-hidden",
-              "pile size-full",
-            )}
-          >
-            <Image
-              width={167}
-              height={236}
-              src={`/roles/${role}.jpg`}
-              alt={label}
-              className="size-full object-cover"
-            />
-            <span
-              className={cn(
-                "m-2 rounded-full bg-background/60 p-1.5 text-foreground backdrop-blur-sm",
-                "self-end justify-self-end",
-              )}
-            >
-              <RefreshCw className="size-3.5" />
-            </span>
-            <span
-              className={cn(
-                "bg-linear-to-t from-background/80 to-transparent p-2 pt-6 text-center",
-                "self-end",
-              )}
-            >
-              <span id={labelId} className="font-bold text-foreground text-sm">
-                {label}
-              </span>
-            </span>
-          </span>
-
-          {/* Pre-rotated, so the card's own flip brings it face up. */}
-          <span
-            className={cn(
-              "overflow-y-auto rounded-lg bg-secondary p-3 text-left text-secondary-foreground backface-hidden rotate-y-180",
-              "grid size-full content-start gap-2",
-            )}
-          >
-            <span className="border-border/40 border-b pb-1 text-center font-bold text-sm">
-              {label}
-            </span>
-            <span className="text-muted-foreground text-xs leading-relaxed">
-              {children}
-            </span>
-          </span>
-        </span>
-      </button>
-
+      {/* The ? button sits on the count row, so the name keeps the tile's width and never breaks mid-word. */}
       <div
         className={cn(
-          "border-border border-t pt-2",
-          "grid h-10 grid-cols-[1fr_auto_1fr] items-center gap-2",
+          "gap-2.5",
+          "grid grid-cols-[auto_minmax(0,1fr)] items-center",
+        )}
+      >
+        <RoleAvatar role={role} size={56} label={label} />
+        <span
+          id={labelId}
+          className="font-bold font-heading text-[17px] leading-tight wrap-anywhere"
+        >
+          {label}
+        </span>
+      </div>
+      <div
+        className={cn(
+          "gap-2",
+          "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center",
         )}
       >
         {/* `output` states it plainly: this number is a result, not a choice. */}
         <output
           aria-labelledby={labelId}
-          className={cn("font-bold text-base tabular-nums", "col-start-2")}
+          className="font-extrabold font-heading text-2xl text-phase-name tabular-nums"
         >
           {roleCounts[role]}
         </output>
-
+        <span className="text-muted-foreground text-xs">{note}</span>
         {/* A tap-opened popover, not a hover tooltip: a phone cannot hover. */}
         <Popover>
           <PopoverTrigger
             render={
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 aria-label={noteLabel}
-                className={cn(
-                  "size-8 rounded-full text-muted-foreground",
-                  "justify-self-start",
-                )}
+                className="size-11 rounded-full font-bold text-phase-name"
               />
             }
           >
-            <HelpCircle className="size-4" />
+            <span aria-hidden="true">?</span>
           </PopoverTrigger>
-          <PopoverContent className={cn("w-48 text-center text-xs")}>
-            {note}
+          <PopoverContent className={cn("text-left text-sm leading-relaxed")}>
+            {children}
           </PopoverContent>
         </Popover>
       </div>
