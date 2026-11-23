@@ -1,19 +1,22 @@
 "use client";
 
+import { Moon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
+import { NamedLine, PlayerName } from "src/components/game/game.ui";
+import { ScreenHeader } from "src/components/game/screen-header";
 import { Button } from "src/components/ui/button";
+import { buildNightOrder } from "src/lib/game/night";
 import { Phase } from "src/lib/game/types";
+import { fillTemplate } from "src/lib/i18n/fill-template";
 import { cn } from "src/lib/utils";
 
 /**
  * The beat between the last dealt card and the first night turn.
  *
- * It exists so the table has a shared moment to settle — before this, the last
- * player was told "you are the last one" on a screen only they could see, which
- * announced nothing to anybody else and put the whole table into the night
- * mid-conversation.
- * @param props.children - The title, the instruction and the control that opens the night.
+ * Everyone looks at the same screen here, so the whole table settles into the
+ * night together instead of following a message only the last player saw.
+ * @param props.children - The header, title, instruction, pass order and the control that opens the night.
  * @returns The screen, or nothing outside the nightfall beat.
  */
 export function NightfallScreen({ children }: { children: ReactNode }) {
@@ -42,31 +45,83 @@ export function NightfallScreen({ children }: { children: ReactNode }) {
  */
 export function NightfallTitle({ children }: { children: ReactNode }) {
   return (
-    <h1 className={cn("font-semibold text-4xl text-balance tracking-tight")}>
-      {children}
-    </h1>
+    <>
+      <Moon aria-hidden="true" className={cn("size-16 text-phase-name")} />
+      <h1
+        className={cn(
+          "font-bold font-heading text-4xl text-balance tracking-tight",
+        )}
+      >
+        {children}
+      </h1>
+    </>
   );
 }
 
 /**
+ * The strip above the screen: only the options menu, since nightfall has no label.
+ * @param props.menu - The options menu, if the page supplies one.
+ * @returns The header row.
+ */
+export function NightfallHeader({ menu }: { menu?: ReactNode }) {
+  return <ScreenHeader menu={menu} />;
+}
+
+/**
  * Tells the table what happens next.
- * @param props.children - `dict.nightfall.body`.
+ * @param props.template - `dict.nightfall.body`, holding `{name}`.
  * @returns The instruction.
  */
-export function NightfallBody({ children }: { children: ReactNode }) {
+export function NightfallBody({ template }: { template: string }) {
+  const state = useGame();
+  const [firstId] = buildNightOrder(state);
+  const first = state.players.find((player) => player.id === firstId);
+
   return (
     <p className={cn("max-w-[40ch] text-lg text-balance leading-relaxed")}>
-      {children}
+      <NamedLine template={template} name={first?.name ?? ""} />
     </p>
   );
 }
 
 /**
- * Opens night one, laying out tonight's circulation.
- * @param props.children - `dict.nightfall.begin`.
+ * Lists tonight's living players in the order the phone will travel.
+ * @returns The numbered order.
+ */
+export function NightfallOrder() {
+  const state = useGame();
+  // Recomputed: the saved order is only written when the night starts, so it is last night's here.
+  const order = buildNightOrder(state).flatMap((id) => {
+    const player = state.players.find((candidate) => candidate.id === id);
+
+    return player === undefined ? [] : [player];
+  });
+
+  return (
+    <ul className={cn("gap-2", "grid w-full max-w-sm")}>
+      {order.map((player, index) => (
+        <li
+          key={player.id}
+          className={cn(
+            "rounded-lg border border-phase-border px-4 py-3 text-left",
+            "grid grid-cols-[auto_minmax(0,1fr)]",
+          )}
+        >
+          <span className="text-muted-foreground">{`${index + 1} · `}</span>
+          <PlayerName>{player.name}</PlayerName>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * Opens the night, laying out tonight's circulation.
+ * @param props.template - `dict.nightfall.begin`, holding `{number}`.
  * @returns The control that starts the night.
  */
-export function NightfallBegin({ children }: { children: ReactNode }) {
+export function NightfallBegin({ template }: { template: string }) {
+  const { nightNumber } = useGame();
   const { startNight } = useGameActions();
 
   return (
@@ -78,7 +133,7 @@ export function NightfallBegin({ children }: { children: ReactNode }) {
         "w-full max-w-sm",
       )}
     >
-      {children}
+      {fillTemplate(template, { number: String(nightNumber) })}
     </Button>
   );
 }

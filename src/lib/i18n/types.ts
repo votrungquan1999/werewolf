@@ -122,7 +122,9 @@ export interface SealDictionary {
 /** The beat between the last card and the first night turn. */
 export interface NightfallDictionary {
   title: string;
+  /** `{name}` = the first living player, who gets the phone first. */
   body: string;
+  /** `{number}` = which night is about to start. */
   begin: string;
 }
 

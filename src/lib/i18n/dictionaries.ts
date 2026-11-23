@@ -72,9 +72,9 @@ const vietnamese: Dictionary = {
     alreadyOpened: "Niêm phong đã được mở",
   },
   nightfall: {
-    title: "Trời tối rồi",
-    body: "Cả làng nhắm mắt đi ngủ. Máy sẽ đi một vòng, ai có việc thì làm.",
-    begin: "Bắt đầu đêm",
+    title: "Màn đêm buông xuống",
+    body: "Cả làng nhắm mắt. Chuyền máy theo thứ tự, bắt đầu từ {name}.",
+    begin: "Bắt đầu đêm {number}",
   },
   night: {
     title: "Đêm {number}",
@@ -277,8 +277,8 @@ const english: Dictionary = {
   },
   nightfall: {
     title: "Night falls",
-    body: "Everyone close your eyes. The phone goes round the table; act when it is your turn.",
-    begin: "Begin the night",
+    body: "Everyone close your eyes. Pass the phone round in order, starting with {name}.",
+    begin: "Begin night {number}",
   },
   night: {
     title: "Night {number}",
