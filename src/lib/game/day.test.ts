@@ -1,6 +1,7 @@
 import {
   castDayVote,
   getDayVoteOutcome,
+  getDayVoteRows,
   getDayVoteTally,
   getEligibleVoterIds,
   getVoteCandidateIds,
@@ -50,6 +51,7 @@ function createDayState(overrides: Partial<GameState> = {}): GameState {
     nightCursor: 0,
     dawnDeaths: [],
     dayVotes: {},
+    dayVoteTurn: 0,
     revoteCandidateIds: [],
     loverIds: null,
     witchHealAvailable: true,
@@ -95,6 +97,61 @@ describe("Feature: Day vote", () => {
         tiedIds: [],
       });
       expect(state.dayVotes).toEqual({});
+    });
+  });
+
+  describe("Scenario: The verdict counts every vote and every abstention", () => {
+    it("should sort high to low, break ties by table order and put abstentions last", () => {
+      // The vote for p2 is recorded before the vote for p1, yet table order must still put p1 first of the tied pair.
+      const state = createDayState({
+        dayVotes: { p4: "p2", p1: "p3", p2: "p3", p3: "p1" },
+      });
+
+      expect(getDayVoteRows(state)).toEqual([
+        { targetId: "p3", count: 2, share: 0.5 },
+        { targetId: "p1", count: 1, share: 0.25 },
+        { targetId: "p2", count: 1, share: 0.25 },
+      ]);
+
+      const withAbstention = createDayState({
+        dayVotes: { p1: "p3", p2: "p3", p3: "p1" },
+      });
+
+      expect(getDayVoteRows(withAbstention)).toEqual([
+        { targetId: "p3", count: 2, share: 0.5 },
+        { targetId: "p1", count: 1, share: 0.25 },
+        { targetId: null, count: 1, share: 0.25 },
+      ]);
+
+      // Abstentions stay last even when they outnumber every player's votes.
+      const mostlyAbstained = createDayState({ dayVotes: { p1: "p3" } });
+
+      expect(getDayVoteRows(mostlyAbstained)).toEqual([
+        { targetId: "p3", count: 1, share: 0.25 },
+        { targetId: null, count: 3, share: 0.75 },
+      ]);
+    });
+
+    it("should show only the abstained row, at 100%, when nobody voted", () => {
+      expect(getDayVoteRows(createDayState())).toEqual([
+        { targetId: null, count: 4, share: 1 },
+      ]);
+    });
+  });
+
+  describe("Scenario: A voter redoes their vote as an abstention", () => {
+    it("should take back the earlier vote, and still pass the phone on when there was none", () => {
+      const state = createDayState({ dayVotes: { p1: "p3", p2: "p3" } });
+
+      const abstained = castDayVote(state, "p1", null);
+      const again = castDayVote(abstained, "p1", null);
+
+      expect(abstained.dayVotes).toEqual({ p2: "p3" });
+      expect(abstained.dayVoteTurn).toBe(1);
+      // Moving the turn is a state change, so an empty abstention is an undo step.
+      expect(again).not.toBe(abstained);
+      expect(again.dayVotes).toEqual({ p2: "p3" });
+      expect(again.dayVoteTurn).toBe(2);
     });
   });
 

@@ -161,6 +161,8 @@ export interface GameState {
   dawnDeaths: Death[];
   /** Voter id -> the player they voted for. Votes are open; the app only counts. */
   dayVotes: Record<string, string>;
+  /** How many eligible voters have taken the phone this round; part of the state so Undo steps the screen back too. */
+  dayVoteTurn: number;
   /** Non-empty while a tie is being revoted. */
   revoteCandidateIds: string[];
   loverIds: LoverPair | null;
@@ -208,7 +210,7 @@ export enum ActionType {
   ResolveNight = "resolve-night",
   CastDayVote = "cast-day-vote",
   ResolveDayVote = "resolve-day-vote",
-  StartNightfall = "start-nightfall",
+  StartDayVote = "start-day-vote",
   StartNight = "start-night",
   StartDay = "start-day",
   ResetGame = "reset-game",
@@ -276,15 +278,16 @@ export interface ResolveNightAction {
 export interface CastDayVoteAction {
   type: ActionType.CastDayVote;
   voterId: string;
-  targetId: string;
+  /** Null abstains, which takes back any earlier vote by this voter. */
+  targetId: string | null;
 }
 
 export interface ResolveDayVoteAction {
   type: ActionType.ResolveDayVote;
 }
 
-export interface StartNightfallAction {
-  type: ActionType.StartNightfall;
+export interface StartDayVoteAction {
+  type: ActionType.StartDayVote;
 }
 
 export interface StartNightAction {
@@ -316,7 +319,7 @@ export type GameAction =
   | ResolveNightAction
   | CastDayVoteAction
   | ResolveDayVoteAction
-  | StartNightfallAction
+  | StartDayVoteAction
   | StartNightAction
   | StartDayAction
   | ResetGameAction

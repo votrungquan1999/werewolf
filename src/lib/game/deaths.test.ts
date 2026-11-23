@@ -54,6 +54,7 @@ function createState(
     nightCursor: 0,
     dawnDeaths: [],
     dayVotes: {},
+    dayVoteTurn: 0,
     revoteCandidateIds: [],
     loverIds: null,
     witchHealAvailable: true,
@@ -116,6 +117,31 @@ describe("Feature: Applying deaths", () => {
       expect(next.dawnDeaths).toEqual([
         { playerId: "a", cause: DeathCause.Lynch },
       ]);
+    });
+  });
+
+  describe("Scenario: A death in the day while a heartbreak is already waiting", () => {
+    it("should keep the earlier pending heartbreak for the next dawn", () => {
+      const state = createState(
+        [
+          createPlayer("a", RoleId.Villager),
+          createPlayer("b", RoleId.Seer),
+          createPlayer("c", RoleId.Doctor),
+          createPlayer("w1", RoleId.Werewolf),
+        ],
+        {
+          phase: Phase.Day,
+          loverIds: { firstId: "a", secondId: "b" },
+          pendingHeartbreakId: "b",
+        },
+      );
+
+      const next = applyDeaths(state, [
+        { playerId: "c", cause: DeathCause.Lynch },
+      ]);
+
+      // The victim is no lover, so nothing new is deferred and the old mourner must stay queued.
+      expect(next.pendingHeartbreakId).toBe("b");
     });
   });
 

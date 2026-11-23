@@ -59,6 +59,7 @@ export function createInitialState(): GameState {
     nightCursor: 0,
     dawnDeaths: [],
     dayVotes: {},
+    dayVoteTurn: 0,
     revoteCandidateIds: [],
     loverIds: null,
     witchHealAvailable: true,

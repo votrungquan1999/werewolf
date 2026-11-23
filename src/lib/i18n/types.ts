@@ -268,12 +268,30 @@ export interface DayDictionary {
   voteCounter: string;
   /** Tells the table nothing is counted until the last vote. */
   voteLockNote: string;
-  tallyTitle: string;
+  /** Names the vote count; also its accessible label. */
+  resultTitle: string;
+  /** The header's stage label on the verdict. */
+  resultLabel: string;
   /** `{name}` = the player the village lynched. */
   votedOut: string;
+  /** `{names}` = the players level on the top count. */
   tieTitle: string;
+  /** Says who the revote is between and that it is only them. */
+  tieBody: string;
+  /** Warns that a second tie ends the day with nobody out. */
+  tieWarning: string;
+  /** `{count}` = how many votes a tied player got. */
+  voteCount: string;
+  /** Label of the row counting voters who did not vote. */
+  abstainedLabel: string;
+  /** Opens the revote after a first tie. */
+  revoteButton: string;
+  /** Ends the day and begins the night. */
+  nightFalls: string;
+  /** Ends the day when the lynch ends the game. */
+  seeWinner: string;
   revoteTitle: string;
-  /** Stands in for the tally when every voter abstained. */
+  /** Said under the verdict when every voter abstained. */
   noVotesCast: string;
   /** The verdict when every voter abstained — nobody dies and there is no revote. */
   noVotesTitle: string;

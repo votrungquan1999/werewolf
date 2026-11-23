@@ -4,6 +4,8 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Day } from "src/components/day/day";
 import { GameProvider } from "src/components/game/game.state";
+import { GameMenu } from "src/components/menu/menu";
+import { Nightfall } from "src/components/nightfall/nightfall";
 import { saveGame } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
 import { type GameState, Phase, RoleId } from "src/lib/game/types";
@@ -51,6 +53,20 @@ async function takeTurn(
     screen.getByText(namedLine(`Who does ${voter} want out?`)),
   ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: target ?? "Abstain" }));
+}
+
+/**
+ * Renders the day and the nightfall it hands over to under one provider, with the options menu.
+ */
+function renderDay(): void {
+  const menu = <GameMenu dict={dict} locale={Locale.En} />;
+
+  render(
+    <GameProvider>
+      <Day dict={dict} menu={menu} />
+      <Nightfall dict={dict} menu={menu} />
+    </GameProvider>,
+  );
 }
 
 describe("Day", () => {
@@ -153,18 +169,14 @@ describe("Day", () => {
     expect(screen.queryByText("Vote result")).toBeNull();
   });
 
-  it("lets a voter abstain and passes the phone straight on", async () => {
-    parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
+  it("shows every vote count, including abstentions, and one tap on Night falls takes the table straight into the night", async () => {
+    // Ann's wolf keeps the game alive after the lynch.
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"], ["Ann"]);
     const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Day dict={dict} />
-      </GameProvider>,
-    );
+    renderDay();
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
-
     await takeTurn(user, "Ann", null);
 
     expect(screen.getByText(namedLine("Ben's vote"))).toBeInTheDocument();
@@ -173,26 +185,35 @@ describe("Day", () => {
     await takeTurn(user, "Cara", "Ben");
     await takeTurn(user, "Dan", "Cara");
 
-    // Ann's abstention records nothing, so Cara goes out on two votes rather than three.
-    const tally = screen.getByRole("list", { name: "Vote tally" });
-    const rows = within(tally).getAllByRole("listitem");
-    expect(rows).toHaveLength(2);
-    expect(within(rows[0]).getByText("Cara")).toBeInTheDocument();
-    expect(within(rows[0]).getByText("2")).toBeInTheDocument();
+    // Ann's abstention records nothing, so it shows as its own row.
+    expect(screen.getByText("Result")).toBeInTheDocument();
     expect(
-      screen.getByText(namedLine("The village has voted out Cara.")),
+      screen.getByText(namedLine("Cara is voted out")),
     ).toBeInTheDocument();
+    expect(screen.queryByText("No votes were cast.")).toBeNull();
+    const rows = within(
+      screen.getByRole("list", { name: "Vote result" }),
+    ).getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Cara2",
+      "Ben1",
+      "Abstained1",
+    ]);
+    expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Night falls →" }));
+
+    expect(
+      screen.getByRole("heading", { name: dict.nightfall.title }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Vote result")).toBeNull();
   });
 
   it("tells the table nobody is out, without promising a revote, when everyone abstains", async () => {
     parkDayGame(["Ann", "Ben", "Cara"]);
     const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Day dict={dict} />
-      </GameProvider>,
-    );
+    renderDay();
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
     await takeTurn(user, "Ann", null);
@@ -203,74 +224,145 @@ describe("Day", () => {
     expect(
       screen.getByText("Nobody voted, so nobody is voted out today."),
     ).toBeInTheDocument();
+    // Only the abstained row shows, and it is everyone.
+    const rows = within(
+      screen.getByRole("list", { name: "Vote result" }),
+    ).getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual(["Abstained3"]);
+    expect(screen.queryByText(/^Tie:/)).not.toBeInTheDocument();
     expect(
-      screen.queryByText("It's a tie — revote between the tied players."),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Night falls →" }),
+    ).toBeInTheDocument();
   });
 
-  it("keeps the verdict on screen after the vote is confirmed", async () => {
-    // Ann's wolf keeps the game alive after the lynch, so the day screen stays up.
+  it("takes one Undo from nightfall back to the debate, and a voter who abstains on the redo no longer counts for their earlier vote", async () => {
     parkDayGame(["Ann", "Ben", "Cara", "Dan"], ["Ann"]);
     const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Day dict={dict} />
-      </GameProvider>,
-    );
+    renderDay();
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
-    await takeTurn(user, "Ann", "Dan");
-    await takeTurn(user, "Ben", "Dan");
-    await takeTurn(user, "Cara", "Dan");
-    await takeTurn(user, "Dan", "Cara");
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Cara", "Ann");
+    await takeTurn(user, "Dan", "Ben");
+    await user.click(screen.getByRole("button", { name: "Night falls →" }));
 
     expect(
-      screen.getByRole("button", { name: "Continue" }),
+      screen.getByRole("heading", { name: dict.nightfall.title }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(namedLine("The village has voted out Dan.")),
-    ).toBeInTheDocument();
-  });
 
-  it("still calls a confirmed revote tie a second tie, not a new revote", async () => {
-    parkDayGame(["Ann", "Ben", "Cara", "Dan"], ["Ann"]);
-    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Options" }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
 
-    render(
-      <GameProvider>
-        <Day dict={dict} />
-      </GameProvider>,
-    );
+    // One tap is one undo: the day is back at its start, not at the verdict.
+    expect(screen.getByText("Debate")).toBeInTheDocument();
+    expect(screen.getByText("2:00")).toBeInTheDocument();
+    expect(screen.queryByText("Result")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
-    for (let round = 0; round < 2; round += 1) {
-      await takeTurn(user, "Ann", "Cara");
-      await takeTurn(user, "Ben", "Dan");
-      await takeTurn(user, "Cara", "Dan");
-      await takeTurn(user, "Dan", "Cara");
-      await user.click(screen.getByRole("button", { name: "Confirm" }));
-    }
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Cara");
+    // Cara now abstains, which takes back her earlier vote for Ann.
+    await takeTurn(user, "Cara", null);
+    await takeTurn(user, "Dan", "Ann");
 
-    // Confirming clears the revote from the game, so the wording must survive it.
-    expect(
-      screen.getByRole("button", { name: "Continue" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Tied again, so nobody is voted out today."),
-    ).toBeInTheDocument();
+    const rows = within(
+      screen.getByRole("list", { name: "Vote result" }),
+    ).getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Cara2",
+      "Ann1",
+      "Abstained1",
+    ]);
   });
 
-  it("opens a revote limited to the tied players", async () => {
+  it("takes one Undo mid-vote back to the previous voter, who votes again with their vote removed", async () => {
     parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
     const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Day dict={dict} />
-      </GameProvider>,
-    );
+    renderDay();
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", "Ben");
+
+    expect(screen.getByText("Vote 2 / 4")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Options" }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(screen.getByText("Vote 1 / 4")).toBeInTheDocument();
+    expect(
+      screen.getByText(namedLine("Who does Ann want out?")),
+    ).toBeInTheDocument();
+
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Cara", "Dan");
+    await takeTurn(user, "Dan", "Cara");
+
+    const rows = within(
+      screen.getByRole("list", { name: "Vote result" }),
+    ).getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual(["Cara3", "Dan1"]);
+  });
+
+  it("takes one Undo back to a voter who abstained with no earlier vote, and from the verdict back to the last voter", async () => {
+    parkDayGame(["Ann", "Ben", "Cara"]);
+    const user = userEvent.setup();
+
+    renderDay();
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", null);
+
+    expect(screen.getByText("Vote 2 / 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Options" }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(
+      screen.getByText(namedLine("Who does Ann want out?")),
+    ).toBeInTheDocument();
+
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Cara", "Ben");
+
+    expect(screen.getByText("Result")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Options" }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(
+      screen.getByText(namedLine("Who does Cara want out?")),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Result")).toBeNull();
+  });
+
+  it("labels the button See who won when the lynch ends the game", async () => {
+    parkDayGame(["Ann", "Ben", "Cara"], ["Ann"]);
+    const user = userEvent.setup();
+
+    renderDay();
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", "Ben");
+    await takeTurn(user, "Ben", "Ann");
+    await takeTurn(user, "Cara", "Ann");
+
+    expect(screen.getByText(namedLine("Ann is voted out"))).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "See who won →" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Night falls →" })).toBeNull();
+  });
+
+  it("names the tied players with their counts on a tie, and one tap on Revote opens a revote limited to them", async () => {
+    parkDayGame(["Ann", "Ben", "Cara", "Dan", "Eve"]);
+    const user = userEvent.setup();
+
+    renderDay();
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
 
@@ -279,44 +371,75 @@ describe("Day", () => {
     await takeTurn(user, "Ben", "Dan");
     await takeTurn(user, "Cara", "Dan");
     await takeTurn(user, "Dan", "Cara");
+    // Ann's one vote is out of the revote, so her row is left off the tie screen.
+    await takeTurn(user, "Eve", "Ann");
 
     expect(
-      screen.getByText("It's a tie — revote between the tied players."),
+      screen.getByText(namedLine("Tie: Cara and Dan")),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Revote between the tied players only."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("If it ties again, nobody is voted out."),
+    ).toBeInTheDocument();
+    const rows = within(
+      screen.getByRole("list", { name: "Vote result" }),
+    ).getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Cara2 vote(s)",
+      "Dan2 vote(s)",
+    ]);
 
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByRole("button", { name: "Revote" }));
 
     expect(screen.getByRole("heading", { name: "Revote" })).toBeInTheDocument();
     // Everyone still votes in a revote, so the counter keeps counting the whole table.
-    expect(screen.getByText("Vote 1 / 4")).toBeInTheDocument();
+    expect(screen.getByText("Vote 1 / 5")).toBeInTheDocument();
     expect(screen.getByText(namedLine("Ann's vote"))).toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Cara" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dan" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Ann" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Ben" }),
-    ).not.toBeInTheDocument();
+    for (const name of ["Ann", "Ben", "Eve"]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
   });
 
-  it("ends the day with nobody out, without promising another revote, when the revote ties too", async () => {
-    parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
+  it("takes one Undo after Revote back to the tie verdict, with its Revote button", async () => {
+    parkDayGame(["Ann", "Ben", "Cara", "Dan", "Eve"]);
     const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Day dict={dict} />
-      </GameProvider>,
-    );
+    renderDay();
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
     await takeTurn(user, "Ann", "Cara");
     await takeTurn(user, "Ben", "Dan");
     await takeTurn(user, "Cara", "Dan");
     await takeTurn(user, "Dan", "Cara");
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await takeTurn(user, "Eve", "Ann");
+    await user.click(screen.getByRole("button", { name: "Revote" }));
+
+    await user.click(screen.getByRole("button", { name: "Options" }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(
+      screen.getByText(namedLine("Tie: Cara and Dan")),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Revote" })).toBeInTheDocument();
+  });
+
+  it("ends the day with nobody out, without promising another revote, when the revote ties too", async () => {
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
+    const user = userEvent.setup();
+
+    renderDay();
+
+    await user.click(screen.getByRole("button", { name: "Vote now" }));
+    await takeTurn(user, "Ann", "Cara");
+    await takeTurn(user, "Ben", "Dan");
+    await takeTurn(user, "Cara", "Dan");
+    await takeTurn(user, "Dan", "Cara");
+    await user.click(screen.getByRole("button", { name: "Revote" }));
 
     // The revote splits the same way, and a tie only earns one revote.
     await takeTurn(user, "Ann", "Cara");
@@ -327,8 +450,15 @@ describe("Day", () => {
     expect(
       screen.getByText("Tied again, so nobody is voted out today."),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/^Tie:/)).not.toBeInTheDocument();
     expect(
-      screen.queryByText("It's a tie — revote between the tied players."),
+      screen.queryByText("If it ties again, nobody is voted out."),
     ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Night falls →" }));
+
+    expect(
+      screen.getByRole("heading", { name: dict.nightfall.title }),
+    ).toBeInTheDocument();
   });
 });

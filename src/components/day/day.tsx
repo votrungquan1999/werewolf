@@ -33,14 +33,21 @@ export function Day({ dict, menu }: DayProps) {
       voteCounterTemplate={dict.day.voteCounter}
       voteLockNote={dict.day.voteLockNote}
       skipVote={dict.day.skipVote}
-      tallyTitle={dict.day.tallyTitle}
+      resultTitle={dict.day.resultTitle}
+      resultLabel={dict.day.resultLabel}
+      tieBody={dict.day.tieBody}
+      tieWarning={dict.day.tieWarning}
+      voteCountTemplate={dict.day.voteCount}
+      abstainedLabel={dict.day.abstainedLabel}
+      revoteButton={dict.day.revoteButton}
+      nightFalls={dict.day.nightFalls}
+      seeWinner={dict.day.seeWinner}
+      listLocale={dict.common.listLocale}
       votedOut={dict.day.votedOut}
       tieTitle={dict.day.tieTitle}
       noVotesCast={dict.day.noVotesCast}
       noVotesTitle={dict.day.noVotesTitle}
       tiedAgainTitle={dict.day.tiedAgainTitle}
-      confirmLabel={dict.common.confirm}
-      nightfallLabel={dict.common.continue}
       menu={menu}
     />
   );

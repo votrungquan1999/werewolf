@@ -55,6 +55,7 @@ function createState(
     nightCursor: 0,
     dawnDeaths: [],
     dayVotes: {},
+    dayVoteTurn: 0,
     revoteCandidateIds: [],
     loverIds,
     witchHealAvailable: true,
@@ -119,6 +120,34 @@ describe("Feature: Win conditions", () => {
       );
 
       expect(getWinner(state)).toBe(Winner.Lovers);
+    });
+  });
+
+  describe("Scenario: Both lovers are alive alongside other players", () => {
+    it("should not declare the lovers the winner while anyone else still lives", () => {
+      const state = createState(
+        [
+          { id: "v1", role: RoleId.Villager, isAlive: true },
+          { id: "v2", role: RoleId.Seer, isAlive: true },
+          { id: "v3", role: RoleId.Doctor, isAlive: true },
+          { id: "w1", role: RoleId.Werewolf, isAlive: true },
+        ],
+        { firstId: "v1", secondId: "v2" },
+      );
+
+      expect(getWinner(state)).toBeNull();
+    });
+  });
+
+  describe("Scenario: One werewolf and one villager are left", () => {
+    it("should declare the werewolves the winner at exact parity", () => {
+      const state = createState([
+        { id: "w1", role: RoleId.Werewolf, isAlive: true },
+        { id: "v1", role: RoleId.Villager, isAlive: true },
+        { id: "s1", role: RoleId.Seer, isAlive: false },
+      ]);
+
+      expect(getWinner(state)).toBe(Winner.Werewolves);
     });
   });
 

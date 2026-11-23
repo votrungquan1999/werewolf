@@ -159,7 +159,7 @@ describe("Feature: running a game through one reducer", () => {
   });
 
   describe("Scenario: the day ends without a winner", () => {
-    it("should hold on a nightfall beat before the next night, counting it once", () => {
+    it("should drop into nightfall in the same step as the verdict, counting the night once", () => {
       const state: GameState = {
         ...createInitialState(),
         phase: Phase.Day,
@@ -167,21 +167,79 @@ describe("Feature: running a game through one reducer", () => {
         players: [
           { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
           { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Villager, isAlive: true },
         ],
+        dayVotes: { p1: "p2", p2: "p3", p3: "p2", p4: "p2" },
       };
 
-      const nightfall = gameReducer(state, {
-        type: ActionType.StartNightfall,
-      });
+      const nightfall = gameReducer(state, { type: ActionType.ResolveDayVote });
 
       expect(nightfall.phase).toBe(Phase.Nightfall);
       expect(nightfall.nightNumber).toBe(2);
+      expect(
+        nightfall.players.find((player) => player.id === "p2")?.isAlive,
+      ).toBe(false);
 
       const night = gameReducer(nightfall, { type: ActionType.StartNight });
 
       expect(night.phase).toBe(Phase.Night);
       expect(night.nightNumber).toBe(2);
-      expect(night.nightOrderIds).toEqual(["p1", "p2"]);
+      expect(night.nightOrderIds).toEqual(["p1", "p3", "p4"]);
+    });
+
+    it("should hold a lynched lover's partner alive until dawn even though the day has already ended", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Day,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Villager, isAlive: true },
+        ],
+        loverIds: { firstId: "p2", secondId: "p3" },
+        dayVotes: { p1: "p2", p2: "p3", p3: "p1", p4: "p2" },
+      };
+
+      const nightfall = gameReducer(state, { type: ActionType.ResolveDayVote });
+
+      expect(nightfall.phase).toBe(Phase.Nightfall);
+      expect(nightfall.pendingHeartbreakId).toBe("p3");
+      expect(
+        nightfall.players.find((player) => player.id === "p3")?.isAlive,
+      ).toBe(true);
+    });
+
+    it("should keep the day going on a first tie and end it, counting the night, on a second", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Day,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Villager, isAlive: true },
+        ],
+        dayVotes: { p1: "p3", p2: "p4", p3: "p4", p4: "p3" },
+      };
+
+      const revote = gameReducer(state, { type: ActionType.ResolveDayVote });
+
+      expect(revote.phase).toBe(Phase.Day);
+      expect(revote.nightNumber).toBe(1);
+      expect(revote.revoteCandidateIds).toEqual(["p3", "p4"]);
+
+      const tiedAgain = gameReducer(
+        { ...revote, dayVotes: { p1: "p3", p2: "p4", p3: "p4", p4: "p3" } },
+        { type: ActionType.ResolveDayVote },
+      );
+
+      expect(tiedAgain.phase).toBe(Phase.Nightfall);
+      expect(tiedAgain.nightNumber).toBe(2);
+      expect(tiedAgain.players.every((player) => player.isAlive)).toBe(true);
     });
   });
 
@@ -428,9 +486,11 @@ describe("Feature: running a game through one reducer", () => {
         false,
       );
       expect(game.winner).toBe(null);
+      // The verdict itself carries the table into nightfall, one night further on.
+      expect(game.phase).toBe(Phase.Nightfall);
+      expect(game.nightNumber).toBe(2);
 
       // Night two: the doctor guesses right and the wolf goes hungry.
-      game = gameReducer(game, { type: ActionType.StartNightfall });
       game = gameReducer(game, { type: ActionType.StartNight });
       expect(game.phase).toBe(Phase.Night);
       expect(game.nightNumber).toBe(2);

@@ -141,7 +141,6 @@ export function useGameActions() {
       dispatch({ type: ActionType.SetRoleCount, role, count }),
     dealRoles: () => dispatch(dealRolesAction()),
     revealNextPlayer: () => dispatch({ type: ActionType.RevealNextPlayer }),
-    startNightfall: () => dispatch({ type: ActionType.StartNightfall }),
     startNight: () => dispatch({ type: ActionType.StartNight }),
     startDay: () => dispatch({ type: ActionType.StartDay }),
     submitNightChoice: (
@@ -163,8 +162,9 @@ export function useGameActions() {
     finishNightTurn: (choice?: NightChoice) =>
       dispatch({ type: ActionType.FinishNightTurn, choice }),
     resolveNight: () => dispatch({ type: ActionType.ResolveNight }),
-    castDayVote: (voterId: string, targetId: string) =>
+    castDayVote: (voterId: string, targetId: string | null) =>
       dispatch({ type: ActionType.CastDayVote, voterId, targetId }),
+    startDayVote: () => dispatch({ type: ActionType.StartDayVote }),
     resolveDayVote: () => dispatch({ type: ActionType.ResolveDayVote }),
     resetGame: () => dispatch({ type: ActionType.ResetGame }),
     openSeal: (sealId: string) =>

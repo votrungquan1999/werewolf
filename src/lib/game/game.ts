@@ -2,6 +2,7 @@ import {
   castDayVote,
   getDayVoteOutcome,
   resolveDayVote,
+  startDayVote,
 } from "src/lib/game/day";
 import { applyDeaths } from "src/lib/game/deaths";
 import {
@@ -76,6 +77,20 @@ function settleAfterDeaths(state: GameState): GameState {
 }
 
 /**
+ * Moves a game whose day just ended to the "everyone close your eyes" beat.
+ * It owns the night count, so StartNight never has to guess which phase it was entered from.
+ * @param state - State after the day's vote and any deaths it caused
+ * @returns The same state at nightfall, one night further on
+ */
+function enterNightfall(state: GameState): GameState {
+  return {
+    ...state,
+    phase: Phase.Nightfall,
+    nightNumber: state.nightNumber + 1,
+  };
+}
+
+/**
  * The single reducer for the whole game, delegating each action to its phase slice.
  * @param state - Current game state
  * @param action - The action to apply
@@ -93,14 +108,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return dealRoles(state, action.seed);
     case ActionType.RevealNextPlayer:
       return revealNextPlayer(state);
-    // The "everyone close your eyes" beat. It owns the night count, so StartNight
-    // below never has to guess which phase it was entered from.
-    case ActionType.StartNightfall:
-      return {
-        ...state,
-        phase: Phase.Nightfall,
-        nightNumber: state.nightNumber + 1,
-      };
     // buildNightOrder only computes the order; the reducer owns writing it.
     case ActionType.StartNight:
       return {
@@ -151,12 +158,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return settleAfterDeaths(resolveNight(state));
     case ActionType.CastDayVote:
       return castDayVote(state, action.voterId, action.targetId);
+    case ActionType.StartDayVote:
+      return startDayVote(state);
     case ActionType.ResolveDayVote: {
       // Read the outcome first — resolveDayVote clears the votes it was derived from.
       const outcome = getDayVoteOutcome(state);
       const resolved = resolveDayVote(state);
-      if (outcome.eliminatedId === null) {
+      // A first tie opens a revote and the day goes on.
+      if (resolved.revoteCandidateIds.length > 0) {
         return resolved;
+      }
+
+      if (outcome.eliminatedId === null) {
+        return enterNightfall(resolved);
       }
 
       const lynched = applyDeaths(resolved, [
@@ -167,7 +181,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return { ...lynched, winner: Winner.Fool, phase: Phase.GameOver };
       }
 
-      return settleAfterDeaths(lynched);
+      // Nightfall comes after the deaths: applyDeaths holds a lover's heartbreak back only while it is still day.
+      const settled = settleAfterDeaths(lynched);
+      return settled.phase === Phase.GameOver
+        ? settled
+        : enterNightfall(settled);
     }
     // The dawn report has been read; the village can start arguing.
     case ActionType.StartDay:
@@ -175,6 +193,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: Phase.Day,
         dayVotes: {},
+        dayVoteTurn: 0,
         revoteCandidateIds: [],
       };
     case ActionType.OpenSeal:

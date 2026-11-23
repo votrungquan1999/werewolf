@@ -48,6 +48,7 @@ function parkFinishedGame(winner: Winner, players: Player[]): void {
     nightCursor: 0,
     dawnDeaths: [],
     dayVotes: {},
+    dayVoteTurn: 0,
     revoteCandidateIds: [],
     loverIds: null,
     witchHealAvailable: false,

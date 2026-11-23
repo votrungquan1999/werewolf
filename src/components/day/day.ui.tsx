@@ -3,18 +3,18 @@
 import { Sun } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
-import { NamedLine } from "src/components/game/game.ui";
+import { NamedLine, NamedList } from "src/components/game/game.ui";
 import { ScreenHeader } from "src/components/game/screen-header";
-import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import {
-  type DayVoteOutcome,
   getDayVoteOutcome,
-  getDayVoteTally,
+  getDayVoteRows,
   getEligibleVoterIds,
   getVoteCandidateIds,
 } from "src/lib/game/day";
-import { Phase, type Player } from "src/lib/game/types";
+import { gameReducer } from "src/lib/game/game";
+import { ActionType, Phase, type Player } from "src/lib/game/types";
+import { fillTemplate } from "src/lib/i18n/fill-template";
 import { cn } from "src/lib/utils";
 
 /** Which beat of the day the table is on. */
@@ -22,13 +22,6 @@ export enum DayStage {
   Discuss = "discuss",
   Vote = "vote",
   Result = "result",
-}
-
-/** A vote round that has been confirmed and will not reopen. */
-interface ClosedVote {
-  outcome: DayVoteOutcome;
-  /** Whether the round was a revote — decides how a tie is worded. */
-  isRevote: boolean;
 }
 
 /** How long the village gets to argue before the countdown runs out. */
@@ -65,19 +58,28 @@ export interface DayVoteProps {
   voteLockNote: string;
   /** Label on the control that passes the phone on without recording a vote. */
   skipVote: string;
-  tallyTitle: string;
+  resultTitle: string;
+  resultLabel: string;
   /** Carries `{name}` for the player the village lynched. */
   votedOut: string;
+  /** Carries `{names}` for the players level on the top count. */
   tieTitle: string;
-  /** Stands in for the tally when every voter abstained. */
+  tieBody: string;
+  tieWarning: string;
+  /** Carries `{count}`. */
+  voteCountTemplate: string;
+  abstainedLabel: string;
+  revoteButton: string;
+  nightFalls: string;
+  seeWinner: string;
+  /** BCP 47 tag the tied players' names are joined in. */
+  listLocale: string;
+  /** Said under the verdict when every voter abstained. */
   noVotesCast: string;
   /** The verdict when every voter abstained. */
   noVotesTitle: string;
   /** The verdict when a revote ties as well. */
   tiedAgainTitle: string;
-  confirmLabel: string;
-  /** Label on the control that ends the day and sends the table into the next night. */
-  nightfallLabel: string;
   menu?: ReactNode;
 }
 
@@ -150,20 +152,27 @@ function DayScreen({
   voteCounterTemplate,
   voteLockNote,
   skipVote,
-  tallyTitle,
+  resultTitle,
+  resultLabel,
   votedOut,
   tieTitle,
+  tieBody,
+  tieWarning,
+  voteCountTemplate,
+  abstainedLabel,
+  revoteButton,
+  nightFalls,
+  seeWinner,
+  listLocale,
   noVotesCast,
   noVotesTitle,
   tiedAgainTitle,
-  confirmLabel,
-  nightfallLabel,
   menu,
 }: DayVoteProps) {
   const state = useGame();
-  const { castDayVote, resolveDayVote, startNightfall } = useGameActions();
-  const tallyHeadingId = useId();
-  const [stage, setStage] = useState(DayStage.Discuss);
+  const { castDayVote, resolveDayVote, startDayVote } = useGameActions();
+  const resultHeadingId = useId();
+  const [chosenStage, setStage] = useState(DayStage.Discuss);
   // The countdown is anchored to a timestamp, not decremented: a backgrounded phone
   // throttles the interval, and a counter would come back minutes fast.
   const [deadline, setDeadline] = useState(
@@ -172,16 +181,10 @@ function DayScreen({
   const [secondsLeft, setSecondsLeft] = useState(DISCUSSION_SECONDS);
   // What a full ring stands for; it grows with each bought minute so the ring never overfills.
   const [ringTotal, setRingTotal] = useState(DISCUSSION_SECONDS);
-  // Who has held the phone is tracked here, not read back from the recorded votes:
-  // an abstention records nothing, so the votes cannot say whose turn is spent.
-  const [voterIndex, setVoterIndex] = useState(0);
-  // Kept once the vote closes: resolving clears the votes and the revote flag the verdict reads.
-  const [closedVote, setClosedVote] = useState<ClosedVote | null>(null);
-  const isResolved = closedVote !== null;
 
   // The sanctioned effect: a wall clock is an external resource, not derived state.
   useEffect(() => {
-    if (stage !== DayStage.Discuss) {
+    if (chosenStage !== DayStage.Discuss) {
       return;
     }
 
@@ -196,7 +199,7 @@ function DayScreen({
     }, TICK_MS);
 
     return () => clearInterval(intervalId);
-  }, [stage, deadline]);
+  }, [chosenStage, deadline]);
 
   /**
    * Buys the table another minute of argument.
@@ -218,72 +221,81 @@ function DayScreen({
   // A tie sends the table round again, so the heading has to say which round this is.
   const isRevote = state.revoteCandidateIds.length > 0;
   const eligibleVoterIds = getEligibleVoterIds(state);
+  // The turn lives in the game, not here, so Undo steps the screen back with the vote it removes.
+  const voterIndex = state.dayVoteTurn;
+  // The verdict is whatever follows the last voter; it is never stored, so Undo reopens that voter.
+  const stage =
+    chosenStage === DayStage.Vote && voterIndex >= eligibleVoterIds.length
+      ? DayStage.Result
+      : chosenStage;
   // The phone walks the table in player order.
   const currentVoterId = eligibleVoterIds[voterIndex] ?? null;
   const currentVoterName =
     currentVoterId === null ? "" : getPlayerName(state.players, currentVoterId);
   const candidateIds =
     currentVoterId === null ? [] : getVoteCandidateIds(state, currentVoterId);
-  const tally = getDayVoteTally(state.dayVotes);
-  // Live from the votes until confirmed, then frozen in `closedVote`.
-  let shownVote = closedVote;
-  if (shownVote === null && stage === DayStage.Result) {
-    shownVote = { outcome: getDayVoteOutcome(state), isRevote };
-  }
+
+  // The verdict reads the live votes: nothing is cleared until the one tap that ends the round.
+  const outcome = getDayVoteOutcome(state);
+  const rows = getDayVoteRows(state);
+  // Mirrors `resolveDayVote`'s own condition: a first tie opens a revote.
+  const willRevote = outcome.tiedIds.length > 0 && !isRevote;
+  // Asks the reducer itself, so the fool's win and a hunter's shot are covered too.
+  const endsGame =
+    stage === DayStage.Result &&
+    !willRevote &&
+    gameReducer(state, { type: ActionType.ResolveDayVote }).phase ===
+      Phase.GameOver;
 
   /**
-   * Hands the phone to the next voter, or closes the round when the table is spent.
+   * Takes the one tap that closes the round: a first tie sends the phone round again, anything else ends the day.
    */
-  function finishTurn() {
-    const nextIndex = voterIndex + 1;
-
-    if (nextIndex < eligibleVoterIds.length) {
-      setVoterIndex(nextIndex);
-      setStage(DayStage.Vote);
-      return;
-    }
-
-    setStage(DayStage.Result);
-  }
-
-  /**
-   * Closes the round: a first tie sends the phone round again, anything else ends the day.
-   */
-  function confirmOutcome() {
-    // Read before resolving clears the votes.
-    const outcome = getDayVoteOutcome(state);
-    // Mirrors `resolveDayVote`'s own condition.
-    const willRevote = outcome.tiedIds.length > 0 && !isRevote;
-
+  function closeRound() {
     resolveDayVote();
 
+    // A revote starts the phone round again on the same screen.
     if (willRevote) {
-      setVoterIndex(0);
       setStage(DayStage.Vote);
-      return;
     }
-
-    setClosedVote({ outcome, isRevote });
   }
 
   let verdict: ReactNode = null;
-  if (shownVote === null) {
-    verdict = null;
-  } else if (shownVote.outcome.eliminatedId !== null) {
+  if (outcome.eliminatedId !== null) {
     verdict = (
       <NamedLine
         template={votedOut}
-        name={getPlayerName(state.players, shownVote.outcome.eliminatedId)}
+        name={getPlayerName(state.players, outcome.eliminatedId)}
       />
     );
-  } else if (shownVote.outcome.tiedIds.length === 0) {
+  } else if (outcome.tiedIds.length === 0) {
     // No votes means no tied players, so there is nobody to revote between.
     verdict = noVotesTitle;
-  } else if (shownVote.isRevote) {
+  } else if (isRevote) {
     // A tie only earns one revote, so tying it again ends the day.
     verdict = tiedAgainTitle;
   } else {
-    verdict = tieTitle;
+    verdict = (
+      <NamedList
+        template={tieTitle}
+        names={outcome.tiedIds.map((id) => getPlayerName(state.players, id))}
+        listLocale={listLocale}
+      />
+    );
+  }
+
+  // A first tie shows only the tied players, since the revote is only between them.
+  const shownRows = willRevote
+    ? rows.filter(
+        (row) =>
+          row.targetId !== null && outcome.tiedIds.includes(row.targetId),
+      )
+    : rows;
+
+  let closeLabel = nightFalls;
+  if (willRevote) {
+    closeLabel = revoteButton;
+  } else if (endsGame) {
+    closeLabel = seeWinner;
   }
 
   const heading = isRevote ? revoteTitle : voteTitle;
@@ -293,17 +305,22 @@ function DayScreen({
       <ScreenHeader
         icon={Sun}
         menu={menu}
-        label={dayTitleTemplate.replace("{number}", String(state.nightNumber))}
+        label={fillTemplate(dayTitleTemplate, {
+          number: String(state.nightNumber),
+        })}
         progress={
-          stage === DayStage.Vote
-            ? voteCounterTemplate
-                .replace("{current}", String(voterIndex + 1))
-                .replace("{total}", String(eligibleVoterIds.length))
-            : discussTitle
+          {
+            [DayStage.Discuss]: discussTitle,
+            [DayStage.Vote]: fillTemplate(voteCounterTemplate, {
+              current: String(voterIndex + 1),
+              total: String(eligibleVoterIds.length),
+            }),
+            [DayStage.Result]: resultLabel,
+          }[stage]
         }
       />
 
-      {stage !== DayStage.Discuss && (
+      {stage === DayStage.Vote && (
         <h1 className="font-heading font-semibold text-2xl tracking-tight">
           {heading}
         </h1>
@@ -365,7 +382,10 @@ function DayScreen({
 
             <Button
               size="lg"
-              onClick={() => setStage(DayStage.Vote)}
+              onClick={() => {
+                startDayVote();
+                setStage(DayStage.Vote);
+              }}
               className={cn(
                 "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
                 "w-full",
@@ -404,7 +424,6 @@ function DayScreen({
                 size="lg"
                 onClick={() => {
                   castDayVote(currentVoterId, candidateId);
-                  finishTurn();
                 }}
                 // Grows and wraps instead of clipping a long name at both edges.
                 className={cn(
@@ -417,11 +436,13 @@ function DayScreen({
             ))}
           </div>
 
-          {/* An abstention is the absence of a vote, so nothing is recorded — only the phone moves. */}
           <Button
             variant="outline"
             size="lg"
-            onClick={finishTurn}
+            onClick={() => {
+              // Abstaining on a redone vote takes back the earlier one.
+              castDayVote(currentVoterId, null);
+            }}
             className={cn("h-14 border-phase-border text-base", "w-full")}
           >
             {skipVote}
@@ -433,78 +454,85 @@ function DayScreen({
         </div>
       )}
 
-      {/* Votes are private now, so the count waits until the phone has been all the way
+      {/* Votes are private, so the count waits until the phone has been all the way
           round — a live tally would show each voter exactly how everyone before them voted. */}
-      {stage === DayStage.Result && !isResolved && (
-        <div
-          className={cn(
-            "gap-2 rounded-xl border border-phase-border p-4",
-            "grid",
+      {stage === DayStage.Result && (
+        <div className={cn("gap-6", "grid")}>
+          <h1 className="font-heading font-semibold text-3xl text-balance">
+            {verdict}
+          </h1>
+
+          {willRevote && (
+            <div className={cn("gap-1", "grid text-lg")}>
+              <p>{tieBody}</p>
+              <p className="text-muted-foreground text-base">{tieWarning}</p>
+            </div>
           )}
-        >
+
+          {outcome.eliminatedId === null && outcome.tiedIds.length === 0 && (
+            <p className="text-lg text-muted-foreground">{noVotesCast}</p>
+          )}
+
           <h2
-            id={tallyHeadingId}
+            id={resultHeadingId}
             className="font-medium text-muted-foreground text-sm uppercase tracking-wide"
           >
-            {tallyTitle}
+            {resultTitle}
           </h2>
-          {Object.keys(tally).length === 0 ? (
-            <p className="text-base text-muted-foreground">{noVotesCast}</p>
-          ) : (
-            <ul
-              aria-labelledby={tallyHeadingId}
-              className={cn("gap-2", "grid")}
-            >
-              {Object.entries(tally).map(([targetId, count]) => (
-                <li
-                  key={targetId}
+          <ul aria-labelledby={resultHeadingId} className={cn("gap-3", "grid")}>
+            {shownRows.map((row) => (
+              <li
+                key={row.targetId ?? "abstained"}
+                className={cn("gap-1", "grid text-base")}
+              >
+                <div
                   className={cn(
-                    "text-base",
-                    "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2",
+                    "gap-2",
+                    "grid grid-cols-[minmax(0,1fr)_auto] items-center",
                   )}
                 >
                   <span className="wrap-anywhere">
-                    {getPlayerName(state.players, targetId)}
+                    {row.targetId === null
+                      ? abstainedLabel
+                      : getPlayerName(state.players, row.targetId)}
                   </span>
-                  <Badge>{count}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
+                  <span className="font-semibold tabular-nums">
+                    {willRevote
+                      ? fillTemplate(voteCountTemplate, {
+                          count: String(row.count),
+                        })
+                      : row.count}
+                  </span>
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="h-1.5 rounded-full bg-phase-border"
+                >
+                  <div
+                    className={cn(
+                      "h-full rounded-full",
+                      row.targetId === null
+                        ? "bg-muted-foreground"
+                        : "bg-phase-name",
+                    )}
+                    style={{ width: `${row.share * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <Button
+            size="lg"
+            onClick={closeRound}
+            className={cn(
+              "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
+              "w-full",
+            )}
+          >
+            {closeLabel}
+          </Button>
         </div>
-      )}
-
-      {shownVote !== null && (
-        <div className={cn("gap-3", "grid")}>
-          <p className="text-lg">{verdict}</p>
-
-          {!isResolved && (
-            <Button
-              size="lg"
-              onClick={confirmOutcome}
-              className={cn(
-                "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
-                "w-full",
-              )}
-            >
-              {confirmLabel}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Only set once the vote closed for good — a first tie reopens the round instead. */}
-      {isResolved && (
-        <Button
-          size="lg"
-          onClick={startNightfall}
-          className={cn(
-            "h-14 bg-phase text-base text-phase-foreground hover:bg-phase/80",
-            "w-full",
-          )}
-        >
-          {nightfallLabel}
-        </Button>
       )}
     </section>
   );

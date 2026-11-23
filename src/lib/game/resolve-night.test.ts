@@ -61,6 +61,7 @@ function createState(
     nightCursor: 0,
     dawnDeaths: [],
     dayVotes: {},
+    dayVoteTurn: 0,
     revoteCandidateIds: [],
     loverIds: null,
     witchHealAvailable: true,

@@ -17,23 +17,45 @@ export interface DayVoteOutcome {
 }
 
 /**
- * Records one open vote, replacing any earlier vote by the same voter.
+ * Records one open vote, replacing any earlier vote by the same voter, and passes the phone on.
  * @param state - The current game state
  * @param voterId - The living player casting the vote
- * @param targetId - The player they voted for
- * @returns A new state with the vote recorded, or the same state for a vote against oneself
+ * @param targetId - The player they voted for, or null to abstain
+ * @returns A new state with the vote recorded and the turn advanced, or the same state for a vote against oneself
  */
 export function castDayVote(
   state: GameState,
   voterId: string,
-  targetId: string,
+  targetId: string | null,
 ): GameState {
   // Nobody votes for themself, so a self-vote changes nothing and records no undo step.
   if (voterId === targetId) {
     return state;
   }
 
-  return { ...state, dayVotes: { ...state.dayVotes, [voterId]: targetId } };
+  const dayVoteTurn = state.dayVoteTurn + 1;
+
+  // An abstention is a redone vote with no target, so it removes the voter's earlier one.
+  // It still moves the turn, so even a first abstention is one undo step.
+  if (targetId === null) {
+    const { [voterId]: _removed, ...kept } = state.dayVotes;
+    return { ...state, dayVotes: kept, dayVoteTurn };
+  }
+
+  return {
+    ...state,
+    dayVotes: { ...state.dayVotes, [voterId]: targetId },
+    dayVoteTurn,
+  };
+}
+
+/**
+ * Sends the phone back to the first voter, for a table that starts or redoes the vote.
+ * @param state - The current game state
+ * @returns A new state at the first voter, or the same state when it already is
+ */
+export function startDayVote(state: GameState): GameState {
+  return state.dayVoteTurn === 0 ? state : { ...state, dayVoteTurn: 0 };
 }
 
 /**
@@ -51,6 +73,46 @@ export function getDayVoteTally(
   }
 
   return tally;
+}
+
+/** One line of the verdict's count: a player's votes, or the voters who abstained. */
+export interface DayVoteRow {
+  /** The player voted for, or null for the abstained row. */
+  targetId: string | null;
+  count: number;
+  /** `count` as a fraction of everyone who may vote. */
+  share: number;
+}
+
+/**
+ * Lays the votes out as the verdict's rows: high to low, with abstentions last.
+ * @param state - The current game state
+ * @returns One row per player who got a vote, plus an abstained row when anyone sat out
+ */
+export function getDayVoteRows(state: GameState): DayVoteRow[] {
+  const eligibleCount = getEligibleVoterIds(state).length;
+  const tally = getDayVoteTally(state.dayVotes);
+
+  // Walk the player list, then sort (stable): equal counts stay in table order, so vote order never leaks.
+  const rows: DayVoteRow[] = state.players
+    .filter((player) => tally[player.id] !== undefined)
+    .map((player) => ({
+      targetId: player.id,
+      count: tally[player.id],
+      share: tally[player.id] / eligibleCount,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const abstainedCount = eligibleCount - Object.keys(state.dayVotes).length;
+  if (abstainedCount > 0) {
+    rows.push({
+      targetId: null,
+      count: abstainedCount,
+      share: abstainedCount / eligibleCount,
+    });
+  }
+
+  return rows;
 }
 
 /**
@@ -85,10 +147,15 @@ export function resolveDayVote(state: GameState): GameState {
 
   // A tie only earns a revote once; tying the revote ends the day with no death.
   if (outcome.tiedIds.length > 0 && !isRevote) {
-    return { ...state, dayVotes: {}, revoteCandidateIds: outcome.tiedIds };
+    return {
+      ...state,
+      dayVotes: {},
+      dayVoteTurn: 0,
+      revoteCandidateIds: outcome.tiedIds,
+    };
   }
 
-  return { ...state, dayVotes: {}, revoteCandidateIds: [] };
+  return { ...state, dayVotes: {}, dayVoteTurn: 0, revoteCandidateIds: [] };
 }
 
 /**
