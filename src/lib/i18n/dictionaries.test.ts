@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 
 // The wolves' prompt addresses the pack, not the card, so it is left out.
 const promptedRoles: Array<[RoleId, keyof NightDictionary]> = [
-  [RoleId.Witch, "witchPrompt"],
   [RoleId.Hunter, "hunterPrompt"],
   [RoleId.Cupid, "cupidPrompt"],
 ];
@@ -15,6 +14,7 @@ const promptedRoles: Array<[RoleId, keyof NightDictionary]> = [
 const titledRoles: Array<[RoleId, keyof NightDictionary]> = [
   [RoleId.Seer, "seerTitle"],
   [RoleId.Doctor, "doctorTitle"],
+  [RoleId.Witch, "witchTitle"],
 ];
 
 describe("Dictionaries", () => {

@@ -373,6 +373,36 @@ describe("Feature: Night phase", () => {
     });
   });
 
+  describe("Scenario: The witch has already poisoned tonight", () => {
+    it("should refuse a heal the same night", () => {
+      const state = createState([
+        createPlayer("t1", RoleId.Witch),
+        createPlayer("w1", RoleId.Werewolf),
+        createPlayer("v1", RoleId.Villager),
+      ]);
+
+      const poisoned = submitNightChoice(
+        state,
+        "t1",
+        NightAction.Potion,
+        "v1",
+        null,
+        PotionKind.Poison,
+      );
+      const healAttempt = submitNightChoice(
+        poisoned,
+        "t1",
+        NightAction.Potion,
+        null,
+        null,
+        PotionKind.Heal,
+      );
+
+      expect(healAttempt.night.healsVictim).toBe(false);
+      expect(healAttempt.night.poisonTargetId).toBe("v1");
+    });
+  });
+
   describe("Scenario: The witch declares which potion she is using", () => {
     it("should poison the wolves' own victim when she says poison", () => {
       const state = createState(

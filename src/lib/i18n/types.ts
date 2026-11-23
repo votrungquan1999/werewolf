@@ -169,13 +169,27 @@ export interface NightDictionary {
   tagYou: string;
   /** Tag on the row the doctor may not save again tonight. */
   tagSavedLast: string;
+  witchTitle: string;
   witchPrompt: string;
-  /** Used when the pack has not voted yet, so the victim has no name to show. */
+  witchHealTitle: string;
+  /** The heal tile's line; the victim is never named, the pack may not have voted yet. */
   witchHealUnknownChoice: string;
+  witchPoisonTitle: string;
   witchPoisonChoice: string;
+  /** Potion tile status while the potion is unused. */
+  witchStatusLeft: string;
+  /** Potion tile status once the potion is spent. */
+  witchStatusUsed: string;
+  /** `{name}` = who gets the phone next. */
   witchNoPotionChoice: string;
+  /** Replaces `witchNoPotionChoice` on the last seat, where nobody is next. */
+  witchNoPotionLast: string;
+  witchPoisonListTitle: string;
   /** `{name}` = who she is about to poison; killing is never one tap. */
   witchPoisonConfirm: string;
+  witchPoisonConfirmBody: string;
+  /** The confirm sheet's danger button. */
+  witchPoisonConfirmLabel: string;
   cupidPrompt: string;
   hunterPrompt: string;
   hunterSkip: string;

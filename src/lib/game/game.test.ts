@@ -6,6 +6,7 @@ import {
   type GameState,
   NightAction,
   Phase,
+  PotionKind,
   RoleId,
   Winner,
 } from "src/lib/game/types";
@@ -303,6 +304,43 @@ describe("Feature: running a game through one reducer", () => {
       expect(next.dawnDeaths).toEqual([
         { playerId: "p1", cause: DeathCause.WolfAttack },
       ]);
+    });
+
+    it("should end the game in the same step when the last seat's poison kills the last wolf", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Night,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Witch, isAlive: true },
+        ],
+        nightOrderIds: ["p1", "p2", "p3"],
+        nightCursor: 2,
+        night: {
+          wolfVotes: { p1: "p2" },
+          protectedId: null,
+          inspectedId: null,
+          healsVictim: false,
+          poisonTargetId: null,
+          loverIds: null,
+        },
+      };
+
+      const next = gameReducer(state, {
+        type: ActionType.FinishNightTurn,
+        choice: {
+          actorId: "p3",
+          action: NightAction.Potion,
+          targetId: "p1",
+          secondTargetId: null,
+          potionKind: PotionKind.Poison,
+        },
+      });
+
+      expect(next.phase).toBe(Phase.GameOver);
+      expect(next.winner).toBe(Winner.Village);
     });
 
     it("should drop the table into nightfall as the last player finishes their reveal", () => {
