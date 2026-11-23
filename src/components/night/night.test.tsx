@@ -16,8 +16,11 @@ import { createInitialState } from "src/lib/game/setup";
 import { type GameState, Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
+import { playDaybreak } from "src/lib/sound";
 import { namedLine } from "src/tests/matchers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("src/lib/sound");
 
 const dictionary = getDictionary(Locale.En);
 
@@ -135,6 +138,7 @@ describe("Night", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.mocked(playDaybreak).mockClear();
   });
 
   it("hands each turn over as a sealed envelope that shows whose turn it is, how far the night has gone and who is next", async () => {
@@ -227,6 +231,7 @@ describe("Night", () => {
     expect(
       screen.getByRole("button", { name: "Swipe to open Bob's letter" }),
     ).toBeInTheDocument();
+    expect(playDaybreak).not.toHaveBeenCalled();
   });
 
   it("starts the sleep turn's wait again after a refresh", async () => {
@@ -268,6 +273,39 @@ describe("Night", () => {
         name: /Villager|Seer|Werewolf|Doctor|Witch|Hunter|Cupid|Fool/,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("tells the last seat their turn is the last and wakes the village from their Done button", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    parkNightGame(
+      [
+        ["Alice", RoleId.Werewolf],
+        ["Bob", RoleId.Villager],
+        ["Cara", RoleId.Villager],
+      ],
+      2,
+    );
+    const user = userEvent.setup();
+    renderNight();
+    await swipeOpen(user, "Cara");
+
+    expect(screen.getByText("Last turn of the night")).toBeInTheDocument();
+    expect(
+      screen.getByText(/When you tap Done the rooster crows/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Done · wake the village" }),
+    ).toBeDisabled();
+    expect(playDaybreak).not.toHaveBeenCalled();
+
+    await passDecoyTurn(user, "Done · wake the village");
+
+    expect(playDaybreak).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Turn 3 / 3")).not.toBeInTheDocument();
+    const parked = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY) ?? "{}",
+    ) as GameState;
+    expect(parked.phase).toBe(Phase.Dawn);
   });
 
   it("keeps the player's own card behind the Your card chip and explains it when opened", async () => {

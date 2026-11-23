@@ -18,6 +18,8 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     turnOf: dict.header.turnOf,
     yourCard: dict.night.yourCard,
     lastTurn: dict.night.lastTurn,
+    lastTurnCaption: dict.night.lastTurnCaption,
+    wakeVillage: dict.night.wakeVillage,
     decoyTitle: dict.night.decoyTitle,
     decoyBody: dict.night.decoyBody,
     decoyWait: dict.night.decoyWait,

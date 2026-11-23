@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { NamedLine } from "src/components/game/game.ui";
@@ -46,6 +46,8 @@ export interface NightCopy {
   turnOf: string;
   yourCard: string;
   lastTurn: string;
+  lastTurnCaption: string;
+  wakeVillage: string;
   decoyTitle: string;
   decoyBody: string;
   /** Carries `{seconds}`. */
@@ -768,16 +770,19 @@ function NightPassButton({
  * as a real one. A remount (refresh, Undo) starts the wait again, which only makes
  * the turn longer and leaks nothing.
  * @param props.passLabel - The pass button's label.
+ * @param props.isLastSeat - True when this turn ends the night.
  * @param props.copy - Night copy supplied by the server component.
  * @param props.onDone - Hands the phone on.
  * @returns The decoy screen.
  */
 function NightDecoyTurn({
   passLabel,
+  isLastSeat,
   copy,
   onDone,
 }: {
   passLabel: string;
+  isLastSeat: boolean;
   copy: NightCopy;
   onDone: () => void;
 }) {
@@ -802,9 +807,22 @@ function NightDecoyTurn({
 
   return (
     <>
-      <Moon aria-hidden="true" className={cn("size-12 text-phase-name")} />
+      {isLastSeat ? (
+        <Sun aria-hidden="true" className={cn("size-12 text-phase-name")} />
+      ) : (
+        <Moon aria-hidden="true" className={cn("size-12 text-phase-name")} />
+      )}
       <h2 className="font-medium text-xl">{copy.decoyTitle}</h2>
       <p className="text-lg leading-relaxed">{copy.decoyBody}</p>
+
+      {isLastSeat ? (
+        <>
+          <p className="font-medium text-base">{copy.lastTurn}</p>
+          <p className="text-muted-foreground text-sm">
+            {copy.lastTurnCaption}
+          </p>
+        </>
+      ) : null}
 
       {/* Plain buttons on purpose: they dispatch nothing, so they leave no undo step. */}
       <div className={cn("gap-2", "grid grid-cols-3")}>
@@ -842,6 +860,7 @@ function NightDecoyTurn({
  * @param props.turn - The turn described by the engine for that player.
  * @param props.copy - Night copy supplied by the server component.
  * @param props.passLabel - Label of the pass button.
+ * @param props.isLastSeat - True when this turn ends the night.
  * @param props.onDone - Hands the phone on once this player has finished.
  * @returns The turn's body.
  */
@@ -849,11 +868,13 @@ function NightTurnBody({
   turn,
   copy,
   passLabel,
+  isLastSeat,
   onDone,
 }: {
   turn: NightTurn;
   copy: NightCopy;
   passLabel: string;
+  isLastSeat: boolean;
   onDone: () => void;
 }) {
   const state = useGame();
@@ -870,7 +891,12 @@ function NightTurnBody({
       )}
 
       {turn.action === null ? (
-        <NightDecoyTurn passLabel={passLabel} copy={copy} onDone={onDone} />
+        <NightDecoyTurn
+          passLabel={passLabel}
+          isLastSeat={isLastSeat}
+          copy={copy}
+          onDone={onDone}
+        />
       ) : (
         <>
           <p className="text-lg leading-relaxed">{copy.prompts[turn.action]}</p>
@@ -902,7 +928,7 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
 
   const passLabel =
     nextName === null
-      ? copy.continueLabel
+      ? copy.wakeVillage
       : fillTemplate(copy.seal.passOn, { name: nextName });
 
   /**
@@ -936,6 +962,7 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
         turn={turn}
         copy={copy}
         passLabel={passLabel}
+        isLastSeat={isLastSeat}
         onDone={handleTurnDone}
       />
     </SealGate>

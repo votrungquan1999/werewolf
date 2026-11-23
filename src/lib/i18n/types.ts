@@ -140,6 +140,10 @@ export interface NightDictionary {
   yourCard: string;
   /** Next line on the last seat's sealed envelope, where there is no next player. */
   lastTurn: string;
+  /** Under the last seat's open letter: the rooster crows when they tap Done. */
+  lastTurnCaption: string;
+  /** The last seat's pass button, which wakes the whole village. */
+  wakeVillage: string;
   decoyTitle: string;
   decoyBody: string;
   /** `{seconds}` = whole seconds left before the pass button unlocks. */

@@ -82,6 +82,9 @@ const vietnamese: Dictionary = {
     yourRole: "Bạn là {role}",
     yourCard: "Lá bài của bạn",
     lastTurn: "Lượt cuối của đêm",
+    lastTurnCaption:
+      "Bấm xong, gà sẽ gáy. Đặt máy ra giữa bàn để cả làng mở mắt.",
+    wakeVillage: "Xong · gọi cả làng dậy",
     decoyTitle: "Đêm nay bạn được ngủ",
     decoyBody:
       "Không có việc gì làm. Giữ máy vài giây cho giống một lượt thật rồi chuyền máy đi.",
@@ -289,6 +292,9 @@ const english: Dictionary = {
     yourRole: "You are the {role}",
     yourCard: "Your card",
     lastTurn: "Last turn of the night",
+    lastTurnCaption:
+      "When you tap Done the rooster crows. Put the phone in the middle so the village can open their eyes.",
+    wakeVillage: "Done · wake the village",
     decoyTitle: "You get to sleep tonight",
     decoyBody:
       "Nothing to do. Keep the phone a few seconds so it looks like a real turn, then pass it on.",
