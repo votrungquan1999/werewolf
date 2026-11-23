@@ -242,8 +242,8 @@ export interface RevealNextPlayerAction {
   type: ActionType.RevealNextPlayer;
 }
 
-export interface SubmitNightChoiceAction {
-  type: ActionType.SubmitNightChoice;
+/** One player's night choice, as the engine records it. */
+export interface NightChoice {
   /** The player whose turn it is — wolf votes are recorded per voter. */
   actorId: string;
   action: NightAction;
@@ -255,12 +255,18 @@ export interface SubmitNightChoiceAction {
   potionKind: PotionKind | null;
 }
 
+export interface SubmitNightChoiceAction extends NightChoice {
+  type: ActionType.SubmitNightChoice;
+}
+
 export interface AdvanceNightCursorAction {
   type: ActionType.AdvanceNightCursor;
 }
 
 export interface FinishNightTurnAction {
   type: ActionType.FinishNightTurn;
+  /** The turn's choice, applied in the same step that passes the phone on. */
+  choice?: NightChoice;
 }
 
 export interface ResolveNightAction {

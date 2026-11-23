@@ -123,7 +123,24 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     // Likewise one step: passing the phone on and, at the last seat, resolving
     // the night are a single thing the table did.
     case ActionType.FinishNightTurn: {
-      const advanced = advanceNightCursor(state);
+      const { choice } = action;
+      const chosen =
+        choice === undefined
+          ? state
+          : submitNightChoice(
+              state,
+              choice.actorId,
+              choice.action,
+              choice.targetId,
+              choice.secondTargetId,
+              choice.potionKind,
+            );
+      // A refused choice leaves the turn open; declines send no choice at all.
+      if (choice !== undefined && chosen === state) {
+        return state;
+      }
+
+      const advanced = advanceNightCursor(chosen);
       if (getCurrentNightTurn(advanced) !== null) {
         return advanced;
       }

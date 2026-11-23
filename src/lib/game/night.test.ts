@@ -205,15 +205,47 @@ describe("Feature: Night phase", () => {
 
   describe("Scenario: Most roles may not aim their night action at themselves", () => {
     it("should refuse the wolf, the seer and the witch, but let the doctor and cupid include themselves", () => {
-      expect(canNightTarget(NightAction.WolfVote, "p1", "p1")).toBe(false);
-      expect(canNightTarget(NightAction.Inspect, "p1", "p1")).toBe(false);
-      expect(canNightTarget(NightAction.Potion, "p1", "p1")).toBe(false);
+      const state = createState([
+        createPlayer("p1", RoleId.Villager),
+        createPlayer("p2", RoleId.Villager),
+      ]);
+
+      expect(canNightTarget(state, NightAction.WolfVote, "p1", "p1")).toBe(
+        false,
+      );
+      expect(canNightTarget(state, NightAction.Inspect, "p1", "p1")).toBe(
+        false,
+      );
+      expect(canNightTarget(state, NightAction.Potion, "p1", "p1")).toBe(false);
 
       // The doctor's self-shield and a cupid who pairs themselves are both real plays.
-      expect(canNightTarget(NightAction.Protect, "p1", "p1")).toBe(true);
-      expect(canNightTarget(NightAction.LinkLovers, "p1", "p1")).toBe(true);
+      expect(canNightTarget(state, NightAction.Protect, "p1", "p1")).toBe(true);
+      expect(canNightTarget(state, NightAction.LinkLovers, "p1", "p1")).toBe(
+        true,
+      );
 
-      expect(canNightTarget(NightAction.WolfVote, "p1", "p2")).toBe(true);
+      expect(canNightTarget(state, NightAction.WolfVote, "p1", "p2")).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("Scenario: A wolf may not bite a packmate", () => {
+    it("should refuse a living packmate for the wolf vote but allow non-wolves, and leave other actions alone", () => {
+      const state = createState([
+        createPlayer("w1", RoleId.Werewolf),
+        createPlayer("w2", RoleId.Werewolf),
+        createPlayer("v1", RoleId.Villager),
+      ]);
+
+      expect(canNightTarget(state, NightAction.WolfVote, "w1", "w2")).toBe(
+        false,
+      );
+      expect(canNightTarget(state, NightAction.WolfVote, "w1", "v1")).toBe(
+        true,
+      );
+      // Only the wolf vote is barred from packmates; the seer may check one.
+      expect(canNightTarget(state, NightAction.Inspect, "v1", "w2")).toBe(true);
     });
   });
 

@@ -151,6 +151,11 @@ export interface NightDictionary {
   decoyFidgetSheep: string;
   decoyFidgetYawn: string;
   decoyFidgetRollOver: string;
+  wolvesTitle: string;
+  /** `{count}` = how many wolves already chose this player. */
+  wolfTargetTag: string;
+  /** Shown in place of the packmates when every other wolf is dead. */
+  wolfAlone: string;
   wolvesPrompt: string;
   seerPrompt: string;
   doctorPrompt: string;
@@ -173,7 +178,6 @@ export interface NightResultsDictionary {
   /** `{name}` = the inspected player. */
   seerIsNotWerewolf: string;
   wolfPackTitle: string;
-  wolfTallyTitle: string;
 }
 
 /** The morning report: who survived the night and who did not. */

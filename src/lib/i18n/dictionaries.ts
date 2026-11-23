@@ -92,8 +92,11 @@ const vietnamese: Dictionary = {
     decoyFidgetSheep: "Đếm cừu",
     decoyFidgetYawn: "Ngáp",
     decoyFidgetRollOver: "Trở mình",
+    wolvesTitle: "Bầy sói thức dậy",
+    wolfTargetTag: "{count} sói đã chọn",
+    wolfAlone: "Bạn là con sói cuối cùng.",
     wolvesPrompt:
-      "Sói ơi, chọn con mồi đêm nay. Ai nhiều phiếu nhất thì chết; bầy hòa phiếu thì không ai chết.",
+      "Chọn một người để cắn. Bầy theo số đông, hòa thì không ai chết.",
     seerPrompt:
       "Tiên Tri, soi một người. Bạn chỉ biết người đó có phải Sói hay không, chứ không biết vai gì.",
     doctorPrompt:
@@ -113,8 +116,7 @@ const vietnamese: Dictionary = {
   nightResults: {
     seerIsWerewolf: "{name} LÀ Ma Sói.",
     seerIsNotWerewolf: "{name} KHÔNG phải Ma Sói.",
-    wolfPackTitle: "Bầy Sói của bạn",
-    wolfTallyTitle: "Bầy đang bỏ phiếu",
+    wolfPackTitle: "Đồng bọn",
   },
   dawn: {
     title: "Ngày {number}",
@@ -302,8 +304,11 @@ const english: Dictionary = {
     decoyFidgetSheep: "Count sheep",
     decoyFidgetYawn: "Yawn",
     decoyFidgetRollOver: "Roll over",
+    wolvesTitle: "The pack wakes",
+    wolfTargetTag: "{count} chose this",
+    wolfAlone: "You are the last wolf.",
     wolvesPrompt:
-      "Wolves, choose tonight's prey. The most-voted player dies; a tie inside the pack kills nobody.",
+      "Choose someone to bite. The pack goes with the majority; a tie kills nobody.",
     seerPrompt:
       "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
     doctorPrompt:
@@ -323,8 +328,7 @@ const english: Dictionary = {
   nightResults: {
     seerIsWerewolf: "{name} IS a werewolf.",
     seerIsNotWerewolf: "{name} is NOT a werewolf.",
-    wolfPackTitle: "Your pack",
-    wolfTallyTitle: "The pack's votes so far",
+    wolfPackTitle: "Packmates",
   },
   dawn: {
     title: "Day {number}",

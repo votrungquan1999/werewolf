@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { NamedLine } from "src/components/game/game.ui";
 import { ScreenHeader } from "src/components/game/screen-header";
+import { RoleAvatar } from "src/components/role-avatar/role-avatar";
 import { SealGate } from "src/components/seal/seal.ui";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
@@ -22,10 +23,11 @@ import { getNightSealId } from "src/lib/game/seal";
 import {
   type GameState,
   NightAction,
+  type NightChoice,
   Phase,
   type Player,
   PotionKind,
-  type RoleId,
+  RoleId,
 } from "src/lib/game/types";
 import type { SealDictionary } from "src/lib/i18n/types";
 import { playDaybreak } from "src/lib/sound";
@@ -56,7 +58,10 @@ export interface NightCopy {
   decoyFidgets: string[];
   prompts: Record<NightAction, string>;
   wolfPackTitle: string;
-  wolfTallyTitle: string;
+  wolvesTitle: string;
+  /** Carries `{count}`. */
+  wolfTargetTag: string;
+  wolfAlone: string;
   seerIsWerewolf: string;
   seerIsNotWerewolf: string;
   witchHealUnknownChoice: string;
@@ -111,19 +116,20 @@ function NightRoleCard({ role, copy }: { role: RoleId; copy: NightCopy }) {
   );
 }
 
-/** One line of a read-only roster: a player, optionally with a vote count. */
+/** One line of a read-only roster. */
 interface RosterEntry {
   id: string;
   name: string;
-  /** Votes to show beside the name, or null for a plain roster. */
-  count: number | null;
 }
 
 /** What every acting role's turn needs to do its job. */
 interface ActTurnProps {
   actorId: string;
   copy: NightCopy;
-  onDone: () => void;
+  /** Label of the shared pass button. */
+  passLabel: string;
+  /** Hands the phone on, carrying the turn's choice when it has one. */
+  onDone: (choice?: NightChoice) => void;
 }
 
 /**
@@ -164,20 +170,20 @@ function getLivingPlayers(state: GameState): Player[] {
 }
 
 /**
- * Lists the players this actor is barred from choosing for this action.
+ * Lists the players this actor may aim the action at; barred players are left out.
  * @param state - The current game state.
  * @param action - The action being taken tonight.
  * @param actorId - The player holding the phone.
- * @returns The ids to disable, which today is only ever their own.
+ * @returns The living players the rules allow, in seating order.
  */
-function getSelfTargetBlockedIds(
+function getTargetablePlayers(
   state: GameState,
   action: NightAction,
   actorId: string,
-): string[] {
-  return getLivingPlayers(state)
-    .filter((player) => !canNightTarget(action, actorId, player.id))
-    .map((player) => player.id);
+): Player[] {
+  return getLivingPlayers(state).filter((player) =>
+    canNightTarget(state, action, actorId, player.id),
+  );
 }
 
 /**
@@ -192,7 +198,7 @@ function getNextPlayerName(state: GameState): string | null {
 }
 
 /**
- * A read-only, titled list of players — the wolf pack roster and the running vote tally.
+ * A read-only, titled list of players, such as the wolf pack's other members.
  * @param props.title - The heading, which also names the list for assistive tech.
  * @param props.entries - The players to list.
  * @returns The roster, or nothing when there is nothing to show yet.
@@ -214,7 +220,7 @@ function NightRoster({
     <section className={cn("gap-2", "grid content-start")}>
       <h3
         id={titleId}
-        className="font-medium text-phase-foreground/70 text-sm uppercase tracking-wide"
+        className="font-medium text-muted-foreground text-sm uppercase tracking-wide"
       >
         {title}
       </h3>
@@ -225,13 +231,9 @@ function NightRoster({
             key={entry.id}
             className={cn(
               "rounded-lg border border-phase-border px-4 py-3 text-base",
-              "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2",
             )}
           >
             <span className="wrap-anywhere">{entry.name}</span>
-            {entry.count === null ? null : (
-              <Badge variant="secondary">{entry.count}</Badge>
-            )}
           </li>
         ))}
       </ul>
@@ -240,88 +242,134 @@ function NightRoster({
 }
 
 /**
- * The living players, as tap targets big enough for a phone in a dark room.
+ * Players as tap targets big enough for a phone in a dark room.
  * @param props.players - Everyone who may be chosen.
- * @param props.disabledIds - Players this role may not choose tonight.
+ * @param props.disabledIds - Players this role may not choose tonight, shown but inert.
+ * @param props.selectedId - The picked player when the list is a pick-then-confirm list; omit for tap-to-choose.
+ * @param props.tags - Short text to show on a player's row, keyed by player id.
  * @param props.onChoose - Called with the chosen player's id.
  * @returns The choice list.
  */
 function NightChoiceList({
   players,
-  disabledIds,
+  disabledIds = [],
+  selectedId,
+  tags = {},
   onChoose,
 }: {
   players: Player[];
-  disabledIds: string[];
+  disabledIds?: string[];
+  selectedId?: string | null;
+  tags?: Record<string, string>;
   onChoose: (playerId: string) => void;
 }) {
   return (
     <ul className={cn("gap-2", "grid")}>
-      {players.map((player) => (
-        <li key={player.id}>
-          <Button
-            variant="outline"
-            size="lg"
-            disabled={disabledIds.includes(player.id)}
-            onClick={() => onChoose(player.id)}
-            // The Button base is nowrap; a long name has to wrap to stay readable.
-            className={cn(
-              "h-auto min-h-16 w-full border-phase-border py-4 text-base whitespace-normal wrap-anywhere",
-            )}
-          >
-            {player.name}
-          </Button>
-        </li>
-      ))}
+      {players.map((player) => {
+        const tag = tags[player.id];
+
+        return (
+          <li key={player.id}>
+            <Button
+              variant={selectedId === player.id ? "default" : "outline"}
+              size="lg"
+              disabled={disabledIds.includes(player.id)}
+              aria-pressed={
+                selectedId === undefined ? undefined : selectedId === player.id
+              }
+              onClick={() => onChoose(player.id)}
+              // The Button base is nowrap; a long name has to wrap to stay readable.
+              className={cn(
+                "h-auto min-h-16 w-full border-phase-border py-4 text-base whitespace-normal wrap-anywhere",
+                "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-left",
+              )}
+            >
+              <span>{player.name}</span>
+              {tag === undefined ? null : (
+                <Badge variant="secondary">{tag}</Badge>
+              )}
+            </Button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 /**
- * The pack's turn: who else is a wolf, how the pack has voted, and tonight's prey.
+ * The pack's turn: who else is a wolf, how many have chosen each target, and tonight's prey.
  * @param props.actorId - The wolf holding the phone.
  * @param props.copy - Night copy supplied by the server component.
- * @param props.onDone - Hands the phone on.
+ * @param props.passLabel - Label of the pass button.
+ * @param props.onDone - Hands the phone on with this wolf's vote.
  * @returns The wolf turn.
  */
-function NightWolfTurn({ actorId, copy, onDone }: ActTurnProps) {
+function NightWolfTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
   const state = useGame();
-  const { submitNightChoice } = useGameActions();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const livingPlayers = getLivingPlayers(state);
-  const disabledIds = livingPlayers
-    .filter(
-      (player) => !canNightTarget(NightAction.WolfVote, actorId, player.id),
-    )
-    .map((player) => player.id);
+  const packmateEntries = getPackMemberIds(state)
+    .filter((playerId) => playerId !== actorId)
+    .map((playerId) => ({
+      id: playerId,
+      name: getPlayerName(state, playerId),
+    }));
 
-  const packEntries = getPackMemberIds(state).map((playerId) => ({
-    id: playerId,
-    name: getPlayerName(state, playerId),
-    count: null,
-  }));
-  const tallyEntries = Object.entries(
-    getWolfVoteTally(state.night.wolfVotes),
-  ).map(([playerId, count]) => ({
-    id: playerId,
-    name: getPlayerName(state, playerId),
-    count,
-  }));
+  // Count only: the tally never says which wolf chose whom.
+  const tags = Object.fromEntries(
+    Object.entries(getWolfVoteTally(state.night.wolfVotes)).map(
+      ([playerId, count]) => [
+        playerId,
+        fillTemplate(copy.wolfTargetTag, { count: String(count) }),
+      ],
+    ),
+  );
 
-  /** Records this wolf's vote — the majority is only counted at dawn. */
-  function chooseVictim(targetId: string) {
-    submitNightChoice(actorId, NightAction.WolfVote, targetId);
-    onDone();
+  /** Records this wolf's vote and passes the phone in one step; the majority is counted at dawn. */
+  function passWithVote() {
+    if (selectedId === null) {
+      return;
+    }
+
+    onDone({
+      actorId,
+      action: NightAction.WolfVote,
+      targetId: selectedId,
+      secondTargetId: null,
+      potionKind: null,
+    });
   }
 
   return (
     <>
-      <NightRoster title={copy.wolfPackTitle} entries={packEntries} />
-      <NightRoster title={copy.wolfTallyTitle} entries={tallyEntries} />
+      <div className={cn("gap-3", "flex items-center")}>
+        <RoleAvatar
+          role={RoleId.Werewolf}
+          size={64}
+          label={copy.roleNames[RoleId.Werewolf]}
+        />
+        <h2 className="font-bold font-heading text-3xl leading-tight">
+          {copy.wolvesTitle}
+        </h2>
+      </div>
+
+      {packmateEntries.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{copy.wolfAlone}</p>
+      ) : (
+        <NightRoster title={copy.wolfPackTitle} entries={packmateEntries} />
+      )}
+
       <NightChoiceList
-        players={livingPlayers}
-        disabledIds={disabledIds}
-        onChoose={chooseVictim}
+        players={getTargetablePlayers(state, NightAction.WolfVote, actorId)}
+        selectedId={selectedId}
+        tags={tags}
+        onChoose={setSelectedId}
+      />
+
+      <NightPassButton
+        label={passLabel}
+        disabled={selectedId === null}
+        onPass={passWithVote}
       />
     </>
   );
@@ -348,12 +396,7 @@ function NightInspectTurn({ actorId, copy, onDone }: ActTurnProps) {
   if (inspectedId === null) {
     return (
       <NightChoiceList
-        players={getLivingPlayers(state)}
-        disabledIds={getSelfTargetBlockedIds(
-          state,
-          NightAction.Inspect,
-          actorId,
-        )}
+        players={getTargetablePlayers(state, NightAction.Inspect, actorId)}
         onChoose={inspect}
       />
     );
@@ -372,7 +415,7 @@ function NightInspectTurn({ actorId, copy, onDone }: ActTurnProps) {
 
       <Button
         size="lg"
-        onClick={onDone}
+        onClick={() => onDone()}
         className={cn(
           "h-auto min-h-16 w-full bg-phase text-base text-phase-foreground",
         )}
@@ -512,12 +555,7 @@ function NightPotionTurn({ actorId, copy, onDone }: ActTurnProps) {
     return (
       <>
         <NightChoiceList
-          players={getLivingPlayers(state)}
-          disabledIds={getSelfTargetBlockedIds(
-            state,
-            NightAction.Potion,
-            actorId,
-          )}
+          players={getTargetablePlayers(state, NightAction.Potion, actorId)}
           onChoose={(targetId) => {
             setPoisonTargetId(targetId);
             setStage(WitchStage.ConfirmPoison);
@@ -666,12 +704,7 @@ function NightMarkTurn({ actorId, copy, onDone }: ActTurnProps) {
   return (
     <>
       <NightChoiceList
-        players={getLivingPlayers(state)}
-        disabledIds={getSelfTargetBlockedIds(
-          state,
-          NightAction.MarkTarget,
-          actorId,
-        )}
+        players={getTargetablePlayers(state, NightAction.MarkTarget, actorId)}
         onChoose={markTarget}
       />
 
@@ -679,7 +712,7 @@ function NightMarkTurn({ actorId, copy, onDone }: ActTurnProps) {
       <Button
         variant="ghost"
         size="lg"
-        onClick={onDone}
+        onClick={() => onDone()}
         className={cn("h-auto min-h-16 w-full whitespace-normal text-base")}
       >
         {copy.hunterSkip}
@@ -693,6 +726,7 @@ function NightMarkTurn({ actorId, copy, onDone }: ActTurnProps) {
  * @param props.action - The action the engine assigned this turn.
  * @param props.actorId - The player holding the phone.
  * @param props.copy - Night copy supplied by the server component.
+ * @param props.passLabel - Label of the pass button.
  * @param props.onDone - Hands the phone on.
  * @returns That role's turn.
  */
@@ -700,21 +734,64 @@ function NightActTurn({
   action,
   actorId,
   copy,
+  passLabel,
   onDone,
 }: ActTurnProps & { action: NightAction }) {
   switch (action) {
     case NightAction.WolfVote:
-      return <NightWolfTurn actorId={actorId} copy={copy} onDone={onDone} />;
+      return (
+        <NightWolfTurn
+          actorId={actorId}
+          copy={copy}
+          passLabel={passLabel}
+          onDone={onDone}
+        />
+      );
     case NightAction.Inspect:
-      return <NightInspectTurn actorId={actorId} copy={copy} onDone={onDone} />;
+      return (
+        <NightInspectTurn
+          actorId={actorId}
+          copy={copy}
+          passLabel={passLabel}
+          onDone={onDone}
+        />
+      );
     case NightAction.Protect:
-      return <NightProtectTurn actorId={actorId} copy={copy} onDone={onDone} />;
+      return (
+        <NightProtectTurn
+          actorId={actorId}
+          copy={copy}
+          passLabel={passLabel}
+          onDone={onDone}
+        />
+      );
     case NightAction.Potion:
-      return <NightPotionTurn actorId={actorId} copy={copy} onDone={onDone} />;
+      return (
+        <NightPotionTurn
+          actorId={actorId}
+          copy={copy}
+          passLabel={passLabel}
+          onDone={onDone}
+        />
+      );
     case NightAction.LinkLovers:
-      return <NightLoversTurn actorId={actorId} copy={copy} onDone={onDone} />;
+      return (
+        <NightLoversTurn
+          actorId={actorId}
+          copy={copy}
+          passLabel={passLabel}
+          onDone={onDone}
+        />
+      );
     case NightAction.MarkTarget:
-      return <NightMarkTurn actorId={actorId} copy={copy} onDone={onDone} />;
+      return (
+        <NightMarkTurn
+          actorId={actorId}
+          copy={copy}
+          passLabel={passLabel}
+          onDone={onDone}
+        />
+      );
   }
 }
 
@@ -753,7 +830,7 @@ function NightPassButton({
     <Button
       size="lg"
       disabled={disabled}
-      onClick={onPass}
+      onClick={() => onPass()}
       className={cn(
         "h-auto min-h-16 w-full bg-phase text-base text-phase-foreground whitespace-normal",
       )}
@@ -875,7 +952,7 @@ function NightTurnBody({
   copy: NightCopy;
   passLabel: string;
   isLastSeat: boolean;
-  onDone: () => void;
+  onDone: (choice?: NightChoice) => void;
 }) {
   const state = useGame();
   const role = state.players.find(
@@ -904,6 +981,7 @@ function NightTurnBody({
             action={turn.action}
             actorId={turn.playerId}
             copy={copy}
+            passLabel={passLabel}
             onDone={onDone}
           />
         </>
@@ -937,12 +1015,12 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
    * Called straight from the tap on purpose: the night resolves on this dispatch,
    * and phones refuse to play audio that no gesture asked for.
    */
-  function handleTurnDone(): void {
+  function handleTurnDone(choice?: NightChoice): void {
     if (isLastSeat) {
       playDaybreak();
     }
 
-    finishNightTurn();
+    finishNightTurn(choice);
   }
 
   return (

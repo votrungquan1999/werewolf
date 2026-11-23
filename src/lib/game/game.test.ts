@@ -216,6 +216,95 @@ describe("Feature: running a game through one reducer", () => {
       ]);
     });
 
+    it("should record the turn's choice and pass the phone on in the same step", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Night,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+        ],
+        nightOrderIds: ["p1", "p2", "p3"],
+        nightCursor: 0,
+      };
+
+      const next = gameReducer(state, {
+        type: ActionType.FinishNightTurn,
+        choice: {
+          actorId: "p1",
+          action: NightAction.WolfVote,
+          targetId: "p2",
+          secondTargetId: null,
+          potionKind: null,
+        },
+      });
+
+      expect(next.night.wolfVotes).toEqual({ p1: "p2" });
+      expect(next.nightCursor).toBe(1);
+    });
+
+    it("should not pass the phone on when the turn's choice changes nothing", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Night,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+        ],
+        nightOrderIds: ["p1", "p2", "p3"],
+        nightCursor: 0,
+      };
+
+      const next = gameReducer(state, {
+        type: ActionType.FinishNightTurn,
+        choice: {
+          actorId: "p1",
+          action: NightAction.WolfVote,
+          targetId: null,
+          secondTargetId: null,
+          potionKind: null,
+        },
+      });
+
+      expect(next.nightCursor).toBe(0);
+    });
+
+    it("should apply the last seat's choice before the night resolves", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Night,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Villager, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Villager, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Werewolf, isAlive: true },
+        ],
+        nightOrderIds: ["p1", "p2", "p3", "p4"],
+        nightCursor: 3,
+      };
+
+      const next = gameReducer(state, {
+        type: ActionType.FinishNightTurn,
+        choice: {
+          actorId: "p4",
+          action: NightAction.WolfVote,
+          targetId: "p1",
+          secondTargetId: null,
+          potionKind: null,
+        },
+      });
+
+      expect(next.phase).toBe(Phase.Dawn);
+      expect(next.dawnDeaths).toEqual([
+        { playerId: "p1", cause: DeathCause.WolfAttack },
+      ]);
+    });
+
     it("should drop the table into nightfall as the last player finishes their reveal", () => {
       const state: GameState = {
         ...createInitialState(),

@@ -162,17 +162,28 @@ const SELF_TARGETING_ACTIONS: ReadonlySet<NightAction> = new Set([
 
 /**
  * Checks whether a player may point their night action at somebody.
+ * @param state - The current game state.
  * @param action - The action being taken tonight.
  * @param actorId - The player whose turn it is.
  * @param targetId - The player they are considering.
  * @returns Whether that pairing is a legal choice.
  */
 export function canNightTarget(
+  state: GameState,
   action: NightAction,
   actorId: string,
   targetId: string,
 ): boolean {
-  return targetId !== actorId || SELF_TARGETING_ACTIONS.has(action);
+  if (targetId === actorId) {
+    return SELF_TARGETING_ACTIONS.has(action);
+  }
+
+  // The pack never bites its own.
+  if (action === NightAction.WolfVote) {
+    return !getPackMemberIds(state).includes(targetId);
+  }
+
+  return true;
 }
 
 /**
