@@ -69,6 +69,9 @@ export interface NightCopy {
   seerResultTitle: string;
   seerIsWerewolf: string;
   seerIsNotWerewolf: string;
+  doctorTitle: string;
+  tagYou: string;
+  tagSavedLast: string;
   witchHealUnknownChoice: string;
   witchPoisonChoice: string;
   witchNoPotionChoice: string;
@@ -489,30 +492,64 @@ function NightInspectTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
 /**
  * The doctor's turn: shield one player, but never last night's pick twice running.
  * @param props.actorId - The doctor holding the phone.
- * @param props.onDone - Hands the phone on.
+ * @param props.copy - Night copy supplied by the server component.
+ * @param props.passLabel - Label of the pass button.
+ * @param props.onDone - Hands the phone on with the chosen shield.
  * @returns The doctor turn.
  */
-function NightProtectTurn({ actorId, onDone }: ActTurnProps) {
+function NightProtectTurn({ actorId, copy, passLabel, onDone }: ActTurnProps) {
   const state = useGame();
-  const { submitNightChoice } = useGameActions();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const livingPlayers = getLivingPlayers(state);
   const disabledIds = livingPlayers
     .filter((player) => !canDoctorProtect(state, player.id))
     .map((player) => player.id);
 
-  /** Records tonight's shield; whether it mattered is settled at dawn. */
-  function protectPlayer(targetId: string) {
-    submitNightChoice(actorId, NightAction.Protect, targetId);
-    onDone();
+  // Last night's pick is tagged after the doctor's own row, so it wins when both are the same row.
+  const tags: Record<string, string> = { [actorId]: copy.tagYou };
+  if (state.lastProtectedId !== null) {
+    tags[state.lastProtectedId] = copy.tagSavedLast;
+  }
+
+  /** Records tonight's shield and passes in one step; whether it mattered is settled at dawn. */
+  function passWithShield() {
+    if (selectedId === null) {
+      return;
+    }
+
+    onDone({
+      actorId,
+      action: NightAction.Protect,
+      targetId: selectedId,
+      secondTargetId: null,
+      potionKind: null,
+    });
   }
 
   return (
-    <NightChoiceList
-      players={livingPlayers}
-      disabledIds={disabledIds}
-      onChoose={protectPlayer}
-    />
+    <>
+      <NightTurnHeading
+        role={RoleId.Doctor}
+        title={copy.doctorTitle}
+        body={copy.prompts[NightAction.Protect]}
+        copy={copy}
+      />
+
+      <NightChoiceList
+        players={livingPlayers}
+        disabledIds={disabledIds}
+        selectedId={selectedId}
+        tags={tags}
+        onChoose={setSelectedId}
+      />
+
+      <NightPassButton
+        label={passLabel}
+        disabled={selectedId === null}
+        onPass={passWithShield}
+      />
+    </>
   );
 }
 
@@ -1036,9 +1073,10 @@ function NightTurnBody({
         />
       ) : (
         <>
-          {/* Wolf and seer turns show their prompt under their own titled heading. */}
+          {/* Turns with a titled heading show their prompt under it. */}
           {turn.action === NightAction.WolfVote ||
-          turn.action === NightAction.Inspect ? null : (
+          turn.action === NightAction.Inspect ||
+          turn.action === NightAction.Protect ? null : (
             <p className="text-lg leading-relaxed">
               {copy.prompts[turn.action]}
             </p>

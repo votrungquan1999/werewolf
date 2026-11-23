@@ -163,7 +163,12 @@ export interface NightDictionary {
   /** `{name}` = the picked player. */
   seerCheckNamed: string;
   seerResultTitle: string;
+  doctorTitle: string;
   doctorPrompt: string;
+  /** Tag on the doctor's own row. */
+  tagYou: string;
+  /** Tag on the row the doctor may not save again tonight. */
+  tagSavedLast: string;
   witchPrompt: string;
   /** Used when the pack has not voted yet, so the victim has no name to show. */
   witchHealUnknownChoice: string;

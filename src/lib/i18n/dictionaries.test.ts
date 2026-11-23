@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 
 // The wolves' prompt addresses the pack, not the card, so it is left out.
 const promptedRoles: Array<[RoleId, keyof NightDictionary]> = [
-  [RoleId.Doctor, "doctorPrompt"],
   [RoleId.Witch, "witchPrompt"],
   [RoleId.Hunter, "hunterPrompt"],
   [RoleId.Cupid, "cupidPrompt"],
@@ -15,6 +14,7 @@ const promptedRoles: Array<[RoleId, keyof NightDictionary]> = [
 // Turns that open with a title name the card before a colon.
 const titledRoles: Array<[RoleId, keyof NightDictionary]> = [
   [RoleId.Seer, "seerTitle"],
+  [RoleId.Doctor, "doctorTitle"],
 ];
 
 describe("Dictionaries", () => {

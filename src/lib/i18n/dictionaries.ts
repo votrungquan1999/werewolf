@@ -103,8 +103,10 @@ const vietnamese: Dictionary = {
     seerResultTitle: "Kết quả của Tiên Tri",
     seerPrompt:
       "Bạn chỉ biết người đó có phải sói hay không, không biết vai cụ thể.",
-    doctorPrompt:
-      "Bảo Vệ, chọn một người để bảo vệ đêm nay. Được tự bảo vệ mình, nhưng không được bảo vệ lại người đêm qua.",
+    doctorTitle: "Bảo Vệ: cứu một người",
+    tagYou: "bạn",
+    tagSavedLast: "đã cứu đêm qua",
+    doctorPrompt: "Được tự cứu mình, nhưng không cứu lại người đêm qua.",
     witchPrompt:
       "Phù Thủy, cứu nạn nhân đêm nay hoặc đầu độc một người — một đêm chỉ được một trong hai. Mỗi bình dùng một lần cả ván.",
     witchHealUnknownChoice: "Cứu nạn nhân của Sói đêm nay",
@@ -319,8 +321,10 @@ const english: Dictionary = {
     seerResultTitle: "Seer's result",
     seerPrompt:
       "You only learn whether they are a werewolf, not their exact role.",
-    doctorPrompt:
-      "Doctor, choose who to protect tonight. You may protect yourself, but not whoever you protected last night.",
+    doctorTitle: "Doctor: save one player",
+    tagYou: "you",
+    tagSavedLast: "saved last night",
+    doctorPrompt: "You may save yourself, but not last night's pick again.",
     witchPrompt:
       "Witch, heal tonight's victim or poison someone — never both in one night. Each potion works once per game.",
     witchHealUnknownChoice: "Save whoever the wolves take tonight",
