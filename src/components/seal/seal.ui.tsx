@@ -2,7 +2,7 @@
 
 import { ChevronsRight, Moon } from "lucide-react";
 import { type PointerEvent, type ReactNode, useRef, useState } from "react";
-import { useGameActions } from "src/components/game/game.state";
+import { useGame, useGameActions } from "src/components/game/game.state";
 import { PlayerName } from "src/components/game/game.ui";
 import type { SealDictionary } from "src/lib/i18n/types";
 import { cn } from "src/lib/utils";
@@ -32,7 +32,7 @@ function NameTemplate({ template, name }: { template: string; name: string }) {
 /**
  * The sealed envelope for one player, and their letter once it is opened.
  *
- * The caller renders it with `key={sealId}` so one player's open letter cannot carry over to the next.
+ * Open means the saved game's open envelope is this one, so a leftover id never opens another player's.
  * @param props.sealId - Which envelope this is, as named by `seal.ts`.
  * @param props.ownerName - Who the envelope is addressed to.
  * @param props.nextLine - What the sealed face says about the phone's next stop.
@@ -53,11 +53,11 @@ export function SealGate({
   copy: SealDictionary;
   children: ReactNode;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  // Open-ness lives in the saved game, so a refresh brings back the same view.
+  const isOpen = useGame().openSealId === sealId;
   const { openSeal } = useGameActions();
 
   function open(): void {
-    setIsOpen(true);
     openSeal(sealId);
   }
 

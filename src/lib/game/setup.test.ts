@@ -129,12 +129,17 @@ describe("Feature: Setting up a game", () => {
   });
 
   describe("Scenario: A new deal starts with every envelope sealed", () => {
-    it("should clear the opened-envelope marks of the earlier deal", () => {
-      const marked = { ...createReadyTable(), openedSeals: ["reveal:p1"] };
+    it("should clear the opened-envelope marks and the open envelope of the earlier deal", () => {
+      const marked = {
+        ...createReadyTable(),
+        openedSeals: ["reveal:p1"],
+        openSealId: "reveal:p1",
+      };
 
       const dealt = dealRoles(marked, 42);
 
       expect(dealt.openedSeals).toEqual([]);
+      expect(dealt.openSealId).toBeNull();
     });
   });
 

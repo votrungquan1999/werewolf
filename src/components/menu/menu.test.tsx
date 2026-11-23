@@ -60,6 +60,7 @@ function parkLiveGame(): void {
     pendingHeartbreakId: null,
     winner: null,
     openedSeals: [],
+    openSealId: null,
   };
 
   saveGame(live);

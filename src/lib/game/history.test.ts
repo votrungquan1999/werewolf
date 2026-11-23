@@ -38,6 +38,32 @@ describe("Feature: taking back a mis-tap", () => {
   });
 
   describe("Scenario: an envelope is opened", () => {
+    it("should remember which envelope is open, with no undo step", () => {
+      const history = createHistory(createInitialState());
+
+      const opened = historyReducer(history, {
+        type: ActionType.OpenSeal,
+        sealId: "reveal:p1",
+      });
+
+      expect(opened.present.openSealId).toBe("reveal:p1");
+      expect(canUndo(opened)).toBe(false);
+    });
+
+    it("should open an envelope again when it is marked but closed", () => {
+      const history = createHistory({
+        ...createInitialState(),
+        openedSeals: ["reveal:p1"],
+      });
+
+      const opened = historyReducer(history, {
+        type: ActionType.OpenSeal,
+        sealId: "reveal:p1",
+      });
+
+      expect(opened.present.openSealId).toBe("reveal:p1");
+    });
+
     it("should record the mark without making an undo step", () => {
       const history = createHistory(createInitialState());
 

@@ -191,6 +191,8 @@ export interface GameState {
    * A mark outlives Undo and refresh so the next holder can see the seal was already opened.
    */
   openedSeals: string[];
+  /** The envelope whose letter is on screen now, so a refresh brings back exactly that view. */
+  openSealId: string | null;
 }
 
 /** Discriminates every action the reducer accepts. */

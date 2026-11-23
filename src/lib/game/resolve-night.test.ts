@@ -70,6 +70,7 @@ function createState(
     pendingHeartbreakId: null,
     winner: null,
     openedSeals: [],
+    openSealId: null,
     ...overrides,
   };
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { type RenderResult, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameProvider } from "src/components/game/game.state";
 import { Reveal } from "src/components/reveal/reveal";
@@ -9,6 +9,7 @@ import { createInitialState } from "src/lib/game/setup";
 import { Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
+import type { Dictionary } from "src/lib/i18n/types";
 import { beforeEach, describe, expect, it } from "vitest";
 
 const dict = getDictionary(Locale.En);
@@ -19,9 +20,9 @@ type User = ReturnType<typeof userEvent.setup>;
  * Parks a dealt three-player game on the reveal screen and renders it.
  *
  * The provider resumes from storage at mount, so the game must be written first.
- * @returns Nothing; the screen is mounted into the test DOM.
+ * @returns The render, so a test can throw it away and remount.
  */
-function renderRevealScreen(): void {
+function renderRevealScreen(): RenderResult {
   saveGame({
     ...createInitialState(),
     phase: Phase.RoleReveal,
@@ -32,9 +33,24 @@ function renderRevealScreen(): void {
     ],
   });
 
-  render(
+  return render(
     <GameProvider>
       <Reveal dict={dict} />
+    </GameProvider>,
+  );
+}
+
+/**
+ * Throws the mounted screen away and mounts a fresh one over the same saved game,
+ * like a refresh; with another dictionary it stands in for a language switch.
+ * @param mounted - The render to throw away.
+ * @param withDict - The dictionary the fresh screen speaks.
+ */
+function remount(mounted: RenderResult, withDict: Dictionary): void {
+  mounted.unmount();
+  render(
+    <GameProvider>
+      <Reveal dict={withDict} />
     </GameProvider>,
   );
 }
@@ -159,6 +175,50 @@ describe("Feature: each player opens their own envelope", () => {
       );
 
       expect(loadGame()?.phase).toBe(Phase.Nightfall);
+    });
+  });
+
+  describe("Scenario: a refresh brings back the envelope as it was left", () => {
+    it("should still show the card after the screen is rebuilt, with no new swipe", async () => {
+      const user = userEvent.setup();
+      const mounted = renderRevealScreen();
+      await swipeOpen(user, "An");
+
+      remount(mounted, dict);
+
+      expect(screen.getByRole("heading", { name: "Seer" })).toBeInTheDocument();
+      expect(screen.getByText(dict.roles.seer.description)).toBeInTheDocument();
+      expect(screen.getByText("Village team")).toBeInTheDocument();
+    });
+
+    it("should show the card in Vietnamese after a language switch", async () => {
+      const user = userEvent.setup();
+      const mounted = renderRevealScreen();
+      await swipeOpen(user, "An");
+      const viDict = getDictionary(Locale.Vi);
+
+      remount(mounted, viDict);
+
+      expect(
+        screen.getByRole("heading", { name: viDict.roles.seer.name }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(viDict.reveal.team.village)).toBeInTheDocument();
+    });
+
+    it("should leave an envelope that was never opened sealed", async () => {
+      const user = userEvent.setup();
+      const mounted = renderRevealScreen();
+      await swipeOpen(user, "An");
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+
+      remount(mounted, dict);
+
+      expect(
+        screen.getByRole("button", { name: "Swipe to open Bình's letter" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "Werewolf" })).toBeNull();
     });
   });
 });

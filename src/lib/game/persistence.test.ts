@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { loadGame, saveGame } from "src/lib/game/persistence";
+import { loadGame, STORAGE_KEY, saveGame } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
 import { type GameState, Phase, RoleId } from "src/lib/game/types";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -25,6 +25,28 @@ describe("Feature: resuming an interrupted game", () => {
       saveGame(state);
 
       expect(loadGame()).toEqual(state);
+    });
+  });
+
+  describe("Scenario: the saved envelope marks are damaged", () => {
+    it("should load an open envelope that no mark backs as closed", () => {
+      saveGame({
+        ...createInitialState(),
+        openedSeals: ["reveal:p1"],
+        openSealId: "reveal:p9",
+      });
+
+      expect(loadGame()?.openSealId).toBeNull();
+      expect(loadGame()?.openedSeals).toEqual(["reveal:p1"]);
+    });
+
+    it("should ignore a save whose marks are not a list of ids", () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ ...createInitialState(), openedSeals: "reveal:p1" }),
+      );
+
+      expect(loadGame()).toBeNull();
     });
   });
 });

@@ -161,9 +161,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         revoteCandidateIds: [],
       };
     case ActionType.OpenSeal:
-      return state.openedSeals.includes(action.sealId)
-        ? state
-        : { ...state, openedSeals: [...state.openedSeals, action.sealId] };
+      // A mark alone is not enough to skip: after Undo it is set while the envelope is closed.
+      if (
+        state.openedSeals.includes(action.sealId) &&
+        state.openSealId === action.sealId
+      ) {
+        return state;
+      }
+
+      return {
+        ...state,
+        openedSeals: [...new Set([...state.openedSeals, action.sealId])],
+        openSealId: action.sealId,
+      };
     case ActionType.ResetGame:
       return resetGame(state);
     default:

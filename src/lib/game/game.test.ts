@@ -130,6 +130,33 @@ describe("Feature: running a game through one reducer", () => {
     });
   });
 
+  describe("Scenario: an envelope is opened again after Undo closed it", () => {
+    it("should reopen a sealed-but-marked envelope and ignore a repeat while it is open", () => {
+      const marked: GameState = {
+        ...createInitialState(),
+        phase: Phase.Night,
+        openedSeals: ["p1:1"],
+        openSealId: null,
+      };
+
+      const reopened = gameReducer(marked, {
+        type: ActionType.OpenSeal,
+        sealId: "p1:1",
+      });
+
+      // The mark alone must not skip: Undo leaves it set while the envelope is shut.
+      expect(reopened.openSealId).toBe("p1:1");
+      expect(reopened.openedSeals).toEqual(["p1:1"]);
+
+      const repeated = gameReducer(reopened, {
+        type: ActionType.OpenSeal,
+        sealId: "p1:1",
+      });
+
+      expect(repeated).toBe(reopened);
+    });
+  });
+
   describe("Scenario: the day ends without a winner", () => {
     it("should hold on a nightfall beat before the next night, counting it once", () => {
       const state: GameState = {

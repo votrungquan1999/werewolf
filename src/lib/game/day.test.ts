@@ -59,6 +59,7 @@ function createDayState(overrides: Partial<GameState> = {}): GameState {
     pendingHeartbreakId: null,
     winner: null,
     openedSeals: [],
+    openSealId: null,
     ...overrides,
   };
 }

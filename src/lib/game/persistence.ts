@@ -41,7 +41,34 @@ export function loadGame(): GameState | null {
     return null;
   }
 
-  return parsed as GameState;
+  // The marks are spread and searched on every Undo and render, so a damaged list must not get through.
+  const { openedSeals, openSealId } = parsed as {
+    openedSeals: unknown;
+    openSealId: unknown;
+  };
+  if (!isStringArray(openedSeals)) {
+    return null;
+  }
+
+  // An open envelope with no mark behind it is stale; show it sealed rather than trust it.
+  const isOpenSealBacked =
+    typeof openSealId === "string" && openedSeals.includes(openSealId);
+
+  return {
+    ...(parsed as GameState),
+    openSealId: isOpenSealBacked ? openSealId : null,
+  };
+}
+
+/**
+ * Narrows a value to a list of strings.
+ * @param value - Anything, e.g. a field of a parsed save
+ * @returns True for an array whose every item is a string
+ */
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
 }
 
 /**

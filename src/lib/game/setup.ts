@@ -68,6 +68,7 @@ export function createInitialState(): GameState {
     pendingHeartbreakId: null,
     winner: null,
     openedSeals: [],
+    openSealId: null,
   };
 }
 
@@ -246,6 +247,7 @@ export function dealRoles(state: GameState, seed: number): GameState {
     phase: Phase.RoleReveal,
     revealIndex: 0,
     openedSeals: [],
+    openSealId: null,
     seed,
   };
 }
