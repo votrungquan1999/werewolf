@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 
-import { render, screen, within } from "@testing-library/react";
+import {
+  type RenderResult,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameProvider } from "src/components/game/game.state";
 import { GameMenu } from "src/components/menu/menu";
@@ -51,9 +56,10 @@ function parkNightGame(
 
 /**
  * Renders the night screen over the parked game.
+ * @returns The render, so a test can throw it away and remount.
  */
-function renderNight(): void {
-  render(
+function renderNight(): RenderResult {
+  return render(
     <GameProvider>
       <Night
         dict={dictionary}
@@ -81,6 +87,26 @@ async function swipeOpen(
     { coords: { clientX: 200 } },
     { keys: "[/MouseLeft]" },
   ]);
+}
+
+/**
+ * Throws the mounted screen away and mounts a fresh one over the same saved game, like a refresh.
+ * @param mounted - The render to throw away.
+ */
+function remount(mounted: RenderResult): void {
+  mounted.unmount();
+  renderNight();
+}
+
+/**
+ * Takes the game back one step through the options menu, the only place Undo lives.
+ * @param user - The user-event session driving the page.
+ */
+async function undoViaMenu(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<void> {
+  await user.click(screen.getByRole("button", { name: "Options" }));
+  await user.click(screen.getByRole("button", { name: "Undo" }));
 }
 
 describe("Night", () => {
@@ -302,5 +328,62 @@ describe("Night", () => {
     expect(
       screen.getByRole("button", { name: "Swipe to open Bob's letter" }),
     ).toBeInTheDocument();
+  });
+
+  describe("an envelope that was opened before", () => {
+    it("shows the neutral mark on a parked game whose mark is saved and whose envelope is closed", () => {
+      parkNightGame(
+        [
+          ["Alice", RoleId.Villager],
+          ["Bob", RoleId.Seer],
+        ],
+        0,
+        { openedSeals: ["night:1:alice"], openSealId: null },
+      );
+      renderNight();
+
+      expect(screen.getByText("Seal already opened")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Nothing to do tonight"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("reaches its player sealed again with the neutral mark after Undo", async () => {
+      // A villager's finish is a single dispatch, so one Undo lands on Alice's envelope.
+      parkNightGame([
+        ["Alice", RoleId.Villager],
+        ["Bob", RoleId.Seer],
+      ]);
+      const user = userEvent.setup();
+      renderNight();
+      await swipeOpen(user, "Alice");
+      await user.click(screen.getByRole("button", { name: "Continue" }));
+
+      await undoViaMenu(user);
+
+      expect(screen.getByText("Seal already opened")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Nothing to do tonight"),
+      ).not.toBeInTheDocument();
+
+      await swipeOpen(user, "Alice");
+
+      expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
+    });
+
+    it("keeps an opened turn showing, with no mark, after a refresh", async () => {
+      parkNightGame([
+        ["Alice", RoleId.Villager],
+        ["Bob", RoleId.Seer],
+      ]);
+      const user = userEvent.setup();
+      const mounted = renderNight();
+      await swipeOpen(user, "Alice");
+
+      remount(mounted);
+
+      expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
+      expect(screen.queryByText("Seal already opened")).not.toBeInTheDocument();
+    });
   });
 });
