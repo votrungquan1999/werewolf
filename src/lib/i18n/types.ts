@@ -19,6 +19,8 @@ export interface CommonDictionary {
   players: string;
   alive: string;
   dead: string;
+  /** BCP 47 tag `Intl.ListFormat` joins name lists with. */
+  listLocale: string;
 }
 
 /** The strip above every screen. */
@@ -231,15 +233,27 @@ export interface NightResultsDictionary {
 export interface DawnDictionary {
   /** `{number}` = which day is starting. */
   title: string;
+  /** The dawn screen's headline, above the news card. */
+  newsTitle: string;
   revealDeaths: string;
   nobodyDied: string;
-  /** `{name}` = the player who died. */
-  playerDied: string;
+  /** `{names}` = the players who died, joined as a list. */
+  playersDied: string;
+  /** Said under the deaths: the report never names a cause. */
+  unknownCause: string;
+  /** `{count}` = how many players are alive. */
+  aliveCount: string;
+  startDebate: string;
 }
 
 /** The open day vote and the revote a tie forces. */
 export interface DayDictionary {
+  /** `{number}` = which day it is. */
+  dayTitle: string;
+  /** The header's stage label while the village argues. */
   discussTitle: string;
+  /** Sits under the countdown. */
+  discussLeft: string;
   /** `{minutes}`:`{seconds}` are filled separately by the countdown. */
   discussAddMinute: string;
   discussSkip: string;

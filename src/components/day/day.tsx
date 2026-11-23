@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import { DayVote } from "src/components/day/day.ui";
 import type { Dictionary } from "src/lib/i18n/types";
 
 interface DayProps {
   dict: Dictionary;
+  menu?: ReactNode;
 }
 
 /**
@@ -12,12 +14,15 @@ interface DayProps {
  * than as composed children. The vote needs no identity gate — it is open, and the
  * screen holds nothing the table has not already heard out loud.
  * @param props.dict - Every UI string for the active language
+ * @param props.menu - The options menu, shown by the header
  * @returns The day screen, gated on the day phase by its client shell
  */
-export function Day({ dict }: DayProps) {
+export function Day({ dict, menu }: DayProps) {
   return (
     <DayVote
+      dayTitleTemplate={dict.day.dayTitle}
       discussTitle={dict.day.discussTitle}
+      discussLeft={dict.day.discussLeft}
       discussAddMinute={dict.day.discussAddMinute}
       discussSkip={dict.day.discussSkip}
       discussTimeUp={dict.day.discussTimeUp}
@@ -33,6 +38,7 @@ export function Day({ dict }: DayProps) {
       tiedAgainTitle={dict.day.tiedAgainTitle}
       confirmLabel={dict.common.confirm}
       nightfallLabel={dict.common.continue}
+      menu={menu}
     />
   );
 }

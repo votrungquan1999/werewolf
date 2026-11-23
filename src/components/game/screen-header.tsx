@@ -1,4 +1,4 @@
-import { Moon } from "lucide-react";
+import { type LucideIcon, Moon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "src/lib/utils";
 
@@ -8,6 +8,7 @@ import { cn } from "src/lib/utils";
  * @param props.progress - Optional centred progress text, such as "Step 1 / 2".
  * @param props.leading - Optional control that takes the label's place, such as a Back button.
  * @param props.menu - Optional options menu, pinned to the right.
+ * @param props.icon - Optional icon beside the label; the moon unless the screen is a daytime one.
  * @returns The header row.
  */
 export function ScreenHeader({
@@ -15,11 +16,13 @@ export function ScreenHeader({
   progress,
   leading,
   menu,
+  icon: Icon = Moon,
 }: {
   label?: string;
   progress?: string;
   leading?: ReactNode;
   menu?: ReactNode;
+  icon?: LucideIcon;
 }) {
   return (
     <header
@@ -32,7 +35,7 @@ export function ScreenHeader({
         {leading ??
           (label === undefined ? null : (
             <div className={cn("gap-2.5", "flex items-center")}>
-              <Moon aria-hidden="true" className="size-5 text-phase-name" />
+              <Icon aria-hidden="true" className="size-5 text-phase-name" />
               <span className="font-heading font-bold text-xl">{label}</span>
             </div>
           ))}

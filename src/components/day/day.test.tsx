@@ -23,6 +23,7 @@ function parkDayGame(names: string[], werewolves: string[] = []): void {
   const state: GameState = {
     ...createInitialState(),
     phase: Phase.Day,
+    nightNumber: 1,
     players: names.map((name) => ({
       id: name,
       name,
@@ -82,6 +83,35 @@ describe("Day", () => {
     fireEvent.click(screen.getByRole("button", { name: "+1 minute" }));
 
     expect(screen.getByText("2:30")).toBeInTheDocument();
+  });
+
+  it("labels the debate in the header and, once time is up, says so in the ring in place of the clock until another minute is bought", () => {
+    vi.useFakeTimers();
+    parkDayGame(["Ann", "Ben", "Cara"]);
+
+    render(
+      <GameProvider>
+        <Day dict={dict} />
+      </GameProvider>,
+    );
+
+    expect(screen.getByText("Day 1")).toBeInTheDocument();
+    expect(screen.getByText("Debate")).toBeInTheDocument();
+    expect(screen.getByText("left")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(120_000);
+    });
+
+    expect(screen.getByText("Time is up")).toBeInTheDocument();
+    expect(screen.queryByText("0:00")).not.toBeInTheDocument();
+    // The screen never moves on by itself.
+    expect(screen.getByRole("button", { name: "Vote now" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "+1 minute" }));
+
+    expect(screen.getByText("1:00")).toBeInTheDocument();
+    expect(screen.queryByText("Time is up")).not.toBeInTheDocument();
   });
 
   it("keeps the tally hidden until every player has had the phone", async () => {

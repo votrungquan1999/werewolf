@@ -63,8 +63,14 @@ export default async function GamePage({ params }: GamePageProps) {
               dict={dictionary}
               menu={<GameMenu dict={dictionary} locale={locale} />}
             />
-            <Dawn dict={dictionary} />
-            <Day dict={dictionary} />
+            <Dawn
+              dict={dictionary}
+              menu={<GameMenu dict={dictionary} locale={locale} />}
+            />
+            <Day
+              dict={dictionary}
+              menu={<GameMenu dict={dictionary} locale={locale} />}
+            />
             <GameOver dict={dictionary} />
           </GameScreens>
         </GameShell>

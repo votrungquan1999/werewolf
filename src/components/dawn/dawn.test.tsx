@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Dawn } from "src/components/dawn/dawn";
+import { Day } from "src/components/day/day";
 import { GameProvider } from "src/components/game/game.state";
+import { GameMenu } from "src/components/menu/menu";
 import { saveGame } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
 import {
@@ -14,6 +17,7 @@ import {
 } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
+import { namedLine } from "src/tests/matchers";
 import { beforeEach, describe, expect, it } from "vitest";
 
 const dict = getDictionary(Locale.En);
@@ -48,41 +52,74 @@ function parkGameAtDawn(overrides: Partial<GameState>): void {
   });
 }
 
+/**
+ * Renders dawn and the day it hands over to under one provider, with the options menu.
+ */
+function renderDawnAndDay(): void {
+  const menu = <GameMenu dict={dict} locale={Locale.En} />;
+
+  render(
+    <GameProvider>
+      <Dawn dict={dict} menu={menu} />
+      <Day dict={dict} menu={menu} />
+    </GameProvider>,
+  );
+}
+
 describe("Dawn report", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("holds the night's dead back until the report is tapped open, then names them without saying how", () => {
+  it("holds the news back until tapped, then names the dead in one sentence without a cause, counts who is left and starts the debate", async () => {
     parkGameAtDawn({
       players: [
         makePlayer("p1", "Ann", RoleId.Werewolf, true),
         makePlayer("p2", "Bob", RoleId.Villager, false),
-        makePlayer("p3", "Cara", RoleId.Seer, true),
+        makePlayer("p3", "Cara", RoleId.Seer, false),
         makePlayer("p4", "Dan", RoleId.Villager, true),
         makePlayer("p5", "Eve", RoleId.Doctor, true),
+        makePlayer("p6", "Fay", RoleId.Villager, true),
       ],
-      dawnDeaths: [{ playerId: "p2", cause: DeathCause.WolfAttack }],
+      dawnDeaths: [
+        { playerId: "p2", cause: DeathCause.WolfAttack },
+        { playerId: "p3", cause: DeathCause.WitchPoison },
+      ],
     });
+    const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Dawn dict={dict} />
-      </GameProvider>,
+    renderDawnAndDay();
+
+    expect(screen.getByText("Morning, day 1")).toBeInTheDocument();
+    expect(screen.getByText("Morning has come")).toBeInTheDocument();
+    expect(screen.queryByText(namedLine("Bob and Cara died."))).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: "Tap to see who died" }),
     );
 
-    expect(screen.queryByText("Bob died in the night.")).toBeNull();
+    expect(
+      screen.getByText(namedLine("Bob and Cara died.")),
+    ).toBeInTheDocument();
+    // Naming the cause would out the lovers, so the report only admits it does not know.
+    expect(screen.getByText("Nobody knows how.")).toBeInTheDocument();
+    expect(screen.getByText("4 still alive")).toBeInTheDocument();
+    for (const name of ["Ann", "Dan", "Eve", "Fay"]) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
+    expect(screen.queryAllByRole("img")).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "Options" })).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tap to see who the night took" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Start the debate" }));
 
-    expect(screen.getByText("Bob died in the night.")).toBeInTheDocument();
-    // Naming the cause would out the lovers, so the report never explains a death.
-    expect(screen.queryByText("Torn apart by the werewolves.")).toBeNull();
+    expect(screen.getByText("2:00")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "+1 minute" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Morning has come")).toBeNull();
   });
 
-  it("offers the day only once the report has been opened on a quiet night", () => {
+  it("offers the debate only once the news has been opened on a quiet night, with the alive count and no cause line", async () => {
     parkGameAtDawn({
       players: [
         makePlayer("p1", "Ann", RoleId.Werewolf, true),
@@ -91,17 +128,16 @@ describe("Dawn report", () => {
       ],
       dawnDeaths: [],
     });
+    const user = userEvent.setup();
 
-    render(
-      <GameProvider>
-        <Dawn dict={dict} />
-      </GameProvider>,
-    );
+    renderDawnAndDay();
 
-    expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Start the debate" }),
+    ).toBeNull();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tap to see who the night took" }),
+    await user.click(
+      screen.getByRole("button", { name: "Tap to see who died" }),
     );
 
     expect(
@@ -109,6 +145,10 @@ describe("Dawn report", () => {
         "The sun is up and everyone is still here — nobody died.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
+    expect(screen.queryByText("Nobody knows how.")).toBeNull();
+    expect(screen.getByText("3 still alive")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start the debate" }),
+    ).toBeEnabled();
   });
 });

@@ -1,51 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { Sun } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
+import { NamedList, PlayerName } from "src/components/game/game.ui";
+import { ScreenHeader } from "src/components/game/screen-header";
 import { Button } from "src/components/ui/button";
-import { Card, CardContent } from "src/components/ui/card";
-import { Separator } from "src/components/ui/separator";
-import { type Death, Phase } from "src/lib/game/types";
+import { Phase } from "src/lib/game/types";
+import { fillTemplate } from "src/lib/i18n/fill-template";
 import { cn } from "src/lib/utils";
 
 /**
  * Every string the dawn report can render.
  *
- * Which death lines appear is runtime state, so the copy arrives as plain data
+ * Which names appear is runtime state, so the copy arrives as plain data
  * rather than composed children — the server still owns all the wording.
  */
 export interface DawnScreenProps {
   /** `{number}` = the day that is starting. */
   titleTemplate: string;
+  newsTitle: string;
   revealDeathsLabel: string;
   nobodyDiedLabel: string;
-  /** `{name}` = the player who died. */
-  playerDiedTemplate: string;
-  continueLabel: string;
+  /** `{names}` = the players who died. */
+  playersDiedTemplate: string;
+  unknownCauseLabel: string;
+  /** `{count}` = how many players are alive. */
+  aliveCountTemplate: string;
+  startDebateLabel: string;
+  /** The tag the death list is joined in. */
+  listLocale: string;
+  menu?: ReactNode;
 }
 
 /**
- * Fills one `{token}` placeholder in a copy string.
- * @param template - Copy holding the placeholder, e.g. `"Day {number}"`
- * @param token - The placeholder name, without braces
- * @param value - What to put in its place
- * @returns The finished line
- */
-function fillTemplate(template: string, token: string, value: string): string {
-  return template.replace(`{${token}}`, value);
-}
-
-/**
- * The morning report: who the night took.
+ * The morning news: who the night took and who is left.
  * @param props - Every string the report can render
  * @returns The dawn screen, or nothing when the game is not at dawn
  */
 export function DawnScreen({
   titleTemplate,
+  newsTitle,
   revealDeathsLabel,
   nobodyDiedLabel,
-  playerDiedTemplate,
-  continueLabel,
+  playersDiedTemplate,
+  unknownCauseLabel,
+  aliveCountTemplate,
+  startDebateLabel,
+  listLocale,
+  menu,
 }: DawnScreenProps) {
   const state = useGame();
   const { startDay } = useGameActions();
@@ -66,12 +69,27 @@ export function DawnScreen({
     return state.players.find((player) => player.id === playerId)?.name ?? "";
   }
 
+  const deadNames = state.dawnDeaths.map((death) => nameOf(death.playerId));
+  const aliveNames = state.players
+    .filter((player) => player.isAlive)
+    .map((player) => player.name);
+
   return (
-    <section className={cn("grid w-full gap-6 p-4")}>
-      {/* Plain text: a filled block matched the button below and read as tappable. */}
-      <h1 className={cn("text-2xl font-semibold tracking-tight")}>
-        {fillTemplate(titleTemplate, "number", String(state.nightNumber))}
-      </h1>
+    <section className={cn("grid w-full content-start gap-6 p-4")}>
+      <ScreenHeader
+        icon={Sun}
+        menu={menu}
+        label={fillTemplate(titleTemplate, {
+          number: String(state.nightNumber),
+        })}
+      />
+
+      <div className={cn("gap-3", "grid justify-items-center text-center")}>
+        <Sun aria-hidden="true" className={cn("size-16 text-phase-name")} />
+        <h1 className="font-bold font-heading text-3xl tracking-tight">
+          {newsTitle}
+        </h1>
+      </div>
 
       {!isRevealed && (
         <Button
@@ -87,38 +105,43 @@ export function DawnScreen({
 
       {isRevealed && (
         <>
-          <div className={cn("grid gap-4")}>
-            {state.dawnDeaths.length === 0 ? (
+          <div
+            className={cn(
+              "gap-2 rounded-xl border border-phase-border p-4 text-center",
+              "grid",
+            )}
+          >
+            {deadNames.length === 0 ? (
               <p className={cn("text-foreground text-lg")}>{nobodyDiedLabel}</p>
             ) : (
-              state.dawnDeaths.map((death: Death) => (
-                <Card
-                  key={`${death.playerId}-${death.cause}`}
-                  className={cn(
-                    "bg-card text-card-foreground ring-phase-border",
-                  )}
-                >
-                  <CardContent className={cn("grid gap-1")}>
-                    <p
-                      className={cn(
-                        "text-destructive text-lg font-semibold wrap-anywhere",
-                      )}
-                    >
-                      {fillTemplate(
-                        playerDiedTemplate,
-                        "name",
-                        nameOf(death.playerId),
-                      )}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
+              <>
+                <p className={cn("font-semibold text-destructive text-xl")}>
+                  <NamedList
+                    template={playersDiedTemplate}
+                    names={deadNames}
+                    listLocale={listLocale}
+                  />
+                </p>
+                <p className={cn("text-muted-foreground text-base")}>
+                  {unknownCauseLabel}
+                </p>
+              </>
             )}
+            <p className={cn("font-medium text-base")}>
+              {fillTemplate(aliveCountTemplate, {
+                count: String(aliveNames.length),
+              })}
+            </p>
+            <ul className={cn("flex flex-wrap justify-center gap-x-3 gap-y-1")}>
+              {aliveNames.map((name) => (
+                <li key={name} className={cn("text-base")}>
+                  <PlayerName>{name}</PlayerName>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <Separator className={cn("bg-phase-border")} />
-
-          {/* The day opens once the table has read the news — nothing else gates it. */}
+          {/* The debate opens once the table has read the news — nothing else gates it. */}
           <Button
             onClick={startDay}
             className={cn(
@@ -126,7 +149,7 @@ export function DawnScreen({
               "w-full",
             )}
           >
-            {continueLabel}
+            {startDebateLabel}
           </Button>
         </>
       )}

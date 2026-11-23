@@ -1,8 +1,10 @@
 "use client";
 
+import { Sun } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { NamedLine } from "src/components/game/game.ui";
+import { ScreenHeader } from "src/components/game/screen-header";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import {
@@ -35,12 +37,20 @@ const DISCUSSION_SECONDS = 120;
 /** What `dict.day.discussAddMinute` buys, in milliseconds. */
 const ONE_MINUTE_MS = 60_000;
 
+/** Ring geometry: radius in a 120-unit box, and the stroke length it implies. */
+const RING_RADIUS = 54;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 /** Well under a second, so the displayed second never visibly lags the clock. */
 const TICK_MS = 250;
 
 /** Every string the day screen renders, handed down by the server component. */
 export interface DayVoteProps {
+  /** `{number}` = which day it is. */
+  dayTitleTemplate: string;
   discussTitle: string;
+  /** Sits under the countdown. */
+  discussLeft: string;
   discussAddMinute: string;
   discussSkip: string;
   discussTimeUp: string;
@@ -63,6 +73,7 @@ export interface DayVoteProps {
   confirmLabel: string;
   /** Label on the control that ends the day and sends the table into the next night. */
   nightfallLabel: string;
+  menu?: ReactNode;
 }
 
 /**
@@ -121,7 +132,9 @@ export function DayVote(props: DayVoteProps) {
  * @returns The day screen for whichever stage the table is on
  */
 function DayScreen({
+  dayTitleTemplate,
   discussTitle,
+  discussLeft,
   discussAddMinute,
   discussSkip,
   discussTimeUp,
@@ -137,6 +150,7 @@ function DayScreen({
   tiedAgainTitle,
   confirmLabel,
   nightfallLabel,
+  menu,
 }: DayVoteProps) {
   const state = useGame();
   const { castDayVote, resolveDayVote, startNightfall } = useGameActions();
@@ -148,6 +162,8 @@ function DayScreen({
     () => Date.now() + DISCUSSION_SECONDS * 1000,
   );
   const [secondsLeft, setSecondsLeft] = useState(DISCUSSION_SECONDS);
+  // What a full ring stands for; it grows with each bought minute so the ring never overfills.
+  const [ringTotal, setRingTotal] = useState(DISCUSSION_SECONDS);
   // Who has held the phone is tracked here, not read back from the recorded votes:
   // an abstention records nothing, so the votes cannot say whose turn is spent.
   const [voterIndex, setVoterIndex] = useState(0);
@@ -185,7 +201,10 @@ function DayScreen({
 
     setDeadline(nextDeadline);
     // Set here too so the display jumps immediately instead of waiting for the next tick.
-    setSecondsLeft(getSecondsLeft(nextDeadline));
+    const nextLeft = getSecondsLeft(nextDeadline);
+    setSecondsLeft(nextLeft);
+    // A spent clock restarts on a full ring of the bought minute.
+    setRingTotal(secondsLeft === 0 ? nextLeft : Math.max(ringTotal, nextLeft));
   }
 
   // A tie sends the table round again, so the heading has to say which round this is.
@@ -258,28 +277,66 @@ function DayScreen({
     verdict = tieTitle;
   }
 
-  let heading = voteTitle;
-  if (stage === DayStage.Discuss) {
-    heading = discussTitle;
-  } else if (isRevote) {
-    heading = revoteTitle;
-  }
+  const heading = isRevote ? revoteTitle : voteTitle;
 
   return (
-    <section className={cn("w-full", "grid gap-6 p-4")}>
-      <h1 className="font-heading font-semibold text-2xl tracking-tight">
-        {heading}
-      </h1>
+    <section className={cn("w-full", "grid content-start gap-6 p-4")}>
+      <ScreenHeader
+        icon={Sun}
+        menu={menu}
+        label={dayTitleTemplate.replace("{number}", String(state.nightNumber))}
+        progress={stage === DayStage.Discuss ? discussTitle : undefined}
+      />
+
+      {stage !== DayStage.Discuss && (
+        <h1 className="font-heading font-semibold text-2xl tracking-tight">
+          {heading}
+        </h1>
+      )}
 
       {stage === DayStage.Discuss && (
         <div className={cn("gap-4", "grid justify-items-center")}>
-          <p className="font-heading font-semibold text-6xl tabular-nums tracking-tight">
-            {formatCountdown(secondsLeft)}
-          </p>
-
-          {secondsLeft === 0 && (
-            <p className="text-lg text-muted-foreground">{discussTimeUp}</p>
-          )}
+          <div className={cn("size-56", "relative grid place-items-center")}>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 120 120"
+              className={cn("-rotate-90 absolute inset-0 size-full")}
+            >
+              <circle
+                cx="60"
+                cy="60"
+                r={RING_RADIUS}
+                fill="none"
+                strokeWidth="8"
+                className="stroke-phase-border"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r={RING_RADIUS}
+                fill="none"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={RING_CIRCUMFERENCE}
+                strokeDashoffset={
+                  RING_CIRCUMFERENCE * (1 - secondsLeft / ringTotal)
+                }
+                className="stroke-phase-name"
+              />
+            </svg>
+            {secondsLeft === 0 ? (
+              <p className="px-6 text-center font-heading font-semibold text-2xl text-balance">
+                {discussTimeUp}
+              </p>
+            ) : (
+              <div className={cn("grid justify-items-center")}>
+                <p className="font-heading font-semibold text-5xl tabular-nums tracking-tight">
+                  {formatCountdown(secondsLeft)}
+                </p>
+                <p className="text-muted-foreground text-sm">{discussLeft}</p>
+              </div>
+            )}
+          </div>
 
           <div className={cn("gap-3", "grid w-full")}>
             <Button

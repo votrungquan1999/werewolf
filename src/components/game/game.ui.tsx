@@ -138,3 +138,41 @@ export function NamedLine({
     </>
   );
 }
+
+/**
+ * Renders copy built around one `{names}` placeholder, joining the names the way the language does.
+ * @param props.template - Dictionary copy containing `{names}` once.
+ * @param props.names - The players to list.
+ * @param props.listLocale - The BCP 47 tag the list is joined in, from `dict.common.listLocale`.
+ * @returns The sentence, with each name picked out.
+ */
+export function NamedList({
+  template,
+  names,
+  listLocale,
+}: {
+  template: string;
+  names: string[];
+  listLocale: string;
+}) {
+  const [before, after] = template.split("{names}");
+  const parts = new Intl.ListFormat(listLocale, {
+    type: "conjunction",
+  }).formatToParts(names);
+
+  return (
+    <>
+      {before}
+      {parts.map((part, index) =>
+        part.type === "element" ? (
+          // The parts are positional and never reorder.
+          // biome-ignore lint/suspicious/noArrayIndexKey: static output of one format call
+          <PlayerName key={index}>{part.value}</PlayerName>
+        ) : (
+          part.value
+        ),
+      )}
+      {after}
+    </>
+  );
+}
