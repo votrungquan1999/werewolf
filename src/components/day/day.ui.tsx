@@ -57,7 +57,12 @@ export interface DayVoteProps {
   voteTitle: string;
   revoteTitle: string;
   /** Carries `{name}` for the voter holding the phone. */
-  playerVotesFor: string;
+  voterTitle: string;
+  /** Carries `{name}` for the voter holding the phone. */
+  voterPrompt: string;
+  /** Carries `{current}` and `{total}`. */
+  voteCounterTemplate: string;
+  voteLockNote: string;
   /** Label on the control that passes the phone on without recording a vote. */
   skipVote: string;
   tallyTitle: string;
@@ -140,7 +145,10 @@ function DayScreen({
   discussTimeUp,
   voteTitle,
   revoteTitle,
-  playerVotesFor,
+  voterTitle,
+  voterPrompt,
+  voteCounterTemplate,
+  voteLockNote,
   skipVote,
   tallyTitle,
   votedOut,
@@ -214,7 +222,8 @@ function DayScreen({
   const currentVoterId = eligibleVoterIds[voterIndex] ?? null;
   const currentVoterName =
     currentVoterId === null ? "" : getPlayerName(state.players, currentVoterId);
-  const candidateIds = getVoteCandidateIds(state);
+  const candidateIds =
+    currentVoterId === null ? [] : getVoteCandidateIds(state, currentVoterId);
   const tally = getDayVoteTally(state.dayVotes);
   // Live from the votes until confirmed, then frozen in `closedVote`.
   let shownVote = closedVote;
@@ -285,7 +294,13 @@ function DayScreen({
         icon={Sun}
         menu={menu}
         label={dayTitleTemplate.replace("{number}", String(state.nightNumber))}
-        progress={stage === DayStage.Discuss ? discussTitle : undefined}
+        progress={
+          stage === DayStage.Vote
+            ? voteCounterTemplate
+                .replace("{current}", String(voterIndex + 1))
+                .replace("{total}", String(eligibleVoterIds.length))
+            : discussTitle
+        }
       />
 
       {stage !== DayStage.Discuss && (
@@ -366,8 +381,13 @@ function DayScreen({
         <div className={cn("gap-3", "grid")}>
           {/* No identity gate here: the day vote is open, so there is nothing on
               this screen the next voter should not already have heard out loud. */}
-          <p className={cn("font-semibold text-2xl text-balance")}>
-            <NamedLine template={playerVotesFor} name={currentVoterName} />
+          <h2
+            className={cn("font-heading font-semibold text-3xl text-balance")}
+          >
+            <NamedLine template={voterTitle} name={currentVoterName} />
+          </h2>
+          <p className={cn("text-lg text-balance")}>
+            <NamedLine template={voterPrompt} name={currentVoterName} />
           </p>
 
           <div
@@ -406,6 +426,10 @@ function DayScreen({
           >
             {skipVote}
           </Button>
+
+          <p className={cn("text-center text-muted-foreground text-sm")}>
+            {voteLockNote}
+          </p>
         </div>
       )}
 

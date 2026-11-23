@@ -409,11 +409,17 @@ describe("Feature: running a game through one reducer", () => {
       game = gameReducer(game, { type: ActionType.StartDay });
       expect(game.phase).toBe(Phase.Day);
 
-      for (const voterId of ["p1", "p2", "p3", "p5"]) {
+      // The lynched player votes too, but never for themself.
+      for (const [voterId, targetId] of [
+        ["p1", "p5"],
+        ["p2", "p5"],
+        ["p3", "p5"],
+        ["p5", "p1"],
+      ]) {
         game = gameReducer(game, {
           type: ActionType.CastDayVote,
           voterId,
-          targetId: "p5",
+          targetId,
         });
       }
       game = gameReducer(game, { type: ActionType.ResolveDayVote });
@@ -452,11 +458,15 @@ describe("Feature: running a game through one reducer", () => {
 
       // Day two: the village finally finds the wolf.
       game = gameReducer(game, { type: ActionType.StartDay });
-      for (const voterId of ["p1", "p2", "p3"]) {
+      for (const [voterId, targetId] of [
+        ["p1", "p2"],
+        ["p2", "p1"],
+        ["p3", "p1"],
+      ]) {
         game = gameReducer(game, {
           type: ActionType.CastDayVote,
           voterId,
-          targetId: "p1",
+          targetId,
         });
       }
       game = gameReducer(game, { type: ActionType.ResolveDayVote });
@@ -477,7 +487,7 @@ describe("Feature: running a game through one reducer", () => {
           { id: "p2", name: "Bình", role: RoleId.Fool, isAlive: true },
           { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
         ],
-        dayVotes: { p1: "p2", p2: "p2", p3: "p2" },
+        dayVotes: { p1: "p2", p2: "p1", p3: "p2" },
       };
 
       const next = gameReducer(state, { type: ActionType.ResolveDayVote });

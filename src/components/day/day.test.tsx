@@ -47,7 +47,9 @@ async function takeTurn(
   target: string | null,
 ): Promise<void> {
   // No identity gate on the day: the vote is open, so the voter is only named.
-  expect(screen.getByText(namedLine(`${voter} votes for`))).toBeInTheDocument();
+  expect(
+    screen.getByText(namedLine(`Who does ${voter} want out?`)),
+  ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: target ?? "Abstain" }));
 }
 
@@ -114,8 +116,8 @@ describe("Day", () => {
     expect(screen.queryByText("Time is up")).not.toBeInTheDocument();
   });
 
-  it("keeps the tally hidden until every player has had the phone", async () => {
-    parkDayGame(["Ann", "Ben", "Cara"]);
+  it("offers each voter everyone but themself, counts the votes in the header and shows no result until the last vote", async () => {
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
     const user = userEvent.setup();
 
     render(
@@ -126,27 +128,33 @@ describe("Day", () => {
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
 
-    expect(screen.getByText(namedLine("Ann votes for"))).toBeInTheDocument();
-    expect(screen.queryByText("Vote tally")).not.toBeInTheDocument();
+    expect(screen.getByText("Vote 1 / 4")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ann" })).toBeNull();
 
     await takeTurn(user, "Ann", "Ben");
 
-    // Ben must not learn how Ann voted before he casts his own vote.
-    expect(screen.getByText(namedLine("Ben votes for"))).toBeInTheDocument();
-    expect(screen.queryByText("Vote tally")).not.toBeInTheDocument();
+    // Ben must not learn how Ann voted, and cannot vote for himself.
+    expect(screen.getByText(namedLine("Ben's vote"))).toBeInTheDocument();
+    expect(screen.getByText("Vote 2 / 4")).toBeInTheDocument();
+    for (const name of ["Ann", "Cara", "Dan"]) {
+      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "Ben" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Abstain" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Results show only once everyone has voted."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Vote result")).toBeNull();
 
-    await takeTurn(user, "Ben", "Ben");
-    await takeTurn(user, "Cara", "Ben");
+    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Cara", "Dan");
 
-    const tally = screen.getByRole("list", { name: "Vote tally" });
-    const rows = within(tally).getAllByRole("listitem");
-    expect(rows).toHaveLength(1);
-    expect(within(rows[0]).getByText("Ben")).toBeInTheDocument();
-    expect(within(rows[0]).getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("Vote 4 / 4")).toBeInTheDocument();
+    expect(screen.queryByText("Vote result")).toBeNull();
   });
 
   it("lets a voter abstain and passes the phone straight on", async () => {
-    parkDayGame(["Ann", "Ben", "Cara"]);
+    parkDayGame(["Ann", "Ben", "Cara", "Dan"]);
     const user = userEvent.setup();
 
     render(
@@ -159,15 +167,16 @@ describe("Day", () => {
 
     await takeTurn(user, "Ann", null);
 
-    expect(screen.getByText(namedLine("Ben votes for"))).toBeInTheDocument();
+    expect(screen.getByText(namedLine("Ben's vote"))).toBeInTheDocument();
 
     await takeTurn(user, "Ben", "Cara");
-    await takeTurn(user, "Cara", "Cara");
+    await takeTurn(user, "Cara", "Ben");
+    await takeTurn(user, "Dan", "Cara");
 
     // Ann's abstention records nothing, so Cara goes out on two votes rather than three.
     const tally = screen.getByRole("list", { name: "Vote tally" });
     const rows = within(tally).getAllByRole("listitem");
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(within(rows[0]).getByText("Cara")).toBeInTheDocument();
     expect(within(rows[0]).getByText("2")).toBeInTheDocument();
     expect(
@@ -214,7 +223,7 @@ describe("Day", () => {
     await takeTurn(user, "Ann", "Dan");
     await takeTurn(user, "Ben", "Dan");
     await takeTurn(user, "Cara", "Dan");
-    await takeTurn(user, "Dan", "Dan");
+    await takeTurn(user, "Dan", "Cara");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(
@@ -238,9 +247,9 @@ describe("Day", () => {
     await user.click(screen.getByRole("button", { name: "Vote now" }));
     for (let round = 0; round < 2; round += 1) {
       await takeTurn(user, "Ann", "Cara");
-      await takeTurn(user, "Ben", "Cara");
+      await takeTurn(user, "Ben", "Dan");
       await takeTurn(user, "Cara", "Dan");
-      await takeTurn(user, "Dan", "Dan");
+      await takeTurn(user, "Dan", "Cara");
       await user.click(screen.getByRole("button", { name: "Confirm" }));
     }
 
@@ -267,9 +276,9 @@ describe("Day", () => {
 
     // Cara and Dan both land two votes, so the day cannot end on this round.
     await takeTurn(user, "Ann", "Cara");
-    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Ben", "Dan");
     await takeTurn(user, "Cara", "Dan");
-    await takeTurn(user, "Dan", "Dan");
+    await takeTurn(user, "Dan", "Cara");
 
     expect(
       screen.getByText("It's a tie — revote between the tied players."),
@@ -278,7 +287,9 @@ describe("Day", () => {
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(screen.getByRole("heading", { name: "Revote" })).toBeInTheDocument();
-    expect(screen.getByText(namedLine("Ann votes for"))).toBeInTheDocument();
+    // Everyone still votes in a revote, so the counter keeps counting the whole table.
+    expect(screen.getByText("Vote 1 / 4")).toBeInTheDocument();
+    expect(screen.getByText(namedLine("Ann's vote"))).toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Cara" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dan" })).toBeInTheDocument();
@@ -302,16 +313,16 @@ describe("Day", () => {
 
     await user.click(screen.getByRole("button", { name: "Vote now" }));
     await takeTurn(user, "Ann", "Cara");
-    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Ben", "Dan");
     await takeTurn(user, "Cara", "Dan");
-    await takeTurn(user, "Dan", "Dan");
+    await takeTurn(user, "Dan", "Cara");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     // The revote splits the same way, and a tie only earns one revote.
     await takeTurn(user, "Ann", "Cara");
-    await takeTurn(user, "Ben", "Cara");
+    await takeTurn(user, "Ben", "Dan");
     await takeTurn(user, "Cara", "Dan");
-    await takeTurn(user, "Dan", "Dan");
+    await takeTurn(user, "Dan", "Cara");
 
     expect(
       screen.getByText("Tied again, so nobody is voted out today."),

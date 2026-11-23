@@ -21,13 +21,18 @@ export interface DayVoteOutcome {
  * @param state - The current game state
  * @param voterId - The living player casting the vote
  * @param targetId - The player they voted for
- * @returns A new state with the vote recorded
+ * @returns A new state with the vote recorded, or the same state for a vote against oneself
  */
 export function castDayVote(
   state: GameState,
   voterId: string,
   targetId: string,
 ): GameState {
+  // Nobody votes for themself, so a self-vote changes nothing and records no undo step.
+  if (voterId === targetId) {
+    return state;
+  }
+
   return { ...state, dayVotes: { ...state.dayVotes, [voterId]: targetId } };
 }
 
@@ -109,16 +114,21 @@ export function getEligibleVoterIds(state: GameState): string[] {
 }
 
 /**
- * Lists who may be voted for, narrowing to the tied players during a revote.
+ * Lists who a voter may vote for: never themself, and only the tied players during a revote.
  * @param state - The current game state
- * @returns The revote candidates when a revote is running, otherwise every living player's id
+ * @param voterId - The player holding the phone
+ * @returns The revote candidates when a revote is running, otherwise every living player, minus the voter
  */
-export function getVoteCandidateIds(state: GameState): string[] {
-  if (state.revoteCandidateIds.length > 0) {
-    return state.revoteCandidateIds;
-  }
+export function getVoteCandidateIds(
+  state: GameState,
+  voterId: string,
+): string[] {
+  const candidateIds =
+    state.revoteCandidateIds.length > 0
+      ? state.revoteCandidateIds
+      : state.players
+          .filter((player) => player.isAlive)
+          .map((player) => player.id);
 
-  return state.players
-    .filter((player) => player.isAlive)
-    .map((player) => player.id);
+  return candidateIds.filter((candidateId) => candidateId !== voterId);
 }

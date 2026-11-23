@@ -28,7 +28,10 @@ export function Day({ dict, menu }: DayProps) {
       discussTimeUp={dict.day.discussTimeUp}
       voteTitle={dict.day.voteTitle}
       revoteTitle={dict.day.revoteTitle}
-      playerVotesFor={dict.day.playerVotesFor}
+      voterTitle={dict.day.voterTitle}
+      voterPrompt={dict.day.voterPrompt}
+      voteCounterTemplate={dict.day.voteCounter}
+      voteLockNote={dict.day.voteLockNote}
       skipVote={dict.day.skipVote}
       tallyTitle={dict.day.tallyTitle}
       votedOut={dict.day.votedOut}

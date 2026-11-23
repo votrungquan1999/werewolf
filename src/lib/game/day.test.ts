@@ -98,6 +98,22 @@ describe("Feature: Day vote", () => {
     });
   });
 
+  describe("Scenario: A player tries to vote for themself", () => {
+    it("should leave the state untouched, so no undo step is recorded", () => {
+      const state = createDayState();
+
+      expect(castDayVote(state, "p2", "p2")).toBe(state);
+    });
+
+    it("should show a tied voter only the other tied players in a revote", () => {
+      const state = createDayState({ revoteCandidateIds: ["p3", "p4"] });
+
+      expect(getVoteCandidateIds(state, "p3")).toEqual(["p4"]);
+      expect(getVoteCandidateIds(state, "p4")).toEqual(["p3"]);
+      expect(getVoteCandidateIds(state, "p1")).toEqual(["p3", "p4"]);
+    });
+  });
+
   describe("Scenario: The day vote ties", () => {
     it("should open a revote restricted to the tied players", () => {
       const state = createDayState({
@@ -108,13 +124,13 @@ describe("Feature: Day vote", () => {
         eliminatedId: null,
         tiedIds: ["p1", "p2"],
       });
-      expect(getVoteCandidateIds(state)).toEqual(["p1", "p2", "p3", "p4"]);
+      expect(getVoteCandidateIds(state, "p1")).toEqual(["p2", "p3", "p4"]);
 
       const revoting = resolveDayVote(state);
 
       expect(revoting.revoteCandidateIds).toEqual(["p1", "p2"]);
       expect(revoting.dayVotes).toEqual({});
-      expect(getVoteCandidateIds(revoting)).toEqual(["p1", "p2"]);
+      expect(getVoteCandidateIds(revoting, "p3")).toEqual(["p1", "p2"]);
     });
   });
 
@@ -136,7 +152,7 @@ describe("Feature: Day vote", () => {
         true,
         false,
       ]);
-      expect(getVoteCandidateIds(ended)).toEqual(["p1", "p2", "p3", "p4"]);
+      expect(getVoteCandidateIds(ended, "p1")).toEqual(["p2", "p3", "p4"]);
     });
   });
 

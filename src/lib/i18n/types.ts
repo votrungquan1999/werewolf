@@ -260,8 +260,14 @@ export interface DayDictionary {
   discussTimeUp: string;
   skipVote: string;
   voteTitle: string;
-  /** `{name}` = the voter; the target is rendered next to it. */
-  playerVotesFor: string;
+  /** `{name}` = the voter holding the phone. */
+  voterTitle: string;
+  /** `{name}` = the voter holding the phone. */
+  voterPrompt: string;
+  /** `{current}` / `{total}` = this voter's place among everyone who votes. */
+  voteCounter: string;
+  /** Tells the table nothing is counted until the last vote. */
+  voteLockNote: string;
   tallyTitle: string;
   /** `{name}` = the player the village lynched. */
   votedOut: string;
