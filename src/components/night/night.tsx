@@ -20,6 +20,12 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     lastTurn: dict.night.lastTurn,
     decoyTitle: dict.night.decoyTitle,
     decoyBody: dict.night.decoyBody,
+    decoyWait: dict.night.decoyWait,
+    decoyFidgets: [
+      dict.night.decoyFidgetSheep,
+      dict.night.decoyFidgetYawn,
+      dict.night.decoyFidgetRollOver,
+    ],
     prompts: {
       [NightAction.WolfVote]: dict.night.wolvesPrompt,
       [NightAction.Inspect]: dict.night.seerPrompt,

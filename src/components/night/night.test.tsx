@@ -4,6 +4,7 @@ import {
   type RenderResult,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -16,7 +17,7 @@ import { type GameState, Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
 import { namedLine } from "src/tests/matchers";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const dictionary = getDictionary(Locale.En);
 
@@ -90,6 +91,24 @@ async function swipeOpen(
 }
 
 /**
+ * Jumps the frozen clock past the sleep turn's wait, then passes the phone on.
+ *
+ * The test must have called `vi.useFakeTimers({ toFake: ["Date"] })` before mounting,
+ * so the wait starts from a frozen clock and "5s" is exact.
+ * @param user - The user-event session driving the page.
+ * @param buttonName - The pass button's accessible name.
+ */
+async function passDecoyTurn(
+  user: ReturnType<typeof userEvent.setup>,
+  buttonName: string,
+): Promise<void> {
+  vi.setSystemTime(Date.now() + 5_000);
+  const passButton = screen.getByRole("button", { name: buttonName });
+  await waitFor(() => expect(passButton).toBeEnabled());
+  await user.click(passButton);
+}
+
+/**
  * Throws the mounted screen away and mounts a fresh one over the same saved game, like a refresh.
  * @param mounted - The render to throw away.
  */
@@ -112,6 +131,10 @@ async function undoViaMenu(
 describe("Night", () => {
   beforeEach(() => {
     window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("hands each turn over as a sealed envelope that shows whose turn it is, how far the night has gone and who is next", async () => {
@@ -162,7 +185,8 @@ describe("Night", () => {
     expect(screen.queryByText(/Next:/)).not.toBeInTheDocument();
   });
 
-  it("tells a player with nothing to do tonight to look busy and pass on", async () => {
+  it("gives a player with nothing to do a sleep screen whose pass button unlocks after a 5-second wait", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
     parkNightGame([
       ["Alice", RoleId.Villager],
       ["Bob", RoleId.Seer],
@@ -172,12 +196,78 @@ describe("Night", () => {
 
     await swipeOpen(user, "Alice");
 
-    expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
+    expect(screen.getByText("You get to sleep tonight")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        namedLine("Wait a moment, look busy, then pass to Bob."),
-      ),
+      screen.getByText(/Keep the phone a few seconds/),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Done · pass to Bob →" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText("You can pass the phone in 5s"),
+    ).toBeInTheDocument();
+
+    // The fidget buttons only look busy: they change nothing and stay usable.
+    for (const name of ["Count sheep", "Yawn", "Roll over"]) {
+      await user.click(screen.getByRole("button", { name }));
+    }
+    expect(screen.getByText("Turn 1 / 2")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Done · pass to Bob →" }),
+    ).toBeDisabled();
+
+    vi.setSystemTime(Date.now() + 4_000);
+    await screen.findByText("You can pass the phone in 1s");
+    expect(
+      screen.getByRole("button", { name: "Done · pass to Bob →" }),
+    ).toBeDisabled();
+
+    await passDecoyTurn(user, "Done · pass to Bob →");
+
+    expect(
+      screen.getByRole("button", { name: "Swipe to open Bob's letter" }),
+    ).toBeInTheDocument();
+  });
+
+  it("starts the sleep turn's wait again after a refresh", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    parkNightGame([
+      ["Alice", RoleId.Villager],
+      ["Bob", RoleId.Seer],
+    ]);
+    const user = userEvent.setup();
+    const mounted = renderNight();
+    await swipeOpen(user, "Alice");
+    vi.setSystemTime(Date.now() + 3_000);
+    await screen.findByText("You can pass the phone in 2s");
+
+    remount(mounted);
+
+    expect(
+      screen.getByText("You can pass the phone in 5s"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Done · pass to Bob →" }),
+    ).toBeDisabled();
+  });
+
+  it("shows no role avatar on the sleep screen, even with the card chip open", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    parkNightGame([
+      ["Alice", RoleId.Villager],
+      ["Bob", RoleId.Seer],
+    ]);
+    const user = userEvent.setup();
+    renderNight();
+    await swipeOpen(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "Your card" }));
+
+    expect(screen.getByText("You are the Villager")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", {
+        name: /Villager|Seer|Werewolf|Doctor|Witch|Hunter|Cupid|Fool/,
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the player's own card behind the Your card chip and explains it when opened", async () => {
@@ -344,11 +434,12 @@ describe("Night", () => {
 
       expect(screen.getByText("Seal already opened")).toBeInTheDocument();
       expect(
-        screen.queryByText("Nothing to do tonight"),
+        screen.queryByText("You get to sleep tonight"),
       ).not.toBeInTheDocument();
     });
 
     it("reaches its player sealed again with the neutral mark after Undo", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
       // A villager's finish is a single dispatch, so one Undo lands on Alice's envelope.
       parkNightGame([
         ["Alice", RoleId.Villager],
@@ -357,18 +448,18 @@ describe("Night", () => {
       const user = userEvent.setup();
       renderNight();
       await swipeOpen(user, "Alice");
-      await user.click(screen.getByRole("button", { name: "Continue" }));
+      await passDecoyTurn(user, "Done · pass to Bob →");
 
       await undoViaMenu(user);
 
       expect(screen.getByText("Seal already opened")).toBeInTheDocument();
       expect(
-        screen.queryByText("Nothing to do tonight"),
+        screen.queryByText("You get to sleep tonight"),
       ).not.toBeInTheDocument();
 
       await swipeOpen(user, "Alice");
 
-      expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
+      expect(screen.getByText("You get to sleep tonight")).toBeInTheDocument();
     });
 
     it("keeps an opened turn showing, with no mark, after a refresh", async () => {
@@ -382,7 +473,7 @@ describe("Night", () => {
 
       remount(mounted);
 
-      expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
+      expect(screen.getByText("You get to sleep tonight")).toBeInTheDocument();
       expect(screen.queryByText("Seal already opened")).not.toBeInTheDocument();
     });
 
@@ -408,7 +499,7 @@ describe("Night", () => {
       expect(screen.queryByText("Seal already opened")).not.toBeInTheDocument();
       expect(screen.queryByText(/A letter for/)).not.toBeInTheDocument();
       expect(
-        screen.queryByText("Nothing to do tonight"),
+        screen.queryByText("You get to sleep tonight"),
       ).not.toBeInTheDocument();
     });
   });

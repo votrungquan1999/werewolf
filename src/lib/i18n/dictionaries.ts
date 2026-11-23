@@ -82,9 +82,13 @@ const vietnamese: Dictionary = {
     yourRole: "Bạn là {role}",
     yourCard: "Lá bài của bạn",
     lastTurn: "Lượt cuối của đêm",
-    decoyTitle: "Đêm nay bạn không phải làm gì",
+    decoyTitle: "Đêm nay bạn được ngủ",
     decoyBody:
-      "Chờ một chút, giả vờ bấm bấm cho giống người ta, rồi đưa máy cho {name}.",
+      "Không có việc gì làm. Giữ máy vài giây cho giống một lượt thật rồi chuyền máy đi.",
+    decoyWait: "Chuyền máy được sau {seconds} giây",
+    decoyFidgetSheep: "Đếm cừu",
+    decoyFidgetYawn: "Ngáp",
+    decoyFidgetRollOver: "Trở mình",
     wolvesPrompt:
       "Sói ơi, chọn con mồi đêm nay. Ai nhiều phiếu nhất thì chết; bầy hòa phiếu thì không ai chết.",
     seerPrompt:
@@ -285,8 +289,13 @@ const english: Dictionary = {
     yourRole: "You are the {role}",
     yourCard: "Your card",
     lastTurn: "Last turn of the night",
-    decoyTitle: "Nothing to do tonight",
-    decoyBody: "Wait a moment, look busy, then pass to {name}.",
+    decoyTitle: "You get to sleep tonight",
+    decoyBody:
+      "Nothing to do. Keep the phone a few seconds so it looks like a real turn, then pass it on.",
+    decoyWait: "You can pass the phone in {seconds}s",
+    decoyFidgetSheep: "Count sheep",
+    decoyFidgetYawn: "Yawn",
+    decoyFidgetRollOver: "Roll over",
     wolvesPrompt:
       "Wolves, choose tonight's prey. The most-voted player dies; a tie inside the pack kills nobody.",
     seerPrompt:

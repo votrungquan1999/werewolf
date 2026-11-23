@@ -141,8 +141,12 @@ export interface NightDictionary {
   /** Next line on the last seat's sealed envelope, where there is no next player. */
   lastTurn: string;
   decoyTitle: string;
-  /** `{name}` = who to pass to once enough time has been burned. */
   decoyBody: string;
+  /** `{seconds}` = whole seconds left before the pass button unlocks. */
+  decoyWait: string;
+  decoyFidgetSheep: string;
+  decoyFidgetYawn: string;
+  decoyFidgetRollOver: string;
   wolvesPrompt: string;
   seerPrompt: string;
   doctorPrompt: string;
