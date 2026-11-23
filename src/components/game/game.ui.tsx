@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { useGame } from "src/components/game/game.state";
 import { Phase } from "src/lib/game/types";
 import { cn } from "src/lib/utils";
@@ -110,8 +110,8 @@ export function PlayerName({ children }: { children: ReactNode }) {
 }
 
 /**
- * Renders copy built around a single `{name}` placeholder, highlighting the name.
- * @param props.template - Dictionary copy containing `{name}`.
+ * Renders copy built around `{name}` placeholders, highlighting the name at each one.
+ * @param props.template - Dictionary copy containing `{name}`, once or more.
  * @param props.name - The player to drop in.
  * @returns The sentence, with the name picked out.
  */
@@ -122,13 +122,19 @@ export function NamedLine({
   template: string;
   name: string;
 }) {
-  const [before, after] = template.split("{name}");
+  const [first, ...rest] = template.split("{name}");
 
   return (
     <>
-      {before}
-      <PlayerName>{name}</PlayerName>
-      {after ?? ""}
+      {first}
+      {rest.map((part, index) => (
+        // The parts are positional and never reorder.
+        // biome-ignore lint/suspicious/noArrayIndexKey: static split of one template
+        <Fragment key={index}>
+          <PlayerName>{name}</PlayerName>
+          {part}
+        </Fragment>
+      ))}
     </>
   );
 }

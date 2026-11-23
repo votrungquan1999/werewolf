@@ -10,6 +10,7 @@ import { Button } from "src/components/ui/button";
 import { getRevealSealId } from "src/lib/game/seal";
 import { getRevealPlayer } from "src/lib/game/setup";
 import { Phase, RoleId } from "src/lib/game/types";
+import { fillTemplate } from "src/lib/i18n/fill-template";
 import type {
   RevealDictionary,
   RolesDictionary,
@@ -64,9 +65,10 @@ export function RevealHeader({
   return (
     <ScreenHeader
       label={label}
-      progress={counterTemplate
-        .replace("{current}", String(current))
-        .replace("{total}", String(players.length))}
+      progress={fillTemplate(counterTemplate, {
+        current: String(current),
+        total: String(players.length),
+      })}
       menu={menu}
     />
   );
@@ -76,16 +78,19 @@ export function RevealHeader({
  * The envelope addressed to whoever the reveal cursor is on.
  * @param props.copy - Envelope strings.
  * @param props.lastPlayerLine - What the next line says for the last player.
+ * @param props.passOn - The control under the open letter that hands the phone on.
  * @param props.children - The letter, shown once the envelope is open.
  * @returns The envelope, or nothing once everyone has looked.
  */
 export function RevealEnvelope({
   copy,
   lastPlayerLine,
+  passOn,
   children,
 }: {
   copy: SealDictionary;
   lastPlayerLine: string;
+  passOn: ReactNode;
   children: ReactNode;
 }) {
   const state = useGame();
@@ -111,6 +116,7 @@ export function RevealEnvelope({
         )
       }
       copy={copy}
+      footer={passOn}
     >
       {children}
     </SealGate>
@@ -155,7 +161,12 @@ export function RevealLetter({
 
   return (
     <div className={cn("gap-3", "grid justify-items-center text-center")}>
-      <RoleAvatar role={player.role} size={150} label={role.name} />
+      {/* A double gold frame, like a card slipped into the letter. */}
+      <div className={cn("border border-phase/75 bg-background p-1.5")}>
+        <div className={cn("border border-phase/35 px-0.5 py-5")}>
+          <RoleAvatar role={player.role} size={150} label={role.name} />
+        </div>
+      </div>
       <h3 className={cn("font-bold font-heading text-3xl")}>{role.name}</h3>
       <span
         className={cn(
@@ -190,11 +201,14 @@ export function RevealPassOn({
     <Button
       size="lg"
       onClick={revealNextPlayer}
-      className={cn("h-14 w-full text-base")}
+      // The Button base is nowrap; a long next name has to wrap to stay on screen.
+      className={cn(
+        "h-auto min-h-14 w-full py-3 text-base whitespace-normal wrap-anywhere",
+      )}
     >
       {next === undefined
         ? lastLabel
-        : passOnTemplate.replace("{name}", next.name)}
+        : fillTemplate(passOnTemplate, { name: next.name })}
     </Button>
   );
 }

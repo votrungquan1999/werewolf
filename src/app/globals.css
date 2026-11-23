@@ -188,6 +188,16 @@
     61px 7px;
 }
 
+/* Gold wax, lit from the top left: the envelope seal, its broken halves and the swipe thumb. */
+@utility wax {
+  background-image: radial-gradient(
+    circle at 35% 30%,
+    #ebcb84,
+    #b08a40 58%,
+    #7e6128
+  );
+}
+
 /* Stack children without absolute positioning. */
 @utility pile {
   display: grid;

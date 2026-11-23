@@ -30,12 +30,17 @@ export function Reveal({ dict, menu }: { dict: Dictionary; menu?: ReactNode }) {
         counterTemplate={dict.reveal.counter}
         menu={menu}
       />
-      <RevealEnvelope copy={dict.seal} lastPlayerLine={dict.reveal.lastPlayer}>
+      <RevealEnvelope
+        copy={dict.seal}
+        lastPlayerLine={dict.reveal.lastPlayer}
+        passOn={
+          <RevealPassOn
+            passOnTemplate={dict.seal.passOn}
+            lastLabel={dict.reveal.passOnLast}
+          />
+        }
+      >
         <RevealLetter roles={dict.roles} teams={dict.reveal.team} />
-        <RevealPassOn
-          passOnTemplate={dict.seal.passOn}
-          lastLabel={dict.reveal.passOnLast}
-        />
       </RevealEnvelope>
     </RevealScreen>
   );

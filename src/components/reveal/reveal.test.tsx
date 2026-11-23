@@ -3,13 +3,13 @@
 import { type RenderResult, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameProvider } from "src/components/game/game.state";
+import { GameMenu } from "src/components/menu/menu";
 import { Reveal } from "src/components/reveal/reveal";
 import { loadGame, saveGame } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
 import { Phase, RoleId } from "src/lib/game/types";
 import { Locale } from "src/lib/i18n/config";
 import { getDictionary } from "src/lib/i18n/dictionaries";
-import type { Dictionary } from "src/lib/i18n/types";
 import { beforeEach, describe, expect, it } from "vitest";
 
 const dict = getDictionary(Locale.En);
@@ -35,22 +35,26 @@ function renderRevealScreen(): RenderResult {
 
   return render(
     <GameProvider>
-      <Reveal dict={dict} />
+      <Reveal dict={dict} menu={<GameMenu dict={dict} locale={Locale.En} />} />
     </GameProvider>,
   );
 }
 
 /**
  * Throws the mounted screen away and mounts a fresh one over the same saved game,
- * like a refresh; with another dictionary it stands in for a language switch.
+ * like a refresh; with another language it stands in for a language switch.
  * @param mounted - The render to throw away.
- * @param withDict - The dictionary the fresh screen speaks.
+ * @param locale - The language the fresh screen speaks.
  */
-function remount(mounted: RenderResult, withDict: Dictionary): void {
+function remount(mounted: RenderResult, locale: Locale): void {
+  const withDict = getDictionary(locale);
   mounted.unmount();
   render(
     <GameProvider>
-      <Reveal dict={withDict} />
+      <Reveal
+        dict={withDict}
+        menu={<GameMenu dict={withDict} locale={locale} />}
+      />
     </GameProvider>,
   );
 }
@@ -70,6 +74,15 @@ async function swipeOpen(user: User, name: string): Promise<void> {
     { coords: { clientX: 200 } },
     { keys: "[/MouseLeft]" },
   ]);
+}
+
+/**
+ * Takes the game back one step through the options menu, the only place Undo lives.
+ * @param user - The user-event instance driving the page.
+ */
+async function undoViaMenu(user: User): Promise<void> {
+  await user.click(screen.getByRole("button", { name: "Options" }));
+  await user.click(screen.getByRole("button", { name: "Undo" }));
 }
 
 beforeEach(() => {
@@ -184,7 +197,7 @@ describe("Feature: each player opens their own envelope", () => {
       const mounted = renderRevealScreen();
       await swipeOpen(user, "An");
 
-      remount(mounted, dict);
+      remount(mounted, Locale.En);
 
       expect(screen.getByRole("heading", { name: "Seer" })).toBeInTheDocument();
       expect(screen.getByText(dict.roles.seer.description)).toBeInTheDocument();
@@ -197,7 +210,7 @@ describe("Feature: each player opens their own envelope", () => {
       await swipeOpen(user, "An");
       const viDict = getDictionary(Locale.Vi);
 
-      remount(mounted, viDict);
+      remount(mounted, Locale.Vi);
 
       expect(
         screen.getByRole("heading", { name: viDict.roles.seer.name }),
@@ -213,11 +226,100 @@ describe("Feature: each player opens their own envelope", () => {
         screen.getByRole("button", { name: "Done · pass to Bình →" }),
       );
 
-      remount(mounted, dict);
+      remount(mounted, Locale.En);
 
       expect(
         screen.getByRole("button", { name: "Swipe to open Bình's letter" }),
       ).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "Werewolf" })).toBeNull();
+    });
+  });
+});
+
+describe("Feature: undoing back to an envelope that was opened", () => {
+  describe("Scenario: the owner's card is hidden again behind a fresh swipe", () => {
+    it("should show An's envelope sealed after Undo, and the card again after a swipe", async () => {
+      const user = userEvent.setup();
+      renderRevealScreen();
+      await swipeOpen(user, "An");
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+
+      await undoViaMenu(user);
+
+      expect(screen.queryByRole("heading", { name: "Seer" })).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Swipe to open An's letter" }),
+      ).toBeInTheDocument();
+
+      await swipeOpen(user, "An");
+
+      expect(screen.getByRole("heading", { name: "Seer" })).toBeInTheDocument();
+    });
+  });
+
+  describe("Scenario: the sealed envelope says it was already opened", () => {
+    it("should show a neutral mark on An's envelope after Undo", async () => {
+      const user = userEvent.setup();
+      renderRevealScreen();
+      await swipeOpen(user, "An");
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+
+      await undoViaMenu(user);
+
+      expect(screen.getByText("Seal already opened")).toBeInTheDocument();
+    });
+
+    it("should show no mark on an envelope that was never opened", async () => {
+      const user = userEvent.setup();
+      renderRevealScreen();
+      await swipeOpen(user, "An");
+
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Swipe to open Bình's letter" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Seal already opened")).toBeNull();
+    });
+
+    it("should show the card and no mark after a fresh swipe and a refresh", async () => {
+      const user = userEvent.setup();
+      const mounted = renderRevealScreen();
+      await swipeOpen(user, "An");
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+      await undoViaMenu(user);
+      await swipeOpen(user, "An");
+
+      remount(mounted, Locale.En);
+
+      expect(screen.getByRole("heading", { name: "Seer" })).toBeInTheDocument();
+      expect(screen.queryByText("Seal already opened")).toBeNull();
+    });
+
+    it("should mark Bình's envelope even though Bình never saw it open", async () => {
+      const user = userEvent.setup();
+      renderRevealScreen();
+      await swipeOpen(user, "An");
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+      await swipeOpen(user, "Bình");
+      await undoViaMenu(user);
+      await swipeOpen(user, "An");
+
+      await user.click(
+        screen.getByRole("button", { name: "Done · pass to Bình →" }),
+      );
+
+      expect(screen.getByText("Seal already opened")).toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "Werewolf" })).toBeNull();
     });
   });

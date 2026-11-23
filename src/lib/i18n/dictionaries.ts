@@ -69,6 +69,7 @@ const vietnamese: Dictionary = {
     next: "Tiếp theo: {name}",
     letterFor: "Thư gửi {name}",
     passOn: "Xong · chuyền cho {name} →",
+    alreadyOpened: "Niêm phong đã được mở",
   },
   nightfall: {
     title: "Trời tối rồi",
@@ -272,6 +273,7 @@ const english: Dictionary = {
     next: "Next: {name}",
     letterFor: "A letter for {name}",
     passOn: "Done · pass to {name} →",
+    alreadyOpened: "Seal already opened",
   },
   nightfall: {
     title: "Night falls",

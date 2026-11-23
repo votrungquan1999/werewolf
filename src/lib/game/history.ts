@@ -70,7 +70,8 @@ export function historyReducer(
     ];
 
     return {
-      present: { ...previous, openedSeals },
+      // The envelope is closed again: its owner must swipe afresh before the card shows.
+      present: { ...previous, openedSeals, openSealId: null },
       past: history.past.slice(0, -1),
     };
   }

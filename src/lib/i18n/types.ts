@@ -115,6 +115,8 @@ export interface SealDictionary {
   letterFor: string;
   /** `{name}` = who gets the phone next; the pass-on button on an opened letter. */
   passOn: string;
+  /** Neutral note on an envelope that was opened before: it does not say who opened it or why. */
+  alreadyOpened: string;
 }
 
 /** The beat between the last card and the first night turn. */

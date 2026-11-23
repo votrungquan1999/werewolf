@@ -93,5 +93,22 @@ describe("Feature: taking back a mis-tap", () => {
       expect(undone.present.players).toEqual([]);
       expect(undone.present.openedSeals).toEqual(["reveal:p1"]);
     });
+
+    it("should close the open envelope when a step is taken back", () => {
+      const history = createHistory(createInitialState());
+      const opened = historyReducer(history, {
+        type: ActionType.OpenSeal,
+        sealId: "reveal:p1",
+      });
+      const added = historyReducer(opened, {
+        type: ActionType.AddPlayer,
+        id: "p1",
+        name: "An",
+      });
+
+      const undone = historyReducer(added, { type: HistoryActionType.Undo });
+
+      expect(undone.present.openSealId).toBeNull();
+    });
   });
 });
