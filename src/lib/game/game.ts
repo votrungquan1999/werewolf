@@ -160,6 +160,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         dayVotes: {},
         revoteCandidateIds: [],
       };
+    case ActionType.OpenSeal:
+      return state.openedSeals.includes(action.sealId)
+        ? state
+        : { ...state, openedSeals: [...state.openedSeals, action.sealId] };
     case ActionType.ResetGame:
       return resetGame(state);
     default:

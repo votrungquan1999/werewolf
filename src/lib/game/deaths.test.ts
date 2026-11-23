@@ -62,6 +62,7 @@ function createState(
     hunterTargetId: null,
     pendingHeartbreakId: null,
     winner: null,
+    openedSeals: [],
     ...overrides,
   };
 }

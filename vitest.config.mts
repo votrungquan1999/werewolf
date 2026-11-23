@@ -20,6 +20,6 @@ export default defineConfig({
     // Node 25+ ships its own `localStorage` global, which hides jsdom's and is undefined
     // without a backing file — every storage test would fail before it asserts anything.
     execArgv: nodeMajorVersion >= 25 ? ["--no-experimental-webstorage"] : [],
-    exclude: ["node_modules/**", ".next/**"],
+    exclude: ["node_modules/**", ".next/**", ".next-e2e/**", "e2e/**"],
   },
 });

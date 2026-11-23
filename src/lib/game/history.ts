@@ -1,5 +1,9 @@
 import { gameReducer } from "src/lib/game/game";
-import type { GameAction, GameState } from "src/lib/game/types";
+import {
+  ActionType,
+  type GameAction,
+  type GameState,
+} from "src/lib/game/types";
 
 /** How many steps back the table can walk. Capped so a long game stays cheap to hold. */
 export const UNDO_LIMIT = 25;
@@ -60,10 +64,24 @@ export function historyReducer(
       return history;
     }
 
-    return { present: previous, past: history.past.slice(0, -1) };
+    // Marks outlive Undo: an envelope that was opened stays marked as opened.
+    const openedSeals = [
+      ...new Set([...previous.openedSeals, ...history.present.openedSeals]),
+    ];
+
+    return {
+      present: { ...previous, openedSeals },
+      past: history.past.slice(0, -1),
+    };
   }
 
   const present = gameReducer(history.present, action);
+
+  // Opening an envelope is a peek, not a table decision: Undo must not be able to take it back.
+  if (action.type === ActionType.OpenSeal) {
+    return present === history.present ? history : { ...history, present };
+  }
+
   // An action the reducer ignored is not a step, so it must not consume an undo.
   if (present === history.present) {
     return history;

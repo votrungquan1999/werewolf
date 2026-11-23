@@ -16,6 +16,12 @@ if (typeof window !== "undefined") {
     HTMLMediaElement.prototype.play = () => Promise.resolve();
   }
 
+  // jsdom lacks pointer capture; a throwing call in a handler would fail silently.
+  if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = () => {};
+    Element.prototype.releasePointerCapture = () => {};
+  }
+
   if (!window.matchMedia) {
     window.matchMedia = (query: string) => ({
       matches: false,

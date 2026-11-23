@@ -185,6 +185,12 @@ export interface GameState {
    */
   pendingHeartbreakId: string | null;
   winner: Winner | null;
+  /**
+   * Envelopes that have been opened at least once, by `getRevealSealId` / `getNightSealId`.
+   *
+   * A mark outlives Undo and refresh so the next holder can see the seal was already opened.
+   */
+  openedSeals: string[];
 }
 
 /** Discriminates every action the reducer accepts. */
@@ -204,6 +210,7 @@ export enum ActionType {
   StartNight = "start-night",
   StartDay = "start-day",
   ResetGame = "reset-game",
+  OpenSeal = "open-seal",
 }
 
 export interface AddPlayerAction {
@@ -284,6 +291,11 @@ export interface ResetGameAction {
   type: ActionType.ResetGame;
 }
 
+export interface OpenSealAction {
+  type: ActionType.OpenSeal;
+  sealId: string;
+}
+
 export type GameAction =
   | AddPlayerAction
   | RemovePlayerAction
@@ -299,4 +311,5 @@ export type GameAction =
   | StartNightfallAction
   | StartNightAction
   | StartDayAction
-  | ResetGameAction;
+  | ResetGameAction
+  | OpenSealAction;

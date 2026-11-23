@@ -165,6 +165,8 @@ export function useGameActions() {
       dispatch({ type: ActionType.CastDayVote, voterId, targetId }),
     resolveDayVote: () => dispatch({ type: ActionType.ResolveDayVote }),
     resetGame: () => dispatch({ type: ActionType.ResetGame }),
+    openSeal: (sealId: string) =>
+      dispatch({ type: ActionType.OpenSeal, sealId }),
     undo: () => dispatch({ type: HistoryActionType.Undo }),
   };
 }

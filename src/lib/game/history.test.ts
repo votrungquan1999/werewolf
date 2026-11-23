@@ -36,4 +36,36 @@ describe("Feature: taking back a mis-tap", () => {
       expect(canUndo(undone)).toBe(false);
     });
   });
+
+  describe("Scenario: an envelope is opened", () => {
+    it("should record the mark without making an undo step", () => {
+      const history = createHistory(createInitialState());
+
+      const opened = historyReducer(history, {
+        type: ActionType.OpenSeal,
+        sealId: "reveal:p1",
+      });
+
+      expect(opened.present.openedSeals).toEqual(["reveal:p1"]);
+      expect(canUndo(opened)).toBe(false);
+    });
+
+    it("should keep the mark when the step it followed is taken back", () => {
+      const history = createHistory(createInitialState());
+      const added = historyReducer(history, {
+        type: ActionType.AddPlayer,
+        id: "p1",
+        name: "An",
+      });
+      const opened = historyReducer(added, {
+        type: ActionType.OpenSeal,
+        sealId: "reveal:p1",
+      });
+
+      const undone = historyReducer(opened, { type: HistoryActionType.Undo });
+
+      expect(undone.present.players).toEqual([]);
+      expect(undone.present.openedSeals).toEqual(["reveal:p1"]);
+    });
+  });
 });

@@ -59,6 +59,7 @@ function parkLiveGame(): void {
     hunterTargetId: null,
     pendingHeartbreakId: null,
     winner: null,
+    openedSeals: [],
   };
 
   saveGame(live);

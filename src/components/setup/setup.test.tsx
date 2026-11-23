@@ -140,6 +140,16 @@ describe("Setup screen", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
+  it("keeps a dollar sequence in a player's name intact on the remove button", async () => {
+    const user = renderSetup();
+
+    await seatPlayers(user, ["Cash$$"]);
+
+    expect(
+      screen.getByRole("button", { name: "Remove Cash$$" }),
+    ).toBeInTheDocument();
+  });
+
   it("tells the host how many players a game needs and blocks the next step on an empty table", () => {
     renderSetup();
 
@@ -207,11 +217,11 @@ describe("Setup screen", () => {
   });
 
   it("deals the cards, and undoing the deal lands back on the roles step", async () => {
+    const menu = <GameMenu dict={dictionary} locale={Locale.En} />;
     render(
       <GameProvider>
-        <GameMenu dict={dictionary} locale={Locale.En} />
-        <Setup dict={dictionary} />
-        <Reveal dict={dictionary} />
+        <Setup dict={dictionary} menu={menu} />
+        <Reveal dict={dictionary} menu={menu} />
       </GameProvider>,
     );
     const user = userEvent.setup();
@@ -220,7 +230,7 @@ describe("Setup screen", () => {
     await user.click(screen.getByRole("button", { name: "Deal the cards" }));
 
     expect(
-      screen.getByText("Press and hold to see your card"),
+      screen.getByRole("button", { name: /^Swipe to open .* letter$/ }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Who's playing tonight?" }),

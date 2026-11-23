@@ -128,6 +128,16 @@ describe("Feature: Setting up a game", () => {
     });
   });
 
+  describe("Scenario: A new deal starts with every envelope sealed", () => {
+    it("should clear the opened-envelope marks of the earlier deal", () => {
+      const marked = { ...createReadyTable(), openedSeals: ["reveal:p1"] };
+
+      const dealt = dealRoles(marked, 42);
+
+      expect(dealt.openedSeals).toEqual([]);
+    });
+  });
+
   describe("Scenario: Each player sees their own card and passes the phone on", () => {
     it("should walk the table in order and drop into nightfall after the last player", () => {
       const dealt = dealRoles(createReadyTable(), 42);

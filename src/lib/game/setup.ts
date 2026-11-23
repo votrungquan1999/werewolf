@@ -67,6 +67,7 @@ export function createInitialState(): GameState {
     hunterTargetId: null,
     pendingHeartbreakId: null,
     winner: null,
+    openedSeals: [],
   };
 }
 
@@ -244,6 +245,7 @@ export function dealRoles(state: GameState, seed: number): GameState {
     })),
     phase: Phase.RoleReveal,
     revealIndex: 0,
+    openedSeals: [],
     seed,
   };
 }

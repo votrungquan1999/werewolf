@@ -56,6 +56,7 @@ function parkFinishedGame(winner: Winner, players: Player[]): void {
     hunterTargetId: null,
     pendingHeartbreakId: null,
     winner,
+    openedSeals: [],
   };
 
   saveGame(finished);

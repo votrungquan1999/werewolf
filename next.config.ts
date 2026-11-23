@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
+  // The e2e run builds into its own directory so it never shares `.next` with a dev server.
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
+
   /**
    * Sends the bare root at the default language.
    * @returns Redirect from `/` to the Vietnamese route tree.

@@ -207,7 +207,7 @@
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
-    /* The role reveal is press-and-hold — stop iOS hijacking it with callouts/selection. */
+    /* Envelopes open with a swipe — stop iOS hijacking the drag with callouts/selection. */
     -webkit-touch-callout: none;
     user-select: none;
   }

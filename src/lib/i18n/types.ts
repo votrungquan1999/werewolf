@@ -81,11 +81,40 @@ export interface MenuDictionary {
 
 /** Pass-the-phone role reveal, one player at a time. */
 export interface RevealDictionary {
-  /** `{name}` = the player who should take the phone. */
+  /** Phase label in the header. */
+  dealing: string;
+  /** `{current}` / `{total}` = which player holds the phone, out of how many. */
+  counter: string;
+  /** Next line on the last player's sealed envelope, where there is no next player. */
+  lastPlayer: string;
+  /** Last player's pass-on button: it leads to the night, not to another player. */
+  passOnLast: string;
+  /** The team line under the role name. */
+  team: {
+    village: string;
+    werewolf: string;
+    fool: string;
+  };
+}
+
+/** The sealed envelope a phone travels in, shared by the reveal and the night turns. */
+export interface SealDictionary {
+  /** Line above the envelope, before the owner's name. */
   passTo: string;
-  holdInstruction: string;
-  yourCard: string;
-  passItOn: string;
+  /** `{name}` = who the envelope is addressed to. */
+  address: string;
+  /** Visible label on the swipe track. */
+  swipe: string;
+  /** `{name}` = the owner; the swipe control's accessible name. */
+  swipeFor: string;
+  /** `{name}` = the owner, twice: the warning for anyone else holding the phone. */
+  notYou: string;
+  /** `{name}` = who gets the phone after this player. */
+  next: string;
+  /** `{name}` = the owner; heading of the opened letter. */
+  letterFor: string;
+  /** `{name}` = who gets the phone next; the pass-on button on an opened letter. */
+  passOn: string;
 }
 
 /** The beat between the last card and the first night turn. */
@@ -225,6 +254,7 @@ export interface Dictionary {
   header: HeaderDictionary;
   setup: SetupDictionary;
   reveal: RevealDictionary;
+  seal: SealDictionary;
   nightfall: NightfallDictionary;
   night: NightDictionary;
   nightResults: NightResultsDictionary;
