@@ -536,6 +536,89 @@ describe("Feature: running a game through one reducer", () => {
     });
   });
 
+  describe("Scenario: the village lynches the hunter", () => {
+    it("should name the hunter's shot victim, and not the hunter, in the next dawn's deaths", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Day,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Hunter, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Villager, isAlive: true },
+          { id: "p5", name: "Em", role: RoleId.Villager, isAlive: true },
+          { id: "p6", name: "Phúc", role: RoleId.Villager, isAlive: true },
+        ],
+        hunterTargetId: "p3",
+        dayVotes: {
+          p1: "p2",
+          p2: "p3",
+          p3: "p2",
+          p4: "p2",
+          p5: "p2",
+          p6: "p3",
+        },
+      };
+
+      let game = gameReducer(state, { type: ActionType.ResolveDayVote });
+      game = gameReducer(game, { type: ActionType.StartNight });
+      // A quiet night: every living seat passes the phone on without a choice.
+      for (
+        let turn = 0;
+        turn < game.nightOrderIds.length && game.phase === Phase.Night;
+        turn++
+      ) {
+        game = gameReducer(game, { type: ActionType.FinishNightTurn });
+      }
+
+      expect(game.phase).toBe(Phase.Dawn);
+      expect(game.dawnDeaths).toEqual([
+        { playerId: "p3", cause: DeathCause.HunterShot },
+      ]);
+    });
+  });
+
+  describe("Scenario: yesterday's dawn deaths", () => {
+    it("should not be announced again at the next dawn", () => {
+      const state: GameState = {
+        ...createInitialState(),
+        phase: Phase.Dawn,
+        nightNumber: 1,
+        players: [
+          { id: "p1", name: "An", role: RoleId.Werewolf, isAlive: true },
+          { id: "p2", name: "Bình", role: RoleId.Hunter, isAlive: true },
+          { id: "p3", name: "Cúc", role: RoleId.Villager, isAlive: true },
+          { id: "p4", name: "Dũng", role: RoleId.Villager, isAlive: true },
+          { id: "p5", name: "Em", role: RoleId.Villager, isAlive: true },
+          { id: "p6", name: "Phúc", role: RoleId.Villager, isAlive: false },
+        ],
+        hunterTargetId: "p3",
+        dawnDeaths: [{ playerId: "p6", cause: DeathCause.WolfAttack }],
+      };
+
+      let game = gameReducer(state, { type: ActionType.StartDay });
+      game = {
+        ...game,
+        dayVotes: { p1: "p2", p2: "p3", p3: "p2", p4: "p2", p5: "p2" },
+      };
+      game = gameReducer(game, { type: ActionType.ResolveDayVote });
+      game = gameReducer(game, { type: ActionType.StartNight });
+      for (
+        let turn = 0;
+        turn < game.nightOrderIds.length && game.phase === Phase.Night;
+        turn++
+      ) {
+        game = gameReducer(game, { type: ActionType.FinishNightTurn });
+      }
+
+      expect(game.phase).toBe(Phase.Dawn);
+      expect(game.dawnDeaths).toEqual([
+        { playerId: "p3", cause: DeathCause.HunterShot },
+      ]);
+    });
+  });
+
   describe("Scenario: the village votes out the fool", () => {
     it("should end the game with the fool winning alone", () => {
       const state: GameState = {

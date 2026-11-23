@@ -95,7 +95,6 @@ describe("Feature: Dawn resolution", () => {
             poisonTargetId: null,
             loverIds: { firstId: "c1", secondId: "v2" },
           },
-          dawnDeaths: [{ playerId: "v2", cause: DeathCause.Lynch }],
         },
       );
 
@@ -115,6 +114,43 @@ describe("Feature: Dawn resolution", () => {
       expect(state.players.find((player) => player.id === "v1")?.isAlive).toBe(
         true,
       );
+    });
+  });
+
+  describe("Scenario: A lynched hunter's shot victim is carried into the dawn report", () => {
+    it("should keep the carried victim on a quiet night, ahead of tonight's deaths", () => {
+      const players = [
+        createPlayer("w1", RoleId.Werewolf),
+        createPlayer("v1", RoleId.Villager),
+        createPlayer("v2", RoleId.Villager),
+        createPlayer("v3", RoleId.Villager),
+      ];
+      const carried = { playerId: "v3", cause: DeathCause.HunterShot };
+
+      const quiet = resolveNight(
+        createState(players, { dawnDeaths: [carried] }),
+      );
+
+      expect(quiet.dawnDeaths).toEqual([carried]);
+
+      const bitten = resolveNight(
+        createState(players, {
+          dawnDeaths: [carried],
+          night: {
+            wolfVotes: { w1: "v1" },
+            protectedId: null,
+            inspectedId: null,
+            healsVictim: false,
+            poisonTargetId: null,
+            loverIds: null,
+          },
+        }),
+      );
+
+      expect(bitten.dawnDeaths).toEqual([
+        carried,
+        { playerId: "v1", cause: DeathCause.WolfAttack },
+      ]);
     });
   });
 

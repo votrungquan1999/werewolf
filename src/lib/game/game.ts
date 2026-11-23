@@ -173,9 +173,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return enterNightfall(resolved);
       }
 
-      const lynched = applyDeaths(resolved, [
+      const applied = applyDeaths(resolved, [
         { playerId: outcome.eliminatedId, cause: DeathCause.Lynch },
       ]);
+      // The lynch is public, so only knock-on deaths (a hunter's shot) wait for the dawn report.
+      const lynched = {
+        ...applied,
+        dawnDeaths: applied.dawnDeaths.filter(
+          (death) => death.cause !== DeathCause.Lynch,
+        ),
+      };
       // The fool's win is event-driven, so it bypasses the standing win conditions entirely.
       if (isFoolWin(state, outcome.eliminatedId)) {
         return { ...lynched, winner: Winner.Fool, phase: Phase.GameOver };
@@ -192,6 +199,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         phase: Phase.Day,
+        // The morning's report is read; only deaths from this day may reach the next one.
+        dawnDeaths: [],
         dayVotes: {},
         dayVoteTurn: 0,
         revoteCandidateIds: [],

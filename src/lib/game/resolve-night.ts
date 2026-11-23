@@ -14,7 +14,7 @@ import { DeathCause, Phase } from "src/lib/game/types";
 /**
  * Resolves one night into deaths and opens the dawn report.
  * @param state - The current game state; never mutated.
- * @returns A new state at dawn, holding only tonight's deaths.
+ * @returns A new state at dawn, whose report holds the day's carried shot victim and tonight's deaths.
  */
 export function resolveNight(state: GameState): GameState {
   // Cupid's pair only becomes real at dawn, so it outlives tonight's reset.
@@ -46,12 +46,11 @@ export function resolveNight(state: GameState): GameState {
     });
   }
 
-  // dawnDeaths is cleared before applying so the report shows tonight only.
+  // Built on dawnDeaths: it may carry a lynched hunter's shot victim from the day into this report.
   const resolved = applyDeaths(
     {
       ...state,
       loverIds,
-      dawnDeaths: [],
       // The heal is only spent when there was somebody to pull back; a pack that
       // tied killed nobody, so she never uncorked it.
       witchHealAvailable: state.witchHealAvailable && !isHealed,
