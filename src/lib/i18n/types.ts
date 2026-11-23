@@ -25,6 +25,8 @@ export interface CommonDictionary {
 export interface HeaderDictionary {
   /** `{current}` / `{total}` = the setup step the host is on. */
   stepOf: string;
+  /** `{current}` / `{total}` = which night turn the phone is on, out of how many. */
+  turnOf: string;
 }
 
 /** Table set-up: who is playing and which cards are in the deck. */
@@ -132,16 +134,12 @@ export interface NightfallDictionary {
 export interface NightDictionary {
   /** `{number}` = which night this is. */
   title: string;
-  /** `{name}` = the player who should take the phone. */
-  passTo: string;
-  /** Carries `{name}` — names the gesture and who it confirms, in one label. */
-  confirmIdentity: string;
   /** Carries `{role}` — every turn reopens with a reminder of your own card. */
   yourRole: string;
-  /** Prompt on the closed card; it stays shut so a neighbour cannot read it. */
-  showRole: string;
-  /** Prompt on the open card, to shut it again before passing the phone on. */
-  hideRole: string;
+  /** Chip on every opened turn that shows or hides the player's own card. */
+  yourCard: string;
+  /** Next line on the last seat's sealed envelope, where there is no next player. */
+  lastTurn: string;
   decoyTitle: string;
   /** `{name}` = who to pass to once enough time has been burned. */
   decoyBody: string;

@@ -3,6 +3,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GameProvider } from "src/components/game/game.state";
+import { GameMenu } from "src/components/menu/menu";
 import { Night } from "src/components/night/night";
 import { STORAGE_KEY } from "src/lib/game/persistence";
 import { createInitialState } from "src/lib/game/setup";
@@ -13,9 +14,6 @@ import { namedLine } from "src/tests/matchers";
 import { beforeEach, describe, expect, it } from "vitest";
 
 const dictionary = getDictionary(Locale.En);
-
-/** Mirrors the hand-off hold in night.ui.tsx. */
-const HOLD_MS = 1000;
 
 /** One seat at the table: the player's name and the card they hold. */
 type Seat = [name: string, role: RoleId];
@@ -57,31 +55,32 @@ function parkNightGame(
 function renderNight(): void {
   render(
     <GameProvider>
-      <Night dict={dictionary} />
+      <Night
+        dict={dictionary}
+        menu={<GameMenu dict={dictionary} locale={Locale.En} />}
+      />
     </GameProvider>,
   );
 }
 
 /**
- * Confirms the named player is the one now holding the phone, which opens their turn.
- *
- * Performs the real gesture — press, wait out the hold, release — rather than the
- * keyboard fallback, since the hold is the path every player actually takes.
+ * Drags the seal's thumb 200 px to the right, the way a finger opens the envelope.
  * @param user - The user-event session driving the pointer.
- * @param name - The player the phone was passed to.
+ * @param name - The envelope's owner.
  */
-async function confirmHandOff(
+async function swipeOpen(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
 ): Promise<void> {
-  const control = screen.getByRole("button", {
-    name: `Hold to confirm you are ${name}`,
+  const seal = screen.getByRole("button", {
+    name: `Swipe to open ${name}'s letter`,
   });
 
-  await user.pointer({ keys: "[MouseLeft>]", target: control });
-  // Real timers only: fake ones deadlock user-event inside RTL's act wrapper.
-  await new Promise((resolve) => setTimeout(resolve, HOLD_MS + 100));
-  await user.pointer({ keys: "[/MouseLeft]", target: control });
+  await user.pointer([
+    { keys: "[MouseLeft>]", target: seal, coords: { clientX: 0 } },
+    { coords: { clientX: 200 } },
+    { keys: "[/MouseLeft]" },
+  ]);
 }
 
 describe("Night", () => {
@@ -89,7 +88,7 @@ describe("Night", () => {
     window.localStorage.clear();
   });
 
-  it("keeps the turn hidden until the right player confirms their name", async () => {
+  it("hands each turn over as a sealed envelope that shows whose turn it is, how far the night has gone and who is next", async () => {
     parkNightGame([
       ["Alice", RoleId.Seer],
       ["Bob", RoleId.Villager],
@@ -97,22 +96,44 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
+    expect(screen.getByText(namedLine("To Alice"))).toBeInTheDocument();
+    expect(screen.getByText("Night 1")).toBeInTheDocument();
+    expect(screen.getByText("Turn 1 / 2")).toBeInTheDocument();
+    expect(screen.getByText(namedLine("Next: Bob"))).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(
-      screen.getByText(namedLine("Pass the phone to Alice")),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
-      ),
+      screen.queryByText(/Seer, choose someone to check/),
     ).not.toBeInTheDocument();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     expect(
-      await screen.findByText(
-        "Seer, choose someone to check. You only learn whether they are a werewolf, never their exact role.",
-      ),
+      screen.getByText(namedLine("A letter for Alice")),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Seer, choose someone to check/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Your card" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Undo" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says the last seat's turn is the last of the night in place of a next player", () => {
+    parkNightGame(
+      [
+        ["Alice", RoleId.Seer],
+        ["Bob", RoleId.Villager],
+      ],
+      1,
+    );
+    renderNight();
+
+    expect(screen.getByText("Turn 2 / 2")).toBeInTheDocument();
+    expect(screen.getByText("Last turn of the night")).toBeInTheDocument();
+    expect(screen.queryByText(/Next:/)).not.toBeInTheDocument();
   });
 
   it("tells a player with nothing to do tonight to look busy and pass on", async () => {
@@ -123,7 +144,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
     expect(
@@ -133,7 +154,7 @@ describe("Night", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps the player's own card behind a tap and explains it when opened", async () => {
+  it("keeps the player's own card behind the Your card chip and explains it when opened", async () => {
     parkNightGame([
       ["Alice", RoleId.Seer],
       ["Bob", RoleId.Villager],
@@ -141,24 +162,26 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     // The phone sits in the open while its holder reads the prompt.
+    const chip = screen.getByRole("button", { name: "Your card" });
+    expect(chip).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText("You are the Seer")).not.toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", { name: /Tap to see your card/ }),
-    );
+    await user.click(chip);
 
+    expect(chip).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("You are the Seer")).toBeInTheDocument();
     expect(
       screen.getByText(/get back one word: wolf, or not a wolf/),
     ).toBeInTheDocument();
+    // A sleep turn shares this chip, so no avatar may leak the role.
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", { name: /Tap to hide your card/ }),
-    );
+    await user.click(chip);
 
+    expect(chip).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText("You are the Seer")).not.toBeInTheDocument();
   });
 
@@ -171,7 +194,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     expect(screen.getByText("Your pack")).toBeInTheDocument();
 
@@ -190,7 +213,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     expect(screen.getByRole("button", { name: "Alice" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Bob" })).toBeEnabled();
@@ -206,7 +229,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     // Nobody drags themselves down with them.
     expect(screen.getByRole("button", { name: "Alice" })).toBeDisabled();
@@ -217,7 +240,7 @@ describe("Night", () => {
     await user.click(screen.getByRole("button", { name: "Cara" }));
 
     expect(
-      screen.getByText(namedLine("Pass the phone to Bob")),
+      screen.getByRole("button", { name: "Swipe to open Bob's letter" }),
     ).toBeInTheDocument();
 
     // The mark outlives the night, so it is read back off the parked game.
@@ -249,7 +272,7 @@ describe("Night", () => {
     const user = userEvent.setup();
     renderNight();
 
-    await confirmHandOff(user, "Alice");
+    await swipeOpen(user, "Alice");
 
     // Stage one offers bottles, never a bare list of names.
     expect(
@@ -277,7 +300,7 @@ describe("Night", () => {
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(
-      screen.getByText(namedLine("Pass the phone to Bob")),
+      screen.getByRole("button", { name: "Swipe to open Bob's letter" }),
     ).toBeInTheDocument();
   });
 });

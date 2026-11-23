@@ -27,6 +27,7 @@ const vietnamese: Dictionary = {
   },
   header: {
     stepOf: "Bước {current} / {total}",
+    turnOf: "Lượt {current} / {total}",
   },
   setup: {
     title: "Ai chơi tối nay?",
@@ -78,11 +79,9 @@ const vietnamese: Dictionary = {
   },
   night: {
     title: "Đêm {number}",
-    passTo: "Đưa máy cho {name}",
-    confirmIdentity: "Nhấn giữ để xác nhận bạn là {name}",
     yourRole: "Bạn là {role}",
-    showRole: "Chạm để xem lại bài của bạn",
-    hideRole: "Chạm để giấu bài đi",
+    yourCard: "Lá bài của bạn",
+    lastTurn: "Lượt cuối của đêm",
     decoyTitle: "Đêm nay bạn không phải làm gì",
     decoyBody:
       "Chờ một chút, giả vờ bấm bấm cho giống người ta, rồi đưa máy cho {name}.",
@@ -229,6 +228,7 @@ const english: Dictionary = {
   },
   header: {
     stepOf: "Step {current} / {total}",
+    turnOf: "Turn {current} / {total}",
   },
   setup: {
     title: "Who's playing tonight?",
@@ -282,11 +282,9 @@ const english: Dictionary = {
   },
   night: {
     title: "Night {number}",
-    passTo: "Pass the phone to {name}",
-    confirmIdentity: "Hold to confirm you are {name}",
     yourRole: "You are the {role}",
-    showRole: "Tap to see your card",
-    hideRole: "Tap to hide your card",
+    yourCard: "Your card",
+    lastTurn: "Last turn of the night",
     decoyTitle: "Nothing to do tonight",
     decoyBody: "Wait a moment, look busy, then pass to {name}.",
     wolvesPrompt:

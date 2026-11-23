@@ -1,8 +1,10 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useGame, useGameActions } from "src/components/game/game.state";
 import { NamedLine } from "src/components/game/game.ui";
+import { ScreenHeader } from "src/components/game/screen-header";
+import { SealGate } from "src/components/seal/seal.ui";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import { Toggle } from "src/components/ui/toggle";
@@ -15,6 +17,7 @@ import {
   isPlayerAWolf,
   type NightTurn,
 } from "src/lib/game/night";
+import { getNightSealId } from "src/lib/game/seal";
 import {
   type GameState,
   NightAction,
@@ -23,17 +26,9 @@ import {
   PotionKind,
   type RoleId,
 } from "src/lib/game/types";
+import type { SealDictionary } from "src/lib/i18n/types";
 import { playDaybreak } from "src/lib/sound";
 import { cn } from "src/lib/utils";
-
-/**
- * How long the hand-off button must be held before a turn opens.
- *
- * Comfortably past the ~500 ms at which iOS and Android fire their own long-press,
- * so the gesture cannot be mistaken for an accidental one, but short enough to
- * repeat once per player per night without becoming a chore.
- */
-const HOLD_TO_CONFIRM_MS = 1000;
 
 /** Which step of the witch's turn is on screen. */
 enum WitchStage {
@@ -45,8 +40,11 @@ enum WitchStage {
 /** Every string the night screen can render, handed down from the server component. */
 export interface NightCopy {
   title: string;
-  passTo: string;
-  confirmIdentity: string;
+  seal: SealDictionary;
+  /** Carries `{current}` and `{total}`. */
+  turnOf: string;
+  yourCard: string;
+  lastTurn: string;
   decoyTitle: string;
   decoyBody: string;
   prompts: Record<NightAction, string>;
@@ -61,8 +59,6 @@ export interface NightCopy {
   /** Carries `{role}`; filled with a name from `roleNames`. */
   yourRole: string;
   hunterSkip: string;
-  showRole: string;
-  hideRole: string;
   roleNames: Record<RoleId, string>;
   roleDescriptions: Record<RoleId, string>;
   continueLabel: string;
@@ -72,43 +68,39 @@ export interface NightCopy {
 }
 
 /**
- * The player's own card, kept behind a tap and explained whenever it is open.
+ * The player's own card, kept behind a chip and explained whenever it is open.
  *
- * Always-visible was a leak: the phone sits in the open while its holder reads the
- * prompt, and anyone leaning over saw the card. Restating the description matters
- * because nobody should have to remember eight role rules to read their own prompt.
+ * Shut by default: the phone sits in the open while its holder reads the prompt,
+ * and anyone leaning over would see the card. No avatar: a sleep turn shows this
+ * chip too, and a picture would tell the table which role is asleep.
  * @param props.role - The card this player is holding.
  * @param props.copy - Night copy supplied by the server component.
- * @returns A toggle carrying the card.
+ * @returns A chip that opens the card.
  */
 function NightRoleCard({ role, copy }: { role: RoleId; copy: NightCopy }) {
   const [isShown, setIsShown] = useState(false);
 
   return (
-    <Button
-      variant="outline"
-      onClick={() => setIsShown(!isShown)}
-      className={cn(
-        "h-auto w-full whitespace-normal border-phase-border px-4 py-3 text-phase-foreground/80",
-        "grid justify-items-center gap-1",
-      )}
-    >
+    <div className={cn("gap-2", "grid")}>
+      <Button
+        variant="outline"
+        aria-expanded={isShown}
+        onClick={() => setIsShown(!isShown)}
+        className={cn("h-11 w-full border-phase-border text-base")}
+      >
+        {copy.yourCard}
+      </Button>
       {isShown ? (
-        <>
+        <div className={cn("gap-1", "grid justify-items-center text-center")}>
           <span className="font-semibold text-base">
             {fillTemplate(copy.yourRole, { role: copy.roleNames[role] })}
           </span>
-          <span className="text-sm text-phase-foreground/70 leading-relaxed">
+          <span className="text-muted-foreground text-sm leading-relaxed">
             {copy.roleDescriptions[role]}
           </span>
-          <span className="pt-1 text-phase-foreground/50 text-xs">
-            {copy.hideRole}
-          </span>
-        </>
-      ) : (
-        <span className="text-base">{copy.showRole}</span>
-      )}
-    </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -720,95 +712,6 @@ function NightActTurn({
 }
 
 /**
- * The hand-off beat: who should be holding the phone, and the control that opens their turn.
- *
- * The control is a circle, not a bar, because the shape is the instruction — a round
- * target that fills as you hold reads as "hold me" where a rectangle reads as "tap me".
- * @param props.name - The player the phone is being passed to.
- * @param props.copy - Night copy supplied by the server component.
- * @param props.onConfirm - Called once the right player has held long enough.
- * @returns The hand-off screen.
- */
-function NightHandOff({
-  name,
-  copy,
-  onConfirm,
-}: {
-  name: string;
-  copy: NightCopy;
-  onConfirm: () => void;
-}) {
-  const [isHolding, setIsHolding] = useState(false);
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  /** Starts the hold; the turn only opens once the finger has stayed down. */
-  function startHold(): void {
-    setIsHolding(true);
-    holdTimerRef.current = setTimeout(onConfirm, HOLD_TO_CONFIRM_MS);
-  }
-
-  /**
-   * Abandons a hold in progress with no side effect.
-   *
-   * Wired to up, leave and cancel alike — a finger sliding off the control while the
-   * phone changes hands must not open somebody else's turn.
-   */
-  function cancelHold(): void {
-    if (holdTimerRef.current !== null) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-
-    setIsHolding(false);
-  }
-
-  /**
-   * Opens the turn outright for anyone who cannot perform a timed hold.
-   * @param event - The activation, whose `detail` of 0 marks a keyboard press.
-   */
-  function handleClick(event: { detail: number }): void {
-    if (event.detail === 0) {
-      onConfirm();
-    }
-  }
-
-  return (
-    <section className={cn("gap-8 text-center", "grid justify-items-center")}>
-      <p className={cn("font-semibold text-3xl text-balance")}>
-        <NamedLine template={copy.passTo} name={name} />
-      </p>
-
-      <button
-        type="button"
-        onPointerDown={startHold}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onPointerCancel={cancelHold}
-        onClick={handleClick}
-        className={cn(
-          "touch-manipulation rounded-full border-2 border-phase-border bg-phase-muted text-phase-foreground",
-          "pile isolate size-52 place-items-center",
-        )}
-      >
-        {/* Purely the progress read-out; the button's own label carries the meaning,
-            so the transform is pushed behind the label rather than painting over it. */}
-        <span
-          aria-hidden="true"
-          data-holding={isHolding ? "" : undefined}
-          className={cn(
-            "rounded-full bg-phase",
-            "-z-10 size-full scale-0 transition-transform ease-linear duration-1000 data-holding:scale-100",
-          )}
-        />
-        <span className={cn("px-8 font-semibold text-lg text-balance")}>
-          <NamedLine template={copy.confirmIdentity} name={name} />
-        </span>
-      </button>
-    </section>
-  );
-}
-
-/**
  * The cover screen for a player whose role sits tonight out.
  * @param props.nextName - Who to pass to, or null on the last seat of the night.
  * @param props.copy - Night copy supplied by the server component.
@@ -899,7 +802,7 @@ function NightTurnBody({
 }
 
 /**
- * One player's whole turn: the hand-off first, then whatever their role does tonight.
+ * One player's whole turn: the sealed envelope first, then whatever their role does tonight.
  * @param props.turn - The turn described by the engine for the player holding the phone.
  * @param props.copy - Night copy supplied by the server component.
  * @returns The turn stage.
@@ -907,7 +810,7 @@ function NightTurnBody({
 function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
   const state = useGame();
   const { finishNightTurn } = useGameActions();
-  const [isRevealed, setIsRevealed] = useState(false);
+  const nextName = getNextPlayerName(state);
   const isLastSeat =
     getCurrentNightTurn({ ...state, nightCursor: state.nightCursor + 1 }) ===
     null;
@@ -926,25 +829,37 @@ function NightTurnStage({ turn, copy }: { turn: NightTurn; copy: NightCopy }) {
     finishNightTurn();
   }
 
-  if (!isRevealed) {
-    return (
-      <NightHandOff
-        name={getPlayerName(state, turn.playerId)}
-        copy={copy}
-        onConfirm={() => setIsRevealed(true)}
-      />
-    );
-  }
-
-  return <NightTurnBody turn={turn} copy={copy} onDone={handleTurnDone} />;
+  return (
+    <SealGate
+      sealId={getNightSealId(state.nightNumber, turn.playerId)}
+      ownerName={getPlayerName(state, turn.playerId)}
+      nextLine={
+        nextName === null ? (
+          copy.lastTurn
+        ) : (
+          <NamedLine template={copy.seal.next} name={nextName} />
+        )
+      }
+      copy={copy.seal}
+    >
+      <NightTurnBody turn={turn} copy={copy} onDone={handleTurnDone} />
+    </SealGate>
+  );
 }
 
 /**
  * The night screen, visible only while the game is in the night phase.
  * @param props.copy - Night copy supplied by the server component.
+ * @param props.menu - The options menu, if the page supplies one.
  * @returns The night screen, or nothing when another phase owns the display.
  */
-export function NightScreen({ copy }: { copy: NightCopy }) {
+export function NightScreen({
+  copy,
+  menu,
+}: {
+  copy: NightCopy;
+  menu?: ReactNode;
+}) {
   const state = useGame();
 
   if (state.phase !== Phase.Night) {
@@ -957,13 +872,17 @@ export function NightScreen({ copy }: { copy: NightCopy }) {
   }
 
   return (
-    <main className={cn("w-full p-6", "grid gap-6")}>
-      {/* Centred to sit over the centred hand-off and hold circle below it. */}
-      <h1 className="text-center font-semibold text-xl tracking-tight">
-        {fillTemplate(copy.title, { number: String(state.nightNumber) })}
-      </h1>
+    <main className={cn("w-full gap-4 px-5 pt-3 pb-7", "grid content-start")}>
+      <ScreenHeader
+        label={fillTemplate(copy.title, { number: String(state.nightNumber) })}
+        progress={fillTemplate(copy.turnOf, {
+          current: String(state.nightCursor + 1),
+          total: String(state.nightOrderIds.length),
+        })}
+        menu={menu}
+      />
 
-      {/* Keyed by the cursor so the next player always starts from a fresh hand-off. */}
+      {/* Keyed by the cursor so the next player always starts from a fresh envelope. */}
       <NightTurnStage key={state.nightCursor} turn={turn} copy={copy} />
     </main>
   );

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { type NightCopy, NightScreen } from "src/components/night/night.ui";
 import { NightAction, type RoleId } from "src/lib/game/types";
 import type { Dictionary } from "src/lib/i18n/types";
@@ -13,8 +14,10 @@ import type { Dictionary } from "src/lib/i18n/types";
 function buildNightCopy(dict: Dictionary): NightCopy {
   return {
     title: dict.night.title,
-    passTo: dict.night.passTo,
-    confirmIdentity: dict.night.confirmIdentity,
+    seal: dict.seal,
+    turnOf: dict.header.turnOf,
+    yourCard: dict.night.yourCard,
+    lastTurn: dict.night.lastTurn,
     decoyTitle: dict.night.decoyTitle,
     decoyBody: dict.night.decoyBody,
     prompts: {
@@ -35,8 +38,6 @@ function buildNightCopy(dict: Dictionary): NightCopy {
     witchPoisonConfirm: dict.night.witchPoisonConfirm,
     yourRole: dict.night.yourRole,
     hunterSkip: dict.night.hunterSkip,
-    showRole: dict.night.showRole,
-    hideRole: dict.night.hideRole,
     roleNames: Object.fromEntries(
       Object.entries(dict.roles).map(([role, copy]) => [role, copy.name]),
     ) as Record<RoleId, string>,
@@ -56,8 +57,9 @@ function buildNightCopy(dict: Dictionary): NightCopy {
 /**
  * The night phase, passed hand to hand around the whole table.
  * @param props.dict - The active language's dictionary.
+ * @param props.menu - The options menu, shown by the header.
  * @returns The night screen.
  */
-export function Night({ dict }: { dict: Dictionary }) {
-  return <NightScreen copy={buildNightCopy(dict)} />;
+export function Night({ dict, menu }: { dict: Dictionary; menu?: ReactNode }) {
+  return <NightScreen copy={buildNightCopy(dict)} menu={menu} />;
 }
