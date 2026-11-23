@@ -16,7 +16,7 @@ const vietnamese: Dictionary = {
   common: {
     back: "Quay lại",
     next: "Tiếp",
-    cancel: "Hủy",
+    cancel: "Thôi",
     confirm: "Xác nhận",
     done: "Xong",
     start: "Bắt đầu",
@@ -129,10 +129,14 @@ const vietnamese: Dictionary = {
   },
   menu: {
     open: "Tùy chọn",
-    undo: "Lùi lại một bước",
+    undo: "Hoàn tác",
+    undoHint: "Lùi lại một bước",
     newGame: "Ván mới",
+    newGameHint: "Giữ người chơi và vai đã chọn",
+    confirmTitle: "Bắt đầu ván mới?",
+    language: "Ngôn ngữ",
     confirmReset:
-      "Bỏ ván đang chơi? Danh sách người chơi và số lượng vai vẫn được giữ lại.",
+      "Giữ nguyên người chơi và vai đã chọn. Mọi thứ của ván này (lá bài, người chết, phiếu bầu) sẽ bị xóa.",
     close: "Đóng",
   },
   error: {
@@ -313,10 +317,14 @@ const english: Dictionary = {
   },
   menu: {
     open: "Options",
-    undo: "Undo last step",
+    undo: "Undo",
+    undoHint: "Go back one step",
     newGame: "New game",
+    newGameHint: "Keeps the players and chosen roles",
+    confirmTitle: "Start a new game?",
+    language: "Language",
     confirmReset:
-      "Discard this game? The player list and role counts are kept.",
+      "The players and chosen roles stay. Everything else in this game (cards, deaths, votes) is erased.",
     close: "Close",
   },
   error: {

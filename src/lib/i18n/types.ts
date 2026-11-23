@@ -66,8 +66,16 @@ export interface SetupDictionary {
 export interface MenuDictionary {
   open: string;
   undo: string;
+  /** Under the undo option. */
+  undoHint: string;
   newGame: string;
+  /** Under the new-game option. */
+  newGameHint: string;
+  /** Heading of the new-game confirmation. */
+  confirmTitle: string;
   confirmReset: string;
+  /** Label above the language options. */
+  language: string;
   close: string;
 }
 

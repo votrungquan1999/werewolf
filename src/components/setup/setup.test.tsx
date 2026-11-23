@@ -227,7 +227,7 @@ describe("Setup screen", () => {
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Options" }));
-    await user.click(screen.getByRole("button", { name: "Undo last step" }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
 
     expect(
       screen.getByText(

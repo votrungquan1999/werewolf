@@ -24,9 +24,12 @@ export function GameMenu({
     <GameMenuPanel
       openLabel={dict.menu.open}
       undoLabel={dict.menu.undo}
+      undoHint={dict.menu.undoHint}
       newGameLabel={dict.menu.newGame}
+      newGameHint={dict.menu.newGameHint}
+      confirmTitle={dict.menu.confirmTitle}
+      languageLabel={dict.menu.language}
       resetPrompt={dict.menu.confirmReset}
-      confirmLabel={dict.common.confirm}
       cancelLabel={dict.common.cancel}
       closeLabel={dict.menu.close}
     >
@@ -36,9 +39,9 @@ export function GameMenu({
           href={swapLocaleInPath(`/${locale}`, target)}
           aria-current={target === locale ? "true" : undefined}
           className={cn(
-            "rounded-lg border border-border px-4 text-base text-muted-foreground",
-            "grid h-12 place-items-center",
-            "aria-[current]:border-primary aria-[current]:text-foreground",
+            "rounded-xl px-4 font-semibold text-base text-foreground",
+            "grid h-11 place-items-center",
+            "aria-[current]:bg-primary aria-[current]:font-bold aria-[current]:text-primary-foreground",
           )}
         >
           {dict.language[target]}

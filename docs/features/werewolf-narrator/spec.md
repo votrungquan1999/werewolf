@@ -25,11 +25,9 @@ The options button sits in the **header each screen renders** (`ScreenHeader`: p
 
 The menu holds everything that must never be one stray tap away from play:
 
-- **Undo** steps the whole game back one action — a mis-tapped vote, the wrong night target, an accidental pass. History lives in `history.ts` as a wrapper reducer over `GameState`, capped at 25 steps, and is deliberately **not** persisted: only the live game is parked. This is the deep recovery route: if the table is already on the day and something went wrong back in the night, tapping it repeatedly walks the whole game back.
-- **New game** asks for confirmation first, then returns to setup **keeping the players and the chosen role counts** — re-typing eight names between back-to-back games is the tedious part, and it is the same table playing again. Everything the finished game produced — cards, deaths, votes, the winner — is cleared. The play-again button on the end screen goes through the same action.
+- **Undo lives only in the options menu, on every screen.** It is for the rare "something went wrong" case, so no screen carries its own Undo button; opening the menu in front of the table keeps it visible. It steps the whole game back one action — a mis-tapped vote, the wrong night target, an accidental pass. The menu **closes after each Undo**; reopen it to go further. History lives in `history.ts` as a wrapper reducer over `GameState`, capped at 25 steps, and is deliberately **not** persisted: only the live game is parked, so Undo is unavailable after a refresh.
+- **New game** asks first ("Start a new game?", saying what is kept), then returns to the **players step** of setup **keeping the players and the chosen role counts** — re-typing eight names between back-to-back games is the tedious part, and it is the same table playing again. Everything the finished game produced — cards, deaths, votes, the winner — is cleared. The play-again button on the end screen goes through the same action.
 - **The language switch** lives here too. It used to float on the screen, where it sat on top of the card.
-
-**Undo is also surfaced inline**, side by side with the primary advance control, so the common case — a phone passed on before its owner looked — is one tap and never needs the menu.
 
 The menu opens as a **modal bottom sheet**, not an inline panel. Two reasons: a panel rendered in flow pushed the whole screen down every time it opened, and an anchored popover would drop out of the top corner the trigger sits in — the hardest part of a tall phone to reach. A sheet renders in the top layer, so it cannot shift anything, and it lands under the thumb.
 
