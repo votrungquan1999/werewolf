@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   GameOverPlayAgain,
   GameOverRoster,
@@ -27,11 +28,22 @@ function toRoleNames(roles: RolesDictionary): Record<RoleId, string> {
 /**
  * The payoff screen: who won, what everyone really was, and a way back to setup.
  * @param props.dict - Every string this screen renders, in the table's language
+ * @param props.menu - The options menu, shown by the header
  * @returns The end screen, gated on the game actually being over
  */
-export function GameOver({ dict }: { dict: Dictionary }) {
+export function GameOver({
+  dict,
+  menu,
+}: {
+  dict: Dictionary;
+  menu?: ReactNode;
+}) {
   return (
-    <GameOverScreen headlines={dict.gameOver.headlines}>
+    <GameOverScreen
+      eyebrow={dict.gameOver.eyebrow}
+      headlines={dict.gameOver.headlines}
+      menu={menu}
+    >
       <GameOverRoster
         roleNames={toRoleNames(dict.roles)}
         aliveLabel={dict.common.alive}

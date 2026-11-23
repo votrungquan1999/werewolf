@@ -71,7 +71,10 @@ export default async function GamePage({ params }: GamePageProps) {
               dict={dictionary}
               menu={<GameMenu dict={dictionary} locale={locale} />}
             />
-            <GameOver dict={dictionary} />
+            <GameOver
+              dict={dictionary}
+              menu={<GameMenu dict={dictionary} locale={locale} />}
+            />
           </GameScreens>
         </GameShell>
       </GameProvider>

@@ -309,6 +309,7 @@ export interface WinnerDictionary {
 
 /** The end screen. */
 export interface GameOverDictionary {
+  eyebrow: string;
   headlines: WinnerDictionary;
   playAgain: string;
 }

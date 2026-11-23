@@ -22,8 +22,8 @@ const vietnamese: Dictionary = {
     start: "Bắt đầu",
     continue: "Tiếp tục",
     players: "Người chơi",
-    alive: "Còn sống",
-    dead: "Đã chết",
+    alive: "Sống",
+    dead: "Chết",
     listLocale: "vi",
   },
   header: {
@@ -185,15 +185,14 @@ const vietnamese: Dictionary = {
     tiedAgainTitle: "Lại hòa phiếu, nên hôm nay không ai bị loại.",
   },
   gameOver: {
+    eyebrow: "Kết thúc",
     headlines: {
-      [Winner.Village]: "Dân Làng thắng! Bầy Sói đã bị diệt sạch.",
-      [Winner.Werewolves]: "Ma Sói thắng! Bầy Sói đã đông hơn dân làng.",
-      [Winner.Lovers]:
-        "Cặp đôi thắng! Hai người yêu nhau là hai người cuối cùng còn sống.",
-      [Winner.Fool]:
-        "Thằng Ngốc thắng một mình! Cả làng treo cổ đúng người nó muốn.",
+      [Winner.Village]: "Phe Dân làng thắng!",
+      [Winner.Werewolves]: "Bầy Ma Sói thắng!",
+      [Winner.Lovers]: "Đôi tình nhân thắng!",
+      [Winner.Fool]: "Thằng Ngốc thắng!",
     },
-    playAgain: "Chơi ván nữa",
+    playAgain: "Chơi ván mới",
   },
   menu: {
     open: "Tùy chọn",
@@ -443,14 +442,12 @@ const english: Dictionary = {
     tiedAgainTitle: "Tied again, so nobody is voted out today.",
   },
   gameOver: {
+    eyebrow: "Game over",
     headlines: {
-      [Winner.Village]: "The village wins! Every werewolf is dead.",
-      [Winner.Werewolves]:
-        "The werewolves win! The pack now outnumbers the village.",
-      [Winner.Lovers]:
-        "The lovers win together — they are the last two left alive.",
-      [Winner.Fool]:
-        "The fool wins alone — the village lynched exactly who they wanted.",
+      [Winner.Village]: "The village wins!",
+      [Winner.Werewolves]: "The werewolves win!",
+      [Winner.Lovers]: "The lovers win!",
+      [Winner.Fool]: "The Fool wins!",
     },
     playAgain: "Play again",
   },
