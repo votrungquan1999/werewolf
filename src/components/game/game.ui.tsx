@@ -61,19 +61,62 @@ export function GameShell({ children }: { children: ReactNode }) {
 }
 
 /**
- * What a slow phone shows until the saved game has been read, instead of a black page.
- * @param props.children - The app name.
- * @returns A full-height, centred title.
+ * The gold crescent of the loading splash and the crash page; decorative, the text beside it carries the meaning.
+ * @returns The moon, hidden from assistive tech.
  */
-export function GameLoading({ children }: { children: ReactNode }) {
+export function SplashMoon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="-10 0 64 64"
+      className={cn("size-20 drop-shadow-[0_0_14px_rgb(233_203_130/45%)]")}
+    >
+      <path d="M40 5 A28 28 0 1 0 40 59 A30 30 0 0 1 40 5 Z" fill="#E9CB82" />
+    </svg>
+  );
+}
+
+/**
+ * What the table sees before the game can read its save.
+ * @param props.title - The app name.
+ * @param props.label - A neutral loading line, announced to assistive tech.
+ * @returns A full-height splash: moon, app name, loading line.
+ */
+export function GameLoading({
+  title,
+  label,
+}: {
+  title: string;
+  label: string;
+}) {
   return (
     <div
       className={cn(
-        "font-semibold text-3xl text-muted-foreground tracking-tight",
-        "grid min-h-dvh place-items-center",
+        "stars gap-4 p-6 text-center",
+        "grid min-h-dvh content-center justify-items-center",
       )}
     >
-      {children}
+      <SplashMoon />
+      <p
+        className={cn(
+          "font-bold font-heading text-5xl text-balance text-phase-name tracking-tight wrap-anywhere",
+        )}
+      >
+        {title}
+      </p>
+      <output className="text-muted-foreground text-sm">{label}</output>
+      <div aria-hidden="true" className={cn("gap-2", "flex")}>
+        {[0, 1, 2].map((dot) => (
+          <span
+            key={dot}
+            className={cn(
+              "size-1.5 rounded-full bg-phase-name",
+              "motion-safe:animate-pulse",
+            )}
+            style={{ animationDelay: `${dot * 200}ms` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

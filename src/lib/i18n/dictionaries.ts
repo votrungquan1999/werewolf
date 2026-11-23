@@ -24,6 +24,7 @@ const vietnamese: Dictionary = {
     players: "Người chơi",
     alive: "Sống",
     dead: "Chết",
+    loading: "Đang tải…",
     listLocale: "vi",
   },
   header: {
@@ -277,6 +278,7 @@ const english: Dictionary = {
     players: "Players",
     alive: "Alive",
     dead: "Dead",
+    loading: "Loading…",
     listLocale: "en",
   },
   header: {

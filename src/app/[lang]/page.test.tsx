@@ -10,3 +10,18 @@ describe("Game page", () => {
     expect(renderToString(page)).toContain("Ma Sói");
   });
 });
+
+describe("Game page loading line", () => {
+  it.each([
+    ["en", "Loading…"],
+    ["vi", "Đang tải…"],
+  ])(
+    "tells a %s table the game is loading, without claiming a saved game",
+    async (lang, line) => {
+      const page = await GamePage({ params: Promise.resolve({ lang }) });
+
+      // The fallback shows to everyone first, so it must not promise a saved game exists.
+      expect(renderToString(page)).toContain(line);
+    },
+  );
+});

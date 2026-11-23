@@ -21,6 +21,7 @@ export interface CommonDictionary {
   dead: string;
   /** BCP 47 tag `Intl.ListFormat` joins name lists with. */
   listLocale: string;
+  loading: string;
 }
 
 /** The strip above every screen. */

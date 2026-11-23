@@ -44,7 +44,14 @@ export default async function GamePage({ params }: GamePageProps) {
     <>
       {/* The game renders client-only, so this puts the app name in the server HTML for crawlers and screen readers. */}
       <h1 className="sr-only">{dictionary.appName}</h1>
-      <GameProvider fallback={<GameLoading>{dictionary.appName}</GameLoading>}>
+      <GameProvider
+        fallback={
+          <GameLoading
+            title={dictionary.appName}
+            label={dictionary.common.loading}
+          />
+        }
+      >
         <GameShell>
           <GameScreens>
             <Setup
