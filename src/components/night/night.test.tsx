@@ -385,5 +385,31 @@ describe("Night", () => {
       expect(screen.getByText("Nothing to do tonight")).toBeInTheDocument();
       expect(screen.queryByText("Seal already opened")).not.toBeInTheDocument();
     });
+
+    it("leaves no mark and no open letter on the next night's envelope", () => {
+      // What really remains after night 1: Alice's mark and the open id she left behind.
+      parkNightGame(
+        [
+          ["Alice", RoleId.Villager],
+          ["Bob", RoleId.Seer],
+        ],
+        0,
+        {
+          nightNumber: 2,
+          openedSeals: ["night:1:alice"],
+          openSealId: "night:1:alice",
+        },
+      );
+      renderNight();
+
+      expect(
+        screen.getByRole("button", { name: "Swipe to open Alice's letter" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Seal already opened")).not.toBeInTheDocument();
+      expect(screen.queryByText(/A letter for/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Nothing to do tonight"),
+      ).not.toBeInTheDocument();
+    });
   });
 });
