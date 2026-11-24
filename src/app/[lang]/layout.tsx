@@ -41,6 +41,15 @@ export async function generateMetadata({
     languages[supported] = `${SITE_URL}/${supported}`;
   }
 
+  // Relative on purpose: metadataBase turns it into an absolute URL for crawlers.
+  const shareImage = {
+    url: `/og/${locale}.png`,
+    width: 1200,
+    height: 630,
+    type: "image/png",
+    alt: String(metadata.title),
+  };
+
   return {
     metadataBase: new URL(SITE_URL),
     title: metadata.title,
@@ -53,12 +62,14 @@ export async function generateMetadata({
       siteName: appName,
       locale: OG_LOCALE[locale],
       type: "website",
+      images: [shareImage],
     },
-    // No dedicated share art exists, so the text-only summary card is used.
+    // The large card shows the same per-language art as Open Graph.
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: metadata.title,
       description: metadata.description,
+      images: [shareImage],
     },
     alternates: {
       canonical,

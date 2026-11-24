@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata } from "next";
 import { generateMetadata } from "src/app/[lang]/layout";
 import { describe, expect, it, vi } from "vitest";
@@ -84,10 +86,65 @@ describe("Feature: page metadata per language", () => {
         });
         expect(String(metadata.openGraph?.description)).toContain(description);
         expect(metadata.twitter).toMatchObject({
-          card: "summary",
           title: metadata.title,
           description: metadata.description,
         });
+      },
+    );
+  });
+
+  describe("Scenario: a link is shared and the platform shows a large image", () => {
+    it("should attach the Vietnamese share image to Open Graph and X", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ lang: "vi" }),
+      });
+      const image = {
+        url: "/og/vi.png", // relative: metadataBase makes it absolute
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: titleOf(metadata),
+      };
+
+      expect(metadata.openGraph?.images).toEqual([image]);
+      expect(metadata.twitter).toMatchObject({
+        card: "summary_large_image",
+        images: [image],
+      });
+    });
+
+    it("should attach the English share image to Open Graph and X", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ lang: "en" }),
+      });
+      const image = {
+        url: "/og/en.png",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: titleOf(metadata),
+      };
+
+      expect(metadata.openGraph?.images).toEqual([image]);
+      expect(metadata.twitter).toMatchObject({
+        card: "summary_large_image",
+        images: [image],
+      });
+    });
+  });
+
+  describe("Scenario: the share image files are served", () => {
+    it.each(["vi", "en"])(
+      "should ship public/og/%s.png as a 1200x630 PNG",
+      (lang) => {
+        const png = readFileSync(
+          join(process.cwd(), "public/og", `${lang}.png`),
+        );
+
+        // PNG signature, then IHDR width/height at bytes 16 and 20.
+        expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+        expect(png.readUInt32BE(16)).toBe(1200);
+        expect(png.readUInt32BE(20)).toBe(630);
       },
     );
   });
